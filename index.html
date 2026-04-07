@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>나의 진짜 성격? MBTI 테스트</title>
+    <meta name="description" content="8개의 간단한 질문으로 알아보는 나의 MBTI 유형 테스트">
+    <link rel="stylesheet" href="style.css">
+    <!-- Google Fonts: Outfit and Noto Sans KR -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;700&family=Outfit:wght@300;400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container" id="app">
+        <!-- Start Screen -->
+        <main class="start-screen" id="start-screen">
+            <div class="card glass">
+                <div class="content">
+                    <h1 id="title">나의 진짜 성격?</h1>
+                    <p id="description">8개의 간단한 질문으로 알아보는 나의 MBTI 유형</p>
+                    <button id="start-btn" class="btn-primary">테스트 시작하기</button>
+                </div>
+            </div>
+        </main>
+
+        <!-- Question Screen -->
+        <main class="question-screen hidden" id="question-screen">
+            <div class="card glass">
+                <div class="question-header">
+                    <span id="question-number">Q1.</span>
+                    <div class="progress-bar">
+                        <div id="progress" class="progress-fill"></div>
+                    </div>
+                </div>
+                <div class="content">
+                    <h2 id="question-text">주말에 약속이 없다면?</h2>
+                    <div class="options-container">
+                        <button class="btn-option" data-choice="A" id="option-a">집에 있는다</button>
+                        <button class="btn-option" data-choice="B" id="option-b">밖에 나가서 사람들을 만난다</button>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Result Screen -->
+        <main class="result-screen hidden" id="result-screen">
+            <div class="card glass result-card">
+                <div class="content">
+                    <p class="result-label">당신의 성격 유형은...</p>
+                    <div class="image-wrapper">
+                        <img id="mbti-image" src="" alt="MBTI Character" class="hidden character-img">
+                    </div>
+                    <h1 id="mbti-type" class="mbti-display">ENTP</h1>
+                    <h2 id="mbti-nickname" class="nickname-display">뜨거운 논쟁을 즐기는 변론가</h2>
+                    
+                    <div class="description-container">
+                        <p id="mbti-description" class="description-text">어떤 상황에서도 창의적인 해결책을 찾아내는 아이디어 뱅크입니다.</p>
+                        
+                        <div class="scenario-box">
+                            <span class="scenario-tag">특징적인 모습</span>
+                            <p id="mbti-scenario" class="scenario-text">"잠깐만, 방금 네 말에서 모순점을 발견했어. 우리 다시 토론해볼까?"</p>
+                        </div>
+                    </div>
+
+                    <button id="restart-btn" class="btn-primary">테스트 다시하기</button>
+                </div>
+            </div>
+        </main>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
