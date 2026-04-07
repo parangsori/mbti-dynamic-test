@@ -315,14 +315,68 @@ h2 {
 
 /* Response for small screens */
 @media (max-width: 480px) {
+    .container {
+        padding: 1rem 15px;
+    }
+    .card {
+        padding: 1.5rem 1rem;
+    }
+    .result-card {
+        padding-top: 1.5rem;
+        padding-bottom: 1.5rem;
+    }
     h1 {
-        font-size: 2rem;
+        font-size: 1.75rem;
     }
     p {
-        font-size: 1rem;
+        font-size: 0.95rem;
+    }
+    .character-img {
+        width: 140px;
+        height: 140px;
+        margin-bottom: 0.5rem;
+        border-width: 3px;
+    }
+    .result-label {
+        margin-bottom: 0.5rem;
+        font-size: 0.95rem;
+    }
+    .mbti-display {
+        font-size: 3.5rem;
+        margin-bottom: 0.25rem;
+        transform: scale(1); /* remove desktop scale up */
+    }
+    .nickname-display {
+        font-size: 1.25rem;
+        margin-bottom: 1rem;
+    }
+    .description-container {
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+        border-radius: 16px;
+    }
+    .description-text {
+        font-size: 0.95rem;
+        line-height: 1.5;
+        margin-bottom: 1.25rem;
+    }
+    .scenario-box {
+        padding: 1.25rem 1rem 1rem;
+    }
+    .scenario-tag {
+        font-size: 0.75rem;
+        padding: 3px 10px;
+        top: -8px;
+        left: 15px;
+    }
+    .scenario-text {
+        font-size: 0.9rem;
+        line-height: 1.4;
     }
     .btn-primary {
         width: 100%;
         padding: 1rem;
+        font-size: 1.1rem;
+        border-radius: 12px;
     }
 }
