@@ -169,6 +169,31 @@ document.addEventListener('DOMContentLoaded', () => {
     const mbtiScenario = document.getElementById('mbti-scenario');
     const restartBtn = document.getElementById('restart-btn');
 
+    // Info Modal elements
+    const infoBtnStart = document.getElementById('info-btn-start');
+    const infoBtnResult = document.getElementById('info-btn-result');
+    const infoModal = document.getElementById('info-modal');
+    const closeModal = document.getElementById('close-modal');
+
+    function openModal() {
+        infoModal.classList.remove('hidden');
+    }
+
+    function closeModalHandler() {
+        infoModal.classList.add('hidden');
+    }
+
+    if (infoBtnStart) infoBtnStart.addEventListener('click', openModal);
+    if (infoBtnResult) infoBtnResult.addEventListener('click', openModal);
+    if (closeModal) closeModal.addEventListener('click', closeModalHandler);
+    if (infoModal) {
+        infoModal.addEventListener('click', (e) => {
+            if (e.target === infoModal) {
+                closeModalHandler();
+            }
+        });
+    }
+
     function initRandomQuestions() {
         // 각 지표에서 무작위로 2개씩 가져오기
         const groups = { EI: [], SN: [], TF: [], JP: [] };
