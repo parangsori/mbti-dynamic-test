@@ -138,10 +138,10 @@
                     const percent = Math.round((totalDominant / 12) * 100);
 
                     const spectrum = [
-                        { left: 'E', right: 'I', leftScore: scores.E, rightScore: scores.I },
-                        { left: 'S', right: 'N', leftScore: scores.S, rightScore: scores.N },
-                        { left: 'T', right: 'F', leftScore: scores.T, rightScore: scores.F },
-                        { left: 'J', right: 'P', leftScore: scores.J, rightScore: scores.P }
+                        { left: 'E', right: 'I', leftScore: scores.E, rightScore: scores.I, leftLabel: '외향적', rightLabel: '내향적' },
+                        { left: 'S', right: 'N', leftScore: scores.S, rightScore: scores.N, leftLabel: '현실적', rightLabel: '직관적' },
+                        { left: 'T', right: 'F', leftScore: scores.T, rightScore: scores.F, leftLabel: '이성적', rightLabel: '감성적' },
+                        { left: 'J', right: 'P', leftScore: scores.J, rightScore: scores.P, leftLabel: '계획적', rightLabel: '유연함' }
                     ];
 
                     return { mbti, info, badges: [bE, bS, bT, bJ], percent, spectrum };
@@ -204,9 +204,12 @@
                                                 const isLeftDom = item.leftScore >= item.rightScore;
 
                                                 return (
-                                                    <div key={idx} className="flex items-center gap-3 text-[12px] font-bold text-slate-400">
-                                                        <span className={`w-5 text-center ${isLeftDom ? 'text-brand text-[15px] drop-shadow-[0_0_8px_rgba(168,85,247,0.8)]' : ''}`}>{item.left}</span>
-                                                        <div className="flex-1 h-2.5 bg-slate-800/80 rounded-full overflow-hidden flex relative shadow-inner">
+                                                    <div key={idx} className="flex items-center gap-2 text-[12px] font-bold text-slate-400">
+                                                        <div className="flex flex-col items-center justify-center w-10">
+                                                            <span className={`text-center ${isLeftDom ? 'text-brand text-[16px] drop-shadow-[0_0_8px_rgba(168,85,247,0.8)]' : ''}`}>{item.left}</span>
+                                                            <span className={`text-[9px] -mt-0.5 ${isLeftDom ? 'text-purple-300' : 'text-slate-500'}`}>{item.leftLabel}</span>
+                                                        </div>
+                                                        <div className="flex-1 h-3 bg-slate-800/80 rounded-full overflow-hidden flex relative shadow-inner mb-2">
                                                             <motion.div
                                                                 initial={{ width: 0 }}
                                                                 animate={{ width: `${leftRatio}%` }}
@@ -220,7 +223,10 @@
                                                                 className="h-full bg-gradient-to-l from-cyan-400 to-cyan-600"
                                                             />
                                                         </div>
-                                                        <span className={`w-5 text-center ${!isLeftDom ? 'text-cyan-400 text-[15px] drop-shadow-[0_0_8px_rgba(34,211,238,0.8)]' : ''}`}>{item.right}</span>
+                                                        <div className="flex flex-col items-center justify-center w-10">
+                                                            <span className={`text-center ${!isLeftDom ? 'text-cyan-400 text-[16px] drop-shadow-[0_0_8px_rgba(34,211,238,0.8)]' : ''}`}>{item.right}</span>
+                                                            <span className={`text-[9px] -mt-0.5 ${!isLeftDom ? 'text-cyan-200' : 'text-slate-500'}`}>{item.rightLabel}</span>
+                                                        </div>
                                                     </div>
                                                 )
                                             })}
