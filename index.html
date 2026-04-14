@@ -107,7 +107,7 @@
 
             const handleStart = () => {
                 localStorage.setItem('mbti_username', userName.trim());
-                
+
                 const selected = [];
                 Object.values(window.QUESTIONS_DB).forEach(axisPool => {
                     const shuffled = [...axisPool].sort(() => Math.random() - 0.5);
