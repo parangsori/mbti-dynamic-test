@@ -294,12 +294,14 @@
                                             <div className="flex-1 bg-gradient-to-br from-green-500/10 to-emerald-500/5 border border-green-500/20 rounded-xl p-3 flex flex-col items-center justify-center relative overflow-hidden">
                                                 <div className="absolute top-0 right-0 w-16 h-16 bg-green-500/10 blur-xl rounded-full"></div>
                                                 <span className="text-[10px] text-green-300 font-bold mb-1">💖 환상의 짝꿍</span>
-                                                <span className="text-xl font-black text-green-400">{comp.good}</span>
+                                                <span className="text-xl font-black text-green-400 mb-0.5">{comp.good}</span>
+                                                <span className="text-[9px] text-green-200/80 text-center font-medium leading-tight tracking-tight break-keep">{window.MBTI_RESULTS[comp.good]?.nickname}</span>
                                             </div>
                                             <div className="flex-1 bg-gradient-to-br from-red-500/10 to-rose-500/5 border border-red-500/20 rounded-xl p-3 flex flex-col items-center justify-center relative overflow-hidden">
                                                 <div className="absolute bottom-0 left-0 w-16 h-16 bg-red-500/10 blur-xl rounded-full"></div>
                                                 <span className="text-[10px] text-red-300 font-bold mb-1">💔 피해야 할 궁합</span>
-                                                <span className="text-xl font-black text-red-400">{comp.bad}</span>
+                                                <span className="text-xl font-black text-red-400 mb-0.5">{comp.bad}</span>
+                                                <span className="text-[9px] text-red-200/80 text-center font-medium leading-tight tracking-tight break-keep">{window.MBTI_RESULTS[comp.bad]?.nickname}</span>
                                             </div>
                                         </div>
                                     </div>
