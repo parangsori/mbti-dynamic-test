@@ -3,117 +3,356 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>나의 진짜 성격? MBTI 테스트</title>
-    <meta name="description" content="8개의 간단한 질문으로 알아보는 나의 MBTI 유형 테스트">
-    <link rel="stylesheet" href="style.css">
-    <!-- Google Fonts: Outfit and Noto Sans KR -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;700&family=Outfit:wght@300;400;700&display=swap"
-        rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>다이나믹 MBTI 테스트</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: { brand: '#a855f7' },
+                    animation: { blob: 'blob 7s infinite' },
+                    keyframes: {
+                        blob: {
+                            '0%': { transform: 'translate(0px, 0px) scale(1)' },
+                            '33%': { transform: 'translate(30px, -50px) scale(1.1)' },
+                            '66%': { transform: 'translate(-20px, 20px) scale(0.9)' },
+                            '100%': { transform: 'translate(0px, 0px) scale(1)' }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #0f172a;
+            color: #f8fafc;
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, 'Helvetica Neue', 'Segoe UI', 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', sans-serif;
+            margin: 0;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Mobile Viewport Fix */
+        .min-h-screen-d {
+            min-height: 100dvh;
+        }
+
+        ::-webkit-scrollbar {
+            width: 0px;
+            background: transparent;
+        }
+    </style>
+    <!-- Dependencies -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/framer-motion@11.0.8/dist/framer-motion.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <!-- Data Source -->
+    <script src="data.js"></script>
 </head>
 
-<body>
-    <div class="container" id="app">
-        <!-- Start Screen -->
-        <main class="start-screen" id="start-screen">
-            <div class="card glass">
-                <div class="content">
-                    <h1 id="title">나의 진짜 성격?</h1>
-                    <p id="description">8개의 간단한 질문으로 알아보는 나의 MBTI 유형</p>
-                    <button id="start-btn" class="btn-primary">테스트 시작하기</button>
-                    <button id="info-btn-start" class="btn-text">MBTI 지표가 궁금하신가요?</button>
-                </div>
-            </div>
-        </main>
-
-        <!-- Question Screen -->
-        <main class="question-screen hidden" id="question-screen">
-            <div class="card glass">
-                <div class="question-header">
-                    <span id="question-number">Q1.</span>
-                    <div class="progress-bar">
-                        <div id="progress" class="progress-fill"></div>
-                    </div>
-                </div>
-                <div class="content">
-                    <h2 id="question-text">주말에 약속이 없다면?</h2>
-                    <div class="options-container">
-                        <button class="btn-option" data-choice="A" id="option-a">집에 있는다</button>
-                        <button class="btn-option" data-choice="B" id="option-b">밖에 나가서 사람들을 만난다</button>
-                    </div>
-                </div>
-            </div>
-        </main>
-
-        <!-- Result Screen -->
-        <main class="result-screen hidden" id="result-screen">
-            <div class="card glass result-card">
-                <div class="content">
-                    <p class="result-label">당신의 성격 유형은...</p>
-                    <div class="image-wrapper">
-                        <img id="mbti-image" src="" alt="MBTI Character" class="hidden character-img">
-                    </div>
-                    <h1 id="mbti-type" class="mbti-display">ENTP</h1>
-                    <h2 id="mbti-nickname" class="nickname-display">뜨거운 논쟁을 즐기는 변론가</h2>
-
-                    <div class="description-container">
-                        <p id="mbti-description" class="description-text">어떤 상황에서도 창의적인 해결책을 찾아내는 아이디어 뱅크입니다.</p>
-
-                        <div class="scenario-box">
-                            <span class="scenario-tag">특징적인 모습</span>
-                            <p id="mbti-scenario" class="scenario-text">"잠깐만, 방금 네 말에서 모순점을 발견했어. 우리 다시 토론해볼까?"</p>
-                        </div>
-                    </div>
-
-                    <button id="restart-btn" class="btn-primary">테스트 다시하기</button>
-                    <button id="info-btn-result" class="btn-text">MBTI 지표 다시보기</button>
-                </div>
-            </div>
-        </main>
-        <!-- MBTI Info Modal -->
-        <div id="info-modal" class="modal hidden">
-            <div class="modal-card glass">
-                <div class="modal-header">
-                    <h2>MBTI 지표 설명</h2>
-                    <button id="close-modal" class="close-btn">&times;</button>
-                </div>
-                <div class="modal-body">
-                    <div class="mbti-pair">
-                        <div class="pair-title"><span class="letter">E</span> 외향 <span class="vs-text">vs</span> <span
-                                class="letter">I</span> 내향</div>
-                        <p><strong>E (외향):</strong> 외부 세계, 사람들과의 교류에서 에너지를 얻음.<br>
-                            <strong>I (내향):</strong> 내면 세계, 혼자만의 시간에서 에너지를 얻음.
-                        </p>
-                    </div>
-                    <div class="mbti-pair">
-                        <div class="pair-title"><span class="letter">S</span> 감각 <span class="vs-text">vs</span> <span
-                                class="letter">N</span> 직관</div>
-                        <p><strong>S (감각):</strong> 현실적, 실용적이며 오감을 통한 경험을 중시함.<br>
-                            <strong>N (직관):</strong> 이상적, 상상력이 풍부하며 숨은 의미와 가능성을 중시함.
-                        </p>
-                    </div>
-                    <div class="mbti-pair">
-                        <div class="pair-title"><span class="letter">T</span> 사고 <span class="vs-text">vs</span> <span
-                                class="letter">F</span> 감정</div>
-                        <p><strong>T (사고):</strong> 객관적 사실과 원칙, 논리를 바탕으로 판단함.<br>
-                            <strong>F (감정):</strong> 인간 관계와 공감, 정서적 가치를 바탕으로 판단함.
-                        </p>
-                    </div>
-                    <div class="mbti-pair">
-                        <div class="pair-title"><span class="letter">J</span> 판단 <span class="vs-text">vs</span> <span
-                                class="letter">P</span> 인식</div>
-                        <p><strong>J (판단):</strong> 체계적, 계획적이며 빠르고 분명한 결정을 선호함.<br>
-                            <strong>P (인식):</strong> 자율적, 융통성 있으며 상황에 맞게 유연하게 대처함.
-                        </p>
-                    </div>
-                </div>
-            </div>
-        </div>
+<body class="relative min-h-screen-d w-full flex justify-center bg-slate-900 overflow-x-hidden">
+    <!-- Background animations -->
+    <div
+        class="fixed top-[-10%] left-[-10%] w-96 h-96 bg-purple-900 rounded-full mix-blend-screen filter blur-[128px] opacity-40 animate-blob pointer-events-none">
     </div>
-    <script src="script.js"></script>
+    <div class="fixed top-[20%] right-[-10%] w-96 h-96 bg-cyan-900 rounded-full mix-blend-screen filter blur-[128px] opacity-40 animate-blob pointer-events-none"
+        style="animation-delay: 2s;"></div>
+    <div class="fixed bottom-[-20%] left-[20%] w-96 h-96 bg-pink-900 rounded-full mix-blend-screen filter blur-[128px] opacity-40 animate-blob pointer-events-none"
+        style="animation-delay: 4s;"></div>
+
+    <div id="root" class="relative z-10 w-full max-w-md min-h-[100dvh] mx-auto"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+        const { motion, AnimatePresence } = window.Motion;
+
+        const App = () => {
+            const [step, setStep] = useState('start');
+            const [userName, setUserName] = useState('');
+            const [questions, setQuestions] = useState([]);
+            const [currIdx, setCurrIdx] = useState(0);
+            const [scores, setScores] = useState({ E: 0, I: 0, S: 0, N: 0, T: 0, F: 0, J: 0, P: 0 });
+            const [microCopy, setMicroCopy] = useState('');
+            const [isTransitioning, setIsTransitioning] = useState(false);
+
+            const handleStart = () => {
+                const selected = [];
+                Object.values(window.QUESTIONS_DB).forEach(axisPool => {
+                    const shuffled = [...axisPool].sort(() => Math.random() - 0.5);
+                    selected.push(...shuffled.slice(0, 3));
+                });
+                selected.sort(() => Math.random() - 0.5);
+
+                setQuestions(selected);
+                setScores({ E: 0, I: 0, S: 0, N: 0, T: 0, F: 0, J: 0, P: 0 });
+                setCurrIdx(0);
+                setMicroCopy('');
+                setStep('question');
+            };
+
+            const handleAnswer = (option) => {
+                if (isTransitioning) return;
+                setIsTransitioning(true);
+
+                setScores(prev => ({ ...prev, [option.type]: prev[option.type] + 1 }));
+                setMicroCopy(option.micro);
+
+                setTimeout(() => {
+                    setMicroCopy('');
+                    if (currIdx + 1 >= 12) {
+                        setStep('result');
+                    } else {
+                        setCurrIdx(prev => prev + 1);
+                    }
+                    setIsTransitioning(false);
+                }, 800);
+            };
+
+            const ResultView = () => {
+                const resultRef = useRef(null);
+
+                const getResult = () => {
+                    const eScore = scores.E >= scores.I ? scores.E : scores.I;
+                    const eType = scores.E >= scores.I ? 'E' : 'I';
+                    const sScore = scores.S >= scores.N ? scores.S : scores.N;
+                    const sType = scores.S >= scores.N ? 'S' : 'N';
+                    const tScore = scores.T >= scores.F ? scores.T : scores.F;
+                    const tType = scores.T >= scores.F ? 'T' : 'F';
+                    const jScore = scores.J >= scores.P ? scores.J : scores.P;
+                    const jType = scores.J >= scores.P ? 'J' : 'P';
+
+                    const mbti = `${eType}${sType}${tType}${jType}`;
+
+                    const bE = scores[eType] === 3 ? window.BADGES[eType][3] : window.BADGES[eType][2];
+                    const bS = scores[sType] === 3 ? window.BADGES[sType][3] : window.BADGES[sType][2];
+                    const bT = scores[tType] === 3 ? window.BADGES[tType][3] : window.BADGES[tType][2];
+                    const bJ = scores[jType] === 3 ? window.BADGES[jType][3] : window.BADGES[jType][2];
+
+                    const info = window.MBTI_RESULTS[mbti];
+
+                    const totalDominant = eScore + sScore + tScore + jScore; // min 8, max 12
+                    const percent = Math.round((totalDominant / 12) * 100);
+
+                    const spectrum = [
+                        { left: 'E', right: 'I', leftScore: scores.E, rightScore: scores.I },
+                        { left: 'S', right: 'N', leftScore: scores.S, rightScore: scores.N },
+                        { left: 'T', right: 'F', leftScore: scores.T, rightScore: scores.F },
+                        { left: 'J', right: 'P', leftScore: scores.J, rightScore: scores.P }
+                    ];
+
+                    return { mbti, info, badges: [bE, bS, bT, bJ], percent, spectrum };
+                };
+
+                const { mbti, info, badges, percent, spectrum } = getResult();
+
+                return (
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center w-full min-h-[100dvh] p-6 text-white pb-20">
+                        <div ref={resultRef} className="bg-slate-900 p-8 w-full max-w-sm flex flex-col items-center mt-6 rounded-3xl border border-white/10 shadow-2xl relative overflow-hidden">
+                            {/* Inner card background effects */}
+                            <div className="absolute top-0 right-0 w-32 h-32 bg-brand/20 blur-3xl rounded-full"></div>
+                            <div className="absolute bottom-0 left-0 w-32 h-32 bg-cyan-500/20 blur-3xl rounded-full"></div>
+
+                            <div className="relative z-10 flex flex-col items-center w-full">
+                                <h2 className="text-xl font-light text-slate-300 mb-2 mt-2">
+                                    <span className="font-bold text-white">{userName}</span>님의 성향은
+                                </h2>
+
+                                <div className="relative mb-3 mt-1">
+                                    <h1 className="text-6xl font-black bg-gradient-to-r from-brand to-cyan-400 bg-clip-text text-transparent tracking-widest drop-shadow-sm">
+                                        {mbti}
+                                    </h1>
+                                    <div className="absolute -top-4 -right-10 bg-brand text-white px-2.5 py-1 rounded-full text-[11px] font-black shadow-lg shadow-purple-500/30 transform rotate-12 border border-white/20 whitespace-nowrap">
+                                        싱크로율 {percent}%
+                                    </div>
+                                </div>
+                                <p className="text-xl font-bold text-center mb-6 text-slate-100">{info.nickname}</p>
+
+                                <div className="flex flex-wrap gap-2 justify-center mb-8">
+                                    {badges.map((b, i) => (
+                                        <span key={i} className="px-3 py-1.5 bg-white/5 border border-white/20 rounded-full text-[13px] font-semibold text-cyan-200">
+                                            #{b}
+                                        </span>
+                                    ))}
+                                </div>
+
+                                {info.image && (
+                                    <div className="w-48 h-48 mb-8 drop-shadow-2xl">
+                                        <img src={window.IMAGE_BASE64 && window.IMAGE_BASE64[info.image] ? window.IMAGE_BASE64[info.image] : info.image} alt={mbti} className="w-full h-full object-contain filter" />
+                                    </div>
+                                )}
+
+                                <div className="bg-white/5 rounded-2xl p-5 w-full border border-white/5 backdrop-blur-sm">
+                                    <p className="text-center text-[15px] leading-relaxed mb-4 text-slate-200">{info.description}</p>
+                                    <div className="bg-black/30 rounded-xl p-4 text-[14px] font-medium text-slate-300 text-center leading-snug break-keep relative border border-white/5 pb-5">
+                                        <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-slate-800 text-[10px] text-purple-300 px-3 py-0.5 rounded-full border border-brand/30">상황극</div>
+                                        <span className="text-brand mr-1">"</span>
+                                        {info.scenario}
+                                        <span className="text-brand ml-1">"</span>
+                                    </div>
+
+                                    {/* 스펙트럼 바 분석 */}
+                                    <div className="pt-6 border-t border-white/10 mt-6">
+                                        <h3 className="text-[13px] font-black text-slate-400 mb-4 text-center tracking-wider">성향 밸런스 분석</h3>
+                                        <div className="flex flex-col gap-4 px-1">
+                                            {spectrum.map((item, idx) => {
+                                                const leftRatio = Math.round((item.leftScore / 3) * 100);
+                                                const rightRatio = 100 - leftRatio;
+                                                const isLeftDom = item.leftScore >= item.rightScore;
+
+                                                return (
+                                                    <div key={idx} className="flex items-center gap-3 text-[12px] font-bold text-slate-400">
+                                                        <span className={`w-5 text-center ${isLeftDom ? 'text-brand text-[15px] drop-shadow-[0_0_8px_rgba(168,85,247,0.8)]' : ''}`}>{item.left}</span>
+                                                        <div className="flex-1 h-2.5 bg-slate-800/80 rounded-full overflow-hidden flex relative shadow-inner">
+                                                            <motion.div
+                                                                initial={{ width: 0 }}
+                                                                animate={{ width: `${leftRatio}%` }}
+                                                                transition={{ duration: 1, delay: 0.1 * idx, type: 'spring' }}
+                                                                className="h-full bg-gradient-to-r from-brand to-purple-400"
+                                                            />
+                                                            <motion.div
+                                                                initial={{ width: 0 }}
+                                                                animate={{ width: `${rightRatio}%` }}
+                                                                transition={{ duration: 1, delay: 0.1 * idx, type: 'spring' }}
+                                                                className="h-full bg-gradient-to-l from-cyan-400 to-cyan-600"
+                                                            />
+                                                        </div>
+                                                        <span className={`w-5 text-center ${!isLeftDom ? 'text-cyan-400 text-[15px] drop-shadow-[0_0_8px_rgba(34,211,238,0.8)]' : ''}`}>{item.right}</span>
+                                                    </div>
+                                                )
+                                            })}
+                                        </div>
+                                        <p className="text-[11.5px] text-slate-400 text-center mt-6 bg-black/20 px-3 py-4 rounded-xl border border-white/5 break-keep leading-snug font-medium shadow-inner">
+                                            {percent === 100 ? "💡 모든 지표가 확고합니다! 어떤 상황에서도 흔들리지 않는 뼛속까지 해당 유형이네요." :
+                                                percent >= 80 ? "💡 꽤 뚜렷한 성향을 보이지만, 기분이나 직면한 상황에 따라 가끔은 다른 성향이 나타날 수 있어요." :
+                                                    "💡 경계선에 있는 밸런스형 성향입니다! 내일 기분에 따라 테스트 결과가 바로 바뀔 수도 있어요."}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="flex flex-col gap-3 w-full max-w-sm mt-8">
+                            <button onClick={() => setStep('start')} className="w-full py-4 mt-2 text-slate-400 underline underline-offset-4 decoration-slate-600 font-medium hover:text-slate-200 transition-colors">
+                                테스트 다시하기
+                            </button>
+                        </div>
+                    </motion.div>
+                );
+            };
+
+            return (
+                <div className={`w-full min-h-[100dvh] flex flex-col items-center ${step !== 'result' ? 'justify-center' : 'pt-10'}`}>
+                    <AnimatePresence mode="wait">
+                        {step === 'start' && (
+                            <motion.div key="start" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="w-full max-w-sm flex flex-col items-center px-6">
+                                <div className="w-24 h-24 mb-6 rounded-3xl bg-gradient-to-br from-brand to-cyan-400 rotate-12 flex items-center justify-center shadow-2xl shadow-brand/40">
+                                    <span className="text-4xl text-white font-black -rotate-12">MBTI</span>
+                                </div>
+                                <h1 className="text-4xl font-extrabold mb-3 text-center text-white tracking-tight">당신의 진짜 성향</h1>
+                                <p className="text-slate-300 mb-10 text-center font-medium leading-relaxed">
+                                    수만 개의 데이터로 분석하는<br />초개인화 다이나믹 테스트
+                                </p>
+
+                                <div className="w-full bg-white/5 p-2 rounded-3xl mb-8 backdrop-blur-xl border border-white/10 relative shadow-inner">
+                                    <input
+                                        value={userName}
+                                        onChange={e => setUserName(e.target.value)}
+                                        placeholder="이름 (또는 닉네임)"
+                                        className="w-full bg-transparent text-white placeholder-slate-400 text-center text-xl py-4 outline-none font-bold"
+                                        maxLength="10"
+                                        onKeyPress={(e) => e.key === 'Enter' && userName.trim() && handleStart()}
+                                    />
+                                    <div className="absolute inset-x-8 bottom-3 h-[2px] bg-gradient-to-r from-transparent via-cyan-500 to-transparent opacity-50"></div>
+                                </div>
+
+                                <button
+                                    onClick={handleStart}
+                                    disabled={!userName.trim()}
+                                    className={`w-full py-5 rounded-3xl font-black text-xl transition-all duration-300 ${userName.trim() ? 'bg-gradient-to-r from-brand to-cyan-500 text-white shadow-[0_0_40px_rgba(168,85,247,0.4)] hover:scale-[1.02] active:scale-[0.98]' : 'bg-slate-800 text-slate-500 cursor-not-allowed'
+                                        }`}
+                                >
+                                    시작하기
+                                </button>
+                            </motion.div>
+                        )}
+
+                        {step === 'question' && (
+                            <motion.div key="question" initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -50 }} className="w-full min-h-[100dvh] flex flex-col max-w-sm pt-12 pb-10 px-6">
+                                <div className="w-full mb-10">
+                                    <div className="flex justify-between items-end mb-3 text-slate-300 font-bold">
+                                        <span className="text-2xl bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-brand tracking-widest italic">Q{currIdx + 1}</span>
+                                        <span className="text-sm font-medium bg-white/10 px-3 py-1 rounded-full">{currIdx + 1} / 12</span>
+                                    </div>
+                                    <div className="h-2.5 w-full bg-slate-800 rounded-full overflow-hidden border border-white/5">
+                                        <motion.div
+                                            className="h-full bg-gradient-to-r from-cyan-400 to-brand delay-100 ease-out"
+                                            initial={{ width: `${((currIdx) / 12) * 100}%` }}
+                                            animate={{ width: `${((currIdx + 1) / 12) * 100}%` }}
+                                            transition={{ duration: 0.5, type: 'spring' }}
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="flex-[0.8] flex flex-col justify-center mb-8">
+                                    <AnimatePresence mode="wait">
+                                        <motion.h2
+                                            key={currIdx}
+                                            initial={{ opacity: 0, y: 20 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            exit={{ opacity: 0, y: -20 }}
+                                            transition={{ duration: 0.3 }}
+                                            className="text-[26px] font-bold text-white leading-snug break-keep text-center"
+                                        >
+                                            {questions[currIdx].q}
+                                        </motion.h2>
+                                    </AnimatePresence>
+                                </div>
+
+                                <div className="flex flex-col gap-4 relative w-full">
+                                    {questions[currIdx].options.map((opt, i) => (
+                                        <button
+                                            key={i}
+                                            onClick={() => handleAnswer(opt)}
+                                            disabled={isTransitioning}
+                                            className={`w-full p-6 rounded-3xl bg-white/5 border border-white/10 text-white font-medium text-[16px] hover:bg-white/10 active:bg-white/20 active:scale-[0.98] transition-all text-center break-keep shadow-lg ${isTransitioning ? 'opacity-40 scale-95' : 'opacity-100'
+                                                }`}
+                                        >
+                                            {opt.text}
+                                        </button>
+                                    ))}
+
+                                    <AnimatePresence>
+                                        {microCopy && (
+                                            <motion.div
+                                                initial={{ opacity: 0, y: 20, scale: 0.8 }}
+                                                animate={{ opacity: 1, y: 0, scale: 1 }}
+                                                exit={{ opacity: 0, scale: 0.8 }}
+                                                transition={{ type: 'spring', damping: 12, stiffness: 200 }}
+                                                className="absolute -bottom-20 left-0 w-full text-center z-50 pointer-events-none"
+                                            >
+                                                <span className="inline-block px-5 py-3 bg-gradient-to-r from-pink-500 to-brand rounded-full text-white text-[15px] font-bold shadow-xl shadow-brand/40 whitespace-nowrap">
+                                                    {microCopy}
+                                                </span>
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
+                                </div>
+                            </motion.div>
+                        )}
+
+                        {step === 'result' && <ResultView key="result" />}
+                    </AnimatePresence>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
 </body>
 
 </html>
