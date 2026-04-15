@@ -6,12 +6,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>오늘의 나를 만나는 다이나믹 MBTI 테스트</title>
     <meta name="description" content="매일 바뀌는 기분과 상황을 반영한 초개인화 MBTI 테스트! 12개의 문항으로 당신의 진짜 성향과 오늘의 궁합을 지금 확인해보세요.">
-    
+
     <!-- Open Graph / Facebook / KakaoTalk -->
     <meta property="og:type" content="website">
     <meta property="og:title" content="오늘의 나를 만나는 다이나믹 MBTI 테스트">
     <meta property="og:description" content="12개의 문항으로 알아보는 나의 진짜 성향! 오늘의 궁합과 기분 기록장까지 확인해보세요.">
-    <meta property="og:image" content="https://raw.githubusercontent.com/parangsori/mbti-dynamic-test/main/resources/ISTJ.png"> <!-- 임시 이미지 경로, 필요시 수정 가능 -->
+    <meta property="og:image"
+        content="https://raw.githubusercontent.com/parangsori/mbti-dynamic-test/main/resources/ISTJ.png">
+    <!-- 임시 이미지 경로, 필요시 수정 가능 -->
 
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image">
@@ -64,6 +66,8 @@
 
     <!-- Data Source -->
     <script src="data.js"></script>
+    <script src="questions_meta.js"></script>
+    <script src="questions_extended.js"></script>
 </head>
 
 <body class="relative min-h-screen-d w-full flex justify-center bg-slate-900 overflow-x-hidden">
@@ -102,6 +106,17 @@
         };
 
         const CHANGELOG = [
+            {
+                version: "v1.3.0",
+                date: "2026.04.15",
+                updates: [
+                    "방대한 문제은행 데이터 대규모 업데이트 (무한 조합 생성)",
+                    "가중치 기반 적응형 테스트(Adaptive Test) 엔진 도입",
+                    "문항 역할군(Anchor, Discriminator 등) 설계 적용",
+                    "최근 노출 문항 중복 방지 알고리즘 고도화",
+                    "성향 경계선 지표 정밀 측정 및 맞춤형 가이드 추가"
+                ]
+            },
             {
                 version: "v1.2.0",
                 date: "2026.04.14",
@@ -153,12 +168,93 @@
             const handleStart = () => {
                 localStorage.setItem('mbti_username', userName.trim());
 
+                // ── Phase 2: 구조형 랜덤 출제 ──────────────────────────────
+                // 최근 3회 노출 ID 추적 (LocalStorage)
+                const recentRaw = localStorage.getItem('mbti_recent_ids');
+                const recentSessions = recentRaw ? JSON.parse(recentRaw) : []; // [[id,...], [id,...], [id,...]]
+                const recentIds = new Set(recentSessions.flat());
+
+                const axisKeys = ['EI', 'SN', 'TF', 'JP'];
                 const selected = [];
-                Object.values(window.QUESTIONS_DB).forEach(axisPool => {
-                    const shuffled = [...axisPool].sort(() => Math.random() - 0.5);
-                    selected.push(...shuffled.slice(0, 3));
+                const usedFamilyIds = new Set();
+                const usedIds = new Set();
+
+                // 각 축마다 3문항씩 선발 (anchor 1개 보장 + familyId 중복 방지 + 최근 노출 제한)
+                axisKeys.forEach(axis => {
+                    // 기존 풀 + 확장 풀 병합
+                    const basePool = window.QUESTIONS_DB[axis] || [];
+                    const extPool = (window.QUESTIONS_EXTENDED && window.QUESTIONS_EXTENDED[axis]) || [];
+                    const baseMeta = window.QUESTIONS_META[axis] || [];
+                    const extMeta = (window.QUESTIONS_META_EXTENDED && window.QUESTIONS_META_EXTENDED[axis]) || [];
+
+                    const pool = [...basePool, ...extPool];
+                    const meta = [...baseMeta, ...extMeta];
+
+                    // 문항 객체에 메타 병합 (인덱스 기반)
+                    const enriched = pool.map((q, i) => ({
+                        ...q,
+                        id: meta[i].id,
+                        familyId: meta[i].familyId,
+                        role: meta[i].role,
+                        weight: meta[i].weight,
+                        _axis: axis
+                    }));
+
+                    // 최근 노출 제외 후 후보 풀 구성
+                    const candidates = enriched.filter(q => !recentIds.has(q.id));
+                    // 후보가 너무 적으면 전체 풀로 폴백
+                    const pool2 = candidates.length >= 4 ? candidates : enriched;
+
+                    // 1) anchor 1개 (필수)
+                    const anchors = pool2.filter(q => q.role === 'anchor' && !usedFamilyIds.has(q.familyId));
+                    const anchor = anchors.length > 0
+                        ? anchors[Math.floor(Math.random() * anchors.length)]
+                        : pool2[Math.floor(Math.random() * pool2.length)];
+
+                    usedFamilyIds.add(anchor.familyId);
+                    usedIds.add(anchor.id);
+                    selected.push(anchor);
+
+                    // 2) 나머지 2개 (discriminator/state/consistency 혼합, familyId 중복 금지)
+                    const rest = pool2.filter(q =>
+                        !usedIds.has(q.id) &&
+                        !usedFamilyIds.has(q.familyId)
+                    );
+                    // weight 기반 가중 샘플링
+                    const totalW = rest.reduce((s, q) => s + q.weight, 0);
+                    const pick = (exclude) => {
+                        let r = Math.random() * totalW;
+                        for (const q of rest) {
+                            if (exclude.has(q.id) || usedFamilyIds.has(q.familyId)) continue;
+                            r -= q.weight;
+                            if (r <= 0) return q;
+                        }
+                        // 폴백: 사용 가능한 첫 번째 문항
+                        return rest.find(q => !exclude.has(q.id) && !usedFamilyIds.has(q.familyId)) || rest[0];
+                    };
+
+                    const pick1 = pick(usedIds);
+                    if (pick1) {
+                        usedFamilyIds.add(pick1.familyId);
+                        usedIds.add(pick1.id);
+                        selected.push(pick1);
+                    }
+                    const pick2 = pick(usedIds);
+                    if (pick2) {
+                        usedFamilyIds.add(pick2.familyId);
+                        usedIds.add(pick2.id);
+                        selected.push(pick2);
+                    }
                 });
+
+                // 12문항 셔플
                 selected.sort(() => Math.random() - 0.5);
+
+                // 이번 세션 노출 ID 저장 (최근 3회 유지)
+                const thisSession = selected.map(q => q.id);
+                const updated = [thisSession, ...recentSessions].slice(0, 3);
+                localStorage.setItem('mbti_recent_ids', JSON.stringify(updated));
+                // ────────────────────────────────────────────────────────────
 
                 setQuestions(selected);
                 setScores({ E: 0, I: 0, S: 0, N: 0, T: 0, F: 0, J: 0, P: 0 });
@@ -171,7 +267,10 @@
                 if (isTransitioning) return;
                 setIsTransitioning(true);
 
-                setScores(prev => ({ ...prev, [option.type]: prev[option.type] + 1 }));
+                // Phase 3: 가중 점수화 (문항의 weight 반영)
+                const currentQ = questions[currIdx];
+                const w = (currentQ && currentQ.weight) ? currentQ.weight : 1.0;
+                setScores(prev => ({ ...prev, [option.type]: prev[option.type] + w }));
                 setMicroCopy(option.micro);
 
                 setTimeout(() => {
@@ -189,38 +288,55 @@
                 const resultRef = useRef(null);
 
                 const getResult = () => {
-                    const eScore = scores.E >= scores.I ? scores.E : scores.I;
-                    const eType = scores.E >= scores.I ? 'E' : 'I';
-                    const sScore = scores.S >= scores.N ? scores.S : scores.N;
-                    const sType = scores.S >= scores.N ? 'S' : 'N';
-                    const tScore = scores.T >= scores.F ? scores.T : scores.F;
-                    const tType = scores.T >= scores.F ? 'T' : 'F';
-                    const jScore = scores.J >= scores.P ? scores.J : scores.P;
-                    const jType = scores.J >= scores.P ? 'J' : 'P';
+                    // Phase 3: 가중 점수 기반 축별 강도 계산
+                    const axes = [
+                        { left: 'E', right: 'I', leftLabel: '외향적', rightLabel: '내향적' },
+                        { left: 'S', right: 'N', leftLabel: '현실적', rightLabel: '직관적' },
+                        { left: 'T', right: 'F', leftLabel: '이성적', rightLabel: '감성적' },
+                        { left: 'J', right: 'P', leftLabel: '계획적', rightLabel: '유연함' }
+                    ];
 
-                    const mbti = `${eType}${sType}${tType}${jType}`;
+                    const axisResults = axes.map(({ left, right, leftLabel, rightLabel }) => {
+                        const lScore = scores[left] || 0;
+                        const rScore = scores[right] || 0;
+                        const total = lScore + rScore || 1; // 0으로 나눔 방지
+                        const dominantType = lScore >= rScore ? left : right;
+                        const dominantScore = Math.max(lScore, rScore);
+                        // intensity: 해당 축에서 우세한 쪽의 비율 (50~100%)
+                        const intensity = Math.round((dominantScore / total) * 100);
+                        const isBoundary = intensity < 62; // 62% 미만 → 경계 축
+                        return {
+                            left, right, leftLabel, rightLabel,
+                            leftScore: lScore, rightScore: rScore,
+                            dominantType, intensity, isBoundary
+                        };
+                    });
 
-                    const bE = scores[eType] === 3 ? window.BADGES[eType][3] : window.BADGES[eType][2];
-                    const bS = scores[sType] === 3 ? window.BADGES[sType][3] : window.BADGES[sType][2];
-                    const bT = scores[tType] === 3 ? window.BADGES[tType][3] : window.BADGES[tType][2];
-                    const bJ = scores[jType] === 3 ? window.BADGES[jType][3] : window.BADGES[jType][2];
+                    const mbti = axisResults.map(a => a.dominantType).join('');
+
+                    // 싱크로율: 축별 intensity 평균 (더 의미 있는 지표)
+                    const percent = Math.round(
+                        axisResults.reduce((sum, a) => sum + a.intensity, 0) / 4
+                    );
+
+                    // 배지: intensity 기반 (75%+ → 3점 배지, 미만 → 2점 배지)
+                    const badges = axisResults.map(a => {
+                        const t = a.dominantType;
+                        return a.intensity >= 75 ? window.BADGES[t][3] : window.BADGES[t][2];
+                    });
 
                     const info = window.MBTI_RESULTS[mbti];
 
-                    const totalDominant = eScore + sScore + tScore + jScore; // min 8, max 12
-                    const percent = Math.round((totalDominant / 12) * 100);
+                    // 스펙트럼 바용 데이터 (기존 UI 호환)
+                    const spectrum = axisResults;
 
-                    const spectrum = [
-                        { left: 'E', right: 'I', leftScore: scores.E, rightScore: scores.I, leftLabel: '외향적', rightLabel: '내향적' },
-                        { left: 'S', right: 'N', leftScore: scores.S, rightScore: scores.N, leftLabel: '현실적', rightLabel: '직관적' },
-                        { left: 'T', right: 'F', leftScore: scores.T, rightScore: scores.F, leftLabel: '이성적', rightLabel: '감성적' },
-                        { left: 'J', right: 'P', leftScore: scores.J, rightScore: scores.P, leftLabel: '계획적', rightLabel: '유연함' }
-                    ];
+                    // 경계 축 목록 (UI 보조 문구용)
+                    const boundaryAxes = axisResults.filter(a => a.isBoundary);
 
-                    return { mbti, info, badges: [bE, bS, bT, bJ], percent, spectrum };
+                    return { mbti, info, badges, percent, spectrum, boundaryAxes };
                 };
 
-                const { mbti, info, badges, percent, spectrum } = getResult();
+                const { mbti, info, badges, percent, spectrum, boundaryAxes } = getResult();
 
                 useEffect(() => {
                     const history = JSON.parse(localStorage.getItem('mbti_history') || '[]');
@@ -298,12 +414,15 @@
                                         <h3 className="text-[13px] font-black text-slate-400 mb-4 text-center tracking-wider">성향 밸런스 분석</h3>
                                         <div className="flex flex-col gap-4 px-1">
                                             {spectrum.map((item, idx) => {
-                                                const leftRatio = Math.round((item.leftScore / 3) * 100);
+                                                // Phase 3: intensity(50~100%) 기반 비율 계산
+                                                const leftRatio = item.leftScore >= item.rightScore
+                                                    ? item.intensity
+                                                    : 100 - item.intensity;
                                                 const rightRatio = 100 - leftRatio;
                                                 const isLeftDom = item.leftScore >= item.rightScore;
 
                                                 return (
-                                                    <div key={idx} className="flex items-center gap-2 text-[12px] font-bold text-slate-400">
+                                                    <div key={idx} className={`flex items-center gap-2 text-[12px] font-bold text-slate-400 ${item.isBoundary ? 'rounded-lg border border-yellow-500/30 bg-yellow-500/5 px-1 py-0.5' : ''}`}>
                                                         <div className="flex flex-col items-center justify-center w-10">
                                                             <span className={`text-center ${isLeftDom ? 'text-brand text-[16px] drop-shadow-[0_0_8px_rgba(168,85,247,0.8)]' : ''}`}>{item.left}</span>
                                                             <span className={`text-[9px] -mt-0.5 ${isLeftDom ? 'text-purple-300' : 'text-slate-500'}`}>{item.leftLabel}</span>
@@ -326,14 +445,21 @@
                                                             <span className={`text-center ${!isLeftDom ? 'text-cyan-400 text-[16px] drop-shadow-[0_0_8px_rgba(34,211,238,0.8)]' : ''}`}>{item.right}</span>
                                                             <span className={`text-[9px] -mt-0.5 ${!isLeftDom ? 'text-cyan-200' : 'text-slate-500'}`}>{item.rightLabel}</span>
                                                         </div>
+                                                        {item.isBoundary && <span className="text-[10px] text-yellow-400 ml-1">⚡</span>}
                                                     </div>
                                                 )
                                             })}
                                         </div>
                                         <p className="text-[11.5px] text-slate-400 text-center mt-6 bg-black/20 px-3 py-4 rounded-xl border border-white/5 break-keep leading-snug font-medium shadow-inner">
-                                            {percent === 100 ? "💡 모든 지표가 확고합니다! 어떤 상황에서도 흔들리지 않는 뼛속까지 해당 유형이네요." :
-                                                percent >= 80 ? "💡 꽤 뚜렷한 성향을 보이지만, 기분이나 직면한 상황에 따라 가끔은 다른 성향이 나타날 수 있어요." :
-                                                    "💡 경계선에 있는 밸런스형 성향입니다! 내일 기분에 따라 테스트 결과가 바로 바뀔 수도 있어요."}
+                                            {(() => {
+                                                if (boundaryAxes.length === 0) {
+                                                    return percent >= 85
+                                                        ? "💡 모든 지표가 확고합니다! 어떤 상황에서도 흔들리지 않는 뼛속까지 해당 유형이네요."
+                                                        : "💡 꽤 뚜렷한 성향을 보이지만, 기분이나 직면한 상황에 따라 가끔은 다른 성향이 나타날 수 있어요.";
+                                                }
+                                                const axisNames = boundaryAxes.map(a => `${a.left}/${a.right}`).join(', ');
+                                                return `⚡ ${axisNames} 경향은 오늘 기분과 상황에 따라 쉽게 달라질 수 있어요. 내일 다시 테스트해 보세요!`;
+                                            })()}
                                         </p>
 
                                         {/* 환상의 짝꿍 & 최악의 궁합 */}
