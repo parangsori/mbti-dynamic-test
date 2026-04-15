@@ -4,7 +4,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>다이나믹 MBTI 테스트</title>
+    <title>오늘의 나를 만나는 다이나믹 MBTI 테스트</title>
+    <meta name="description" content="매일 바뀌는 기분과 상황을 반영한 초개인화 MBTI 테스트! 12개의 문항으로 당신의 진짜 성향과 오늘의 궁합을 지금 확인해보세요.">
+    
+    <!-- Open Graph / Facebook / KakaoTalk -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="오늘의 나를 만나는 다이나믹 MBTI 테스트">
+    <meta property="og:description" content="12개의 문항으로 알아보는 나의 진짜 성향! 오늘의 궁합과 기분 기록장까지 확인해보세요.">
+    <meta property="og:image" content="https://raw.githubusercontent.com/parangsori/mbti-dynamic-test/main/resources/ISTJ.png"> <!-- 임시 이미지 경로, 필요시 수정 가능 -->
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:title" content="오늘의 나를 만나는 다이나믹 MBTI 테스트">
+    <meta property="twitter:description" content="매일 바뀌는 나의 MBTI? 초개인화 다이나믹 테스트로 확인해보세요.">
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -516,17 +528,17 @@
                     {/* 버전 정보 및 업데이트 내역 모달 */}
                     <AnimatePresence>
                         {showVersionModal && (
-                            <motion.div 
-                                initial={{ opacity: 0 }} 
-                                animate={{ opacity: 1 }} 
-                                exit={{ opacity: 0 }} 
+                            <motion.div
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
                                 className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/60 backdrop-blur-sm"
                                 onClick={() => setShowVersionModal(false)}
                             >
-                                <motion.div 
-                                    initial={{ scale: 0.9, y: 20 }} 
-                                    animate={{ scale: 1, y: 0 }} 
-                                    exit={{ scale: 0.9, y: 20 }} 
+                                <motion.div
+                                    initial={{ scale: 0.9, y: 20 }}
+                                    animate={{ scale: 1, y: 0 }}
+                                    exit={{ scale: 0.9, y: 20 }}
                                     className="bg-slate-900 border border-white/10 rounded-3xl p-6 w-full max-w-sm shadow-2xl overflow-hidden relative"
                                     onClick={e => e.stopPropagation()}
                                 >
@@ -534,7 +546,7 @@
                                     <h3 className="text-xl font-black text-white mb-6 flex items-center gap-2">
                                         🚀 업데이트 소식
                                     </h3>
-                                    
+
                                     <div className="flex flex-col gap-6 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
                                         {CHANGELOG.map((item, idx) => (
                                             <div key={idx} className="relative pl-4 border-l-2 border-brand/30">
@@ -554,7 +566,7 @@
                                             </div>
                                         ))}
                                     </div>
-                                    
+
                                     <button onClick={() => setShowVersionModal(false)} className="w-full py-4 mt-8 bg-white/10 border border-white/10 rounded-2xl text-slate-200 font-bold hover:bg-white/20 transition-colors">
                                         확인
                                     </button>
@@ -565,7 +577,7 @@
 
                     {/* 하단 버전 표시 */}
                     <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-20">
-                        <button 
+                        <button
                             onClick={() => setShowVersionModal(true)}
                             className="text-[11px] font-bold text-slate-600 hover:text-slate-400 transition-colors bg-black/20 px-3 py-1 rounded-full border border-white/5 backdrop-blur-sm"
                         >
