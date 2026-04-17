@@ -107,6 +107,16 @@
 
         const CHANGELOG = [
             {
+                version: "v1.3.2",
+                date: "2026.04.17",
+                updates: [
+                    "결과 화면에 직전 결과 대비 변화 요약 UI 추가",
+                    "기록 모달에 최근 흐름 인사이트 (자주 나온 유형, 흔들리는 축) 추가",
+                    "기록별 변화 메모 노출로 재방문 동기 강화",
+                    "백업 폴더 Git 무시를 위한 .gitignore 준비"
+                ]
+            },
+            {
                 version: "v1.3.1",
                 date: "2026.04.17",
                 updates: [
@@ -160,6 +170,13 @@
         ];
 
         const App = () => {
+            const AXIS_META = [
+                { pair: 'E/I', left: 'E', right: 'I', label: '에너지 방향' },
+                { pair: 'S/N', left: 'S', right: 'N', label: '정보 해석' },
+                { pair: 'T/F', left: 'T', right: 'F', label: '판단 기준' },
+                { pair: 'J/P', left: 'J', right: 'P', label: '생활 리듬' }
+            ];
+
             const [step, setStep] = useState('start');
             const [userName, setUserName] = useState(() => localStorage.getItem('mbti_username') || '');
             const [showHistory, setShowHistory] = useState(false);
@@ -396,6 +413,88 @@
                 };
             };
 
+            const getEffectiveHistory = (currentMbti, percent, historyData) => {
+                if (!currentMbti) return historyData;
+
+                const todayEntry = {
+                    date: new Date().toLocaleDateString('ko-KR', { month: 'short', day: 'numeric', weekday: 'short' }),
+                    mbti: currentMbti,
+                    percent
+                };
+
+                if (!historyData.length) return [todayEntry];
+                if (historyData[0].mbti === todayEntry.mbti && historyData[0].date === todayEntry.date) return historyData;
+                return [todayEntry, ...historyData].slice(0, 7);
+            };
+
+            const getAxisChangeDetails = (currentMbti, previousMbti) => {
+                if (!currentMbti || !previousMbti) return [];
+
+                return AXIS_META.map((axis, idx) => {
+                    const before = previousMbti[idx];
+                    const after = currentMbti[idx];
+                    if (before === after) return null;
+
+                    return {
+                        ...axis,
+                        before,
+                        after,
+                        title: `${axis.label} 변화`,
+                        description: `${before}에서 ${after} 쪽으로 기울었어요.`
+                    };
+                }).filter(Boolean);
+            };
+
+            const getHistoryInsights = (historyData) => {
+                if (!historyData.length) return null;
+
+                const recent = historyData.slice(0, 5);
+                const countMap = recent.reduce((acc, item) => {
+                    acc[item.mbti] = (acc[item.mbti] || 0) + 1;
+                    return acc;
+                }, {});
+
+                const topType = Object.entries(countMap).sort((a, b) => b[1] - a[1])[0];
+
+                let stableCount = 1;
+                for (let i = 1; i < recent.length; i++) {
+                    if (recent[i].mbti === recent[0].mbti) stableCount += 1;
+                    else break;
+                }
+
+                const volatility = AXIS_META.map((axis, idx) => {
+                    let flips = 0;
+                    for (let i = 0; i < recent.length - 1; i++) {
+                        if (recent[i].mbti[idx] !== recent[i + 1].mbti[idx]) flips += 1;
+                    }
+
+                    return { ...axis, flips };
+                }).sort((a, b) => b.flips - a.flips);
+
+                const mostVolatile = volatility[0];
+                const mostStable = [...volatility].sort((a, b) => a.flips - b.flips)[0];
+
+                return {
+                    recentCount: recent.length,
+                    topType: topType ? { mbti: topType[0], count: topType[1] } : null,
+                    stableCount,
+                    mostVolatile,
+                    mostStable
+                };
+            };
+
+            const getHistoryEntryNote = (item, idx, historyData) => {
+                const nextEntry = historyData[idx + 1];
+                if (!nextEntry) return "기준점이 되는 기록";
+
+                const changedAxes = getAxisChangeDetails(item.mbti, nextEntry.mbti);
+                if (!changedAxes.length) {
+                    return `직전 기록과 같은 ${item.mbti} 흐름`;
+                }
+
+                return `${changedAxes.map(axis => axis.pair).join(', ')} 축 변화`;
+            };
+
             const ResultView = () => {
                 const resultRef = useRef(null);
 
@@ -469,7 +568,10 @@
                 const summaryCopy = getResultSummary(mbti, spectrum, percent);
                 const consistencyCopy = getConsistencyCopy(percent, boundaryAxes);
                 const boundaryCopy = getBoundaryCopy(boundaryAxes);
-                const historyComparison = getHistoryComparison(mbti, historyData);
+                const effectiveHistory = getEffectiveHistory(mbti, percent, historyData);
+                const historyComparison = getHistoryComparison(mbti, effectiveHistory);
+                const axisChanges = getAxisChangeDetails(mbti, effectiveHistory[1]?.mbti);
+                const historyInsights = getHistoryInsights(effectiveHistory);
 
                 // 다이나믹 칭호 로직
                 let dynamicTitle = "";
@@ -513,6 +615,28 @@
                                     <p className="mt-2 text-2xl font-black text-white">{percent}%</p>
                                     <p className="mt-2 text-[13px] leading-relaxed text-slate-300 break-keep">{consistencyCopy}</p>
                                 </div>
+
+                                {historyComparison && (
+                                    <div className="w-full mb-6 rounded-2xl border border-emerald-400/20 bg-emerald-400/10 px-4 py-4">
+                                        <p className="text-[11px] font-bold tracking-[0.2em] text-emerald-200 uppercase">직전 결과와 비교</p>
+                                        <p className="mt-2 text-[15px] font-semibold leading-relaxed text-white break-keep">{historyComparison.title}</p>
+                                        <p className="mt-2 text-[12px] leading-relaxed text-emerald-50/90 break-keep">{historyComparison.body}</p>
+                                        {axisChanges.length > 0 && (
+                                            <div className="mt-3 flex flex-wrap gap-2">
+                                                {axisChanges.map((axis) => (
+                                                    <span key={axis.pair} className="px-3 py-1 rounded-full border border-emerald-300/20 bg-black/20 text-[11px] font-semibold text-emerald-100">
+                                                        {axis.pair} {axis.before}→{axis.after}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        )}
+                                        {historyInsights?.stableCount >= 2 && (
+                                            <p className="mt-3 text-[11px] text-emerald-100/80">
+                                                최근 {historyInsights.stableCount}회 연속 {mbti} 흐름이 이어지고 있어요.
+                                            </p>
+                                        )}
+                                    </div>
+                                )}
 
                                 <div className="flex flex-wrap gap-2 justify-center mb-8">
                                     {badges.map((b, i) => (
@@ -634,6 +758,7 @@
             };
 
             const latestHistoryComparison = getHistoryComparison(historyData[0]?.mbti || '', historyData);
+            const latestHistoryInsights = getHistoryInsights(historyData);
 
             return (
                 <div className={`w-full min-h-[100dvh] flex flex-col items-center ${step !== 'result' ? 'justify-center' : 'pt-10'}`}>
@@ -773,19 +898,43 @@
                                         </div>
                                     )}
 
+                                    {latestHistoryInsights && (
+                                        <div className="grid grid-cols-2 gap-3 mb-4">
+                                            <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-4">
+                                                <p className="text-[11px] text-slate-400 font-bold tracking-[0.15em] uppercase">가장 자주 나온 흐름</p>
+                                                <p className="mt-2 text-2xl font-black text-white">{latestHistoryInsights.topType?.mbti || '-'}</p>
+                                                <p className="mt-1 text-[11px] text-slate-300">
+                                                    최근 {latestHistoryInsights.recentCount}회 중 {latestHistoryInsights.topType?.count || 0}회
+                                                </p>
+                                            </div>
+                                            <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-4">
+                                                <p className="text-[11px] text-slate-400 font-bold tracking-[0.15em] uppercase">가장 잘 흔들리는 축</p>
+                                                <p className="mt-2 text-lg font-black text-white">{latestHistoryInsights.mostVolatile?.pair || '-'}</p>
+                                                <p className="mt-1 text-[11px] text-slate-300">
+                                                    {latestHistoryInsights.mostVolatile?.flips
+                                                        ? `${latestHistoryInsights.mostVolatile.flips}번 바뀌었어요`
+                                                        : "최근엔 거의 그대로였어요"}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    )}
+
                                     <div className="flex flex-col gap-3 max-h-[60vh] overflow-y-auto pr-2">
                                         {historyData.length === 0 ? (
                                             <p className="text-slate-400 text-center py-8 text-sm">아직 기록이 없습니다.<br />오늘 결과가 쌓이면 변화 흐름도 함께 보여드릴게요.</p>
                                         ) : (
                                             historyData.map((item, idx) => (
-                                                <div key={idx} className="bg-white/5 border border-white/5 rounded-2xl p-4 flex justify-between items-center">
-                                                    <span className="text-slate-300 font-medium text-sm">{item.date}</span>
-                                                    <div className="flex flex-col items-end gap-1">
-                                                        <div className="flex items-center gap-2">
-                                                            <span className="text-[11px] bg-brand/20 border border-brand/30 text-brand px-2 py-0.5 rounded-full">싱크로율 {item.percent}%</span>
-                                                            <span className="text-2xl font-black text-cyan-400 drop-shadow-md">{item.mbti}</span>
+                                                <div key={idx} className="bg-white/5 border border-white/5 rounded-2xl p-4">
+                                                    <div className="flex justify-between items-center">
+                                                        <span className="text-slate-300 font-medium text-sm">{item.date}</span>
+                                                        <div className="flex flex-col items-end gap-1">
+                                                            <div className="flex items-center gap-2">
+                                                                <span className="text-[11px] bg-brand/20 border border-brand/30 text-brand px-2 py-0.5 rounded-full">싱크로율 {item.percent}%</span>
+                                                                <span className="text-2xl font-black text-cyan-400 drop-shadow-md">{item.mbti}</span>
+                                                            </div>
                                                         </div>
                                                     </div>
+                                                    <p className="mt-2 text-[12px] text-slate-400 break-keep">{getHistoryEntryNote(item, idx, historyData)}</p>
                                                 </div>
                                             ))
                                         )}
