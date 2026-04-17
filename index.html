@@ -5,12 +5,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>오늘의 나를 만나는 다이나믹 MBTI 테스트</title>
-    <meta name="description" content="매일 바뀌는 기분과 상황을 반영한 초개인화 MBTI 테스트! 12개의 문항으로 당신의 진짜 성향과 오늘의 궁합을 지금 확인해보세요.">
+    <meta name="description" content="매일 바뀌는 기분과 상황을 반영한 초개인화 MBTI 테스트! 12개의 문항으로 오늘의 나는 어느 쪽에 더 가까운지 확인해보세요.">
 
     <!-- Open Graph / Facebook / KakaoTalk -->
     <meta property="og:type" content="website">
     <meta property="og:title" content="오늘의 나를 만나는 다이나믹 MBTI 테스트">
-    <meta property="og:description" content="12개의 문항으로 알아보는 나의 진짜 성향! 오늘의 궁합과 기분 기록장까지 확인해보세요.">
+    <meta property="og:description" content="12개의 문항으로 알아보는 오늘의 성향 스냅샷. 결과 해석과 최근 변화까지 함께 확인해보세요.">
     <meta property="og:image"
         content="https://raw.githubusercontent.com/parangsori/mbti-dynamic-test/main/resources/ISTJ.png">
     <!-- 임시 이미지 경로, 필요시 수정 가능 -->
@@ -106,6 +106,16 @@
         };
 
         const CHANGELOG = [
+            {
+                version: "v1.3.1",
+                date: "2026.04.17",
+                updates: [
+                    "결과 화면 해석 구조 재정비 (한 줄 요약, 성향 흐름 설명 추가)",
+                    "성향 축별 해석 문구 개선 (신뢰도 유지 + 몰입감 강화)",
+                    "궁합/재테스트 안내 카피 톤 조정",
+                    "시작 화면 및 기록 모달 카피 리라이팅"
+                ]
+            },
             {
                 version: "v1.3.0",
                 date: "2026.04.15",
@@ -285,6 +295,107 @@
                 }, 800);
             };
 
+            const getAxisNarratives = (spectrum) => {
+                const copyMap = {
+                    E: "오늘은 혼자보다 사람 속에서 에너지가 더 살아나는 흐름이었어요.",
+                    I: "오늘은 사람보다 내 페이스를 지키는 쪽이 더 편하게 느껴졌어요.",
+                    S: "아이디어보다 눈앞의 사실과 익숙한 기준에 더 손이 갔어요.",
+                    N: "정답보다 가능성과 큰 그림 쪽으로 시선이 더 먼저 움직였어요.",
+                    T: "감정보다 기준과 판단을 먼저 세우는 흐름이 비교적 또렷했어요.",
+                    F: "결론보다 분위기와 관계의 온도를 함께 살피는 쪽에 가까웠어요.",
+                    J: "열어두기보다 정리하고 결론 내리는 흐름이 더 편했어요.",
+                    P: "딱 맞춰 움직이기보다 상황에 맞게 유연하게 가는 쪽이 자연스러웠어요."
+                };
+
+                return spectrum.map((item) => {
+                    const dominantLabel = item.dominantType === item.left ? item.leftLabel : item.rightLabel;
+                    return {
+                        ...item,
+                        dominantLabel,
+                        narrative: copyMap[item.dominantType],
+                        stateLabel: item.isBoundary ? "상황 영향이 큰 축" : "비교적 안정적인 축"
+                    };
+                });
+            };
+
+            const getResultSummary = (mbti, spectrum, percent) => {
+                const strongestAxis = [...spectrum].sort((a, b) => b.intensity - a.intensity)[0];
+                const boundaryCount = spectrum.filter(item => item.isBoundary).length;
+                const strongestLabel = strongestAxis.dominantType === strongestAxis.left ? strongestAxis.leftLabel : strongestAxis.rightLabel;
+
+                if (boundaryCount >= 2) {
+                    return `오늘은 ${mbti} 쪽으로 기울었지만, 몇몇 축은 기분과 상황에 따라 꽤 유연하게 움직이고 있어요.`;
+                }
+                if (percent >= 85) {
+                    return `오늘은 ${strongestLabel} 흐름이 확실했어요. 여러 답변에서 비슷한 결이 또렷하게 이어졌어요.`;
+                }
+                return `오늘은 ${strongestLabel} 쪽이 조금 더 강했어요. 다만 몇몇 판단 축에서는 다른 결도 함께 보였어요.`;
+            };
+
+            const getConsistencyCopy = (percent, boundaryAxes) => {
+                if (percent >= 88) {
+                    return "오늘 답변의 결이 꽤 또렷했어요. 여러 축에서 비슷한 방향의 선택이 자연스럽게 이어졌어요.";
+                }
+                if (boundaryAxes.length === 0) {
+                    return "오늘의 흐름은 비교적 분명했어요. 다만 상황이 바뀌면 세부 톤은 충분히 달라질 수 있어요.";
+                }
+                return "한쪽으로 딱 고정되기보다 여러 결이 함께 보였어요. 그래서 오늘 상태가 더 많이 반영된 결과에 가까워요.";
+            };
+
+            const getBoundaryCopy = (boundaryAxes) => {
+                if (boundaryAxes.length === 0) {
+                    return "이번에는 크게 흔들리는 축이 많지 않았어요. 오늘의 선택 기준이 비교적 안정적으로 유지된 편이에요.";
+                }
+                const axisNames = boundaryAxes.map(a => `${a.left}/${a.right}`).join(', ');
+                return `${axisNames} 축은 우세 차이가 크지 않았어요. 누구와 함께 있느냐, 컨디션이 어떤지에 따라 가장 먼저 달라질 수 있는 영역이에요.`;
+            };
+
+            const getCompatibilityCopy = (mbti) => {
+                const pair = COMPATIBILITY[mbti] || { good: "알 수 없음", bad: "알 수 없음" };
+                return {
+                    good: {
+                        type: pair.good,
+                        title: "오늘 잘 통할 가능성이 높은 유형",
+                        description: "대화 템포와 반응 방식이 자연스럽게 맞물릴 수 있어요."
+                    },
+                    bad: {
+                        type: pair.bad,
+                        title: "오늘은 살짝 부딪힐 수 있는 유형",
+                        description: "우선순위나 표현 방식이 엇갈리면 괜히 피곤하게 느껴질 수 있어요."
+                    }
+                };
+            };
+
+            const getHistoryComparison = (currentMbti, historyData) => {
+                if (!historyData.length) return null;
+
+                const previousEntry = historyData.length > 1 ? historyData[1] : null;
+                if (!previousEntry) {
+                    return {
+                        title: "오늘 결과가 첫 기준점이에요",
+                        body: "다음 기록부터는 어떤 축이 달라졌는지, 오늘과 무엇이 달라졌는지 바로 비교해볼 수 있어요."
+                    };
+                }
+
+                const changedAxes = currentMbti
+                    .split('')
+                    .map((char, idx) => (char !== previousEntry.mbti[idx] ? idx : null))
+                    .filter(idx => idx !== null)
+                    .map(idx => ['E/I', 'S/N', 'T/F', 'J/P'][idx]);
+
+                if (changedAxes.length === 0) {
+                    return {
+                        title: `직전 기록(${previousEntry.date})과 같은 흐름이에요`,
+                        body: `최근 두 번 모두 ${currentMbti}로 나왔어요. 요즘의 선택 기준이 꽤 비슷하게 유지되고 있다는 뜻으로 볼 수 있어요.`
+                    };
+                }
+
+                return {
+                    title: `직전 기록(${previousEntry.date})과 ${changedAxes.length}개 축이 달라졌어요`,
+                    body: `${changedAxes.join(', ')} 축의 결이 달라졌어요. 지금 컨디션이나 주변 상황 변화가 자연스럽게 반영된 결과일 수 있어요.`
+                };
+            };
+
             const ResultView = () => {
                 const resultRef = useRef(null);
 
@@ -353,7 +464,12 @@
                     }
                 }, [mbti, percent]);
 
-                const comp = COMPATIBILITY[mbti] || { good: "알 수 없음", bad: "알 수 없음" };
+                const compCopy = getCompatibilityCopy(mbti);
+                const axisNarratives = getAxisNarratives(spectrum);
+                const summaryCopy = getResultSummary(mbti, spectrum, percent);
+                const consistencyCopy = getConsistencyCopy(percent, boundaryAxes);
+                const boundaryCopy = getBoundaryCopy(boundaryAxes);
+                const historyComparison = getHistoryComparison(mbti, historyData);
 
                 // 다이나믹 칭호 로직
                 let dynamicTitle = "";
@@ -370,12 +486,8 @@
 
                             <div className="relative z-10 flex flex-col items-center w-full">
                                 <h2 className="text-xl font-light text-slate-300 mb-2 mt-2">
-                                    <span className="font-bold text-white">{userName}</span>님의 성향은
+                                    <span className="font-bold text-white">{userName}</span>님의 오늘 성향 스냅샷
                                 </h2>
-
-                                <p className="text-sm font-bold text-brand bg-brand/10 px-3 py-1 rounded-full mt-1 border border-brand/20 shadow-inner">
-                                    {dynamicTitle}
-                                </p>
 
                                 <div className="relative mb-3 mt-3">
                                     <h1 className="text-6xl font-black bg-gradient-to-r from-brand to-cyan-400 bg-clip-text text-transparent tracking-widest drop-shadow-sm">
@@ -385,7 +497,22 @@
                                         싱크로율 {percent}%
                                     </div>
                                 </div>
-                                <p className="text-xl font-bold text-center mb-6 text-slate-100">{info.nickname}</p>
+                                <p className="text-xl font-bold text-center text-slate-100">{info.nickname}</p>
+                                <p className="text-sm font-bold text-brand bg-brand/10 px-3 py-1 rounded-full mt-3 border border-brand/20 shadow-inner">
+                                    {dynamicTitle}
+                                </p>
+
+                                <div className="w-full mt-6 mb-5 rounded-2xl border border-cyan-400/20 bg-cyan-400/10 px-5 py-4 text-center">
+                                    <p className="text-[15px] font-semibold leading-relaxed text-cyan-50 break-keep">
+                                        {summaryCopy}
+                                    </p>
+                                </div>
+
+                                <div className="w-full mb-6 rounded-2xl border border-white/10 bg-black/25 px-4 py-4 text-center">
+                                    <p className="text-[11px] font-bold tracking-[0.2em] text-slate-400 uppercase">오늘 답변 기준 성향 흐름</p>
+                                    <p className="mt-2 text-2xl font-black text-white">{percent}%</p>
+                                    <p className="mt-2 text-[13px] leading-relaxed text-slate-300 break-keep">{consistencyCopy}</p>
+                                </div>
 
                                 <div className="flex flex-wrap gap-2 justify-center mb-8">
                                     {badges.map((b, i) => (
@@ -414,7 +541,7 @@
                                     <div className="pt-6 border-t border-white/10 mt-6">
                                         <h3 className="text-[13px] font-black text-slate-400 mb-4 text-center tracking-wider">성향 밸런스 분석</h3>
                                         <div className="flex flex-col gap-4 px-1">
-                                            {spectrum.map((item, idx) => {
+                                            {axisNarratives.map((item, idx) => {
                                                 // Phase 3: intensity(50~100%) 기반 비율 계산
                                                 const leftRatio = item.leftScore >= item.rightScore
                                                     ? item.intensity
@@ -423,60 +550,71 @@
                                                 const isLeftDom = item.leftScore >= item.rightScore;
 
                                                 return (
-                                                    <div key={idx} className={`flex items-center gap-2 text-[12px] font-bold text-slate-400 ${item.isBoundary ? 'rounded-lg border border-yellow-500/30 bg-yellow-500/5 px-1 py-0.5' : ''}`}>
-                                                        <div className="flex flex-col items-center justify-center w-10">
-                                                            <span className={`text-center ${isLeftDom ? 'text-brand text-[16px] drop-shadow-[0_0_8px_rgba(168,85,247,0.8)]' : ''}`}>{item.left}</span>
-                                                            <span className={`text-[9px] -mt-0.5 ${isLeftDom ? 'text-purple-300' : 'text-slate-500'}`}>{item.leftLabel}</span>
+                                                    <div key={idx} className={`rounded-xl border px-3 py-3 ${item.isBoundary ? 'border-yellow-500/30 bg-yellow-500/5' : 'border-white/5 bg-black/10'}`}>
+                                                        <div className="flex items-center gap-2 text-[12px] font-bold text-slate-400">
+                                                            <div className="flex flex-col items-center justify-center w-10">
+                                                                <span className={`text-center ${isLeftDom ? 'text-brand text-[16px] drop-shadow-[0_0_8px_rgba(168,85,247,0.8)]' : ''}`}>{item.left}</span>
+                                                                <span className={`text-[9px] -mt-0.5 ${isLeftDom ? 'text-purple-300' : 'text-slate-500'}`}>{item.leftLabel}</span>
+                                                            </div>
+                                                            <div className="flex-1">
+                                                                <div className="h-3 bg-slate-800/80 rounded-full overflow-hidden flex relative shadow-inner">
+                                                                    <motion.div
+                                                                        initial={{ width: 0 }}
+                                                                        animate={{ width: `${leftRatio}%` }}
+                                                                        transition={{ duration: 1, delay: 0.1 * idx, type: 'spring' }}
+                                                                        className="h-full bg-gradient-to-r from-brand to-purple-400"
+                                                                    />
+                                                                    <motion.div
+                                                                        initial={{ width: 0 }}
+                                                                        animate={{ width: `${rightRatio}%` }}
+                                                                        transition={{ duration: 1, delay: 0.1 * idx, type: 'spring' }}
+                                                                        className="h-full bg-gradient-to-l from-cyan-400 to-cyan-600"
+                                                                    />
+                                                                </div>
+                                                                <div className="mt-2 flex items-center justify-between text-[10px] font-semibold">
+                                                                    <span className="text-slate-400">{item.stateLabel}</span>
+                                                                    <span className="text-slate-300">{item.dominantType} 우세 {item.intensity}%</span>
+                                                                </div>
+                                                            </div>
+                                                            <div className="flex flex-col items-center justify-center w-10">
+                                                                <span className={`text-center ${!isLeftDom ? 'text-cyan-400 text-[16px] drop-shadow-[0_0_8px_rgba(34,211,238,0.8)]' : ''}`}>{item.right}</span>
+                                                                <span className={`text-[9px] -mt-0.5 ${!isLeftDom ? 'text-cyan-200' : 'text-slate-500'}`}>{item.rightLabel}</span>
+                                                            </div>
                                                         </div>
-                                                        <div className="flex-1 h-3 bg-slate-800/80 rounded-full overflow-hidden flex relative shadow-inner mb-2">
-                                                            <motion.div
-                                                                initial={{ width: 0 }}
-                                                                animate={{ width: `${leftRatio}%` }}
-                                                                transition={{ duration: 1, delay: 0.1 * idx, type: 'spring' }}
-                                                                className="h-full bg-gradient-to-r from-brand to-purple-400"
-                                                            />
-                                                            <motion.div
-                                                                initial={{ width: 0 }}
-                                                                animate={{ width: `${rightRatio}%` }}
-                                                                transition={{ duration: 1, delay: 0.1 * idx, type: 'spring' }}
-                                                                className="h-full bg-gradient-to-l from-cyan-400 to-cyan-600"
-                                                            />
-                                                        </div>
-                                                        <div className="flex flex-col items-center justify-center w-10">
-                                                            <span className={`text-center ${!isLeftDom ? 'text-cyan-400 text-[16px] drop-shadow-[0_0_8px_rgba(34,211,238,0.8)]' : ''}`}>{item.right}</span>
-                                                            <span className={`text-[9px] -mt-0.5 ${!isLeftDom ? 'text-cyan-200' : 'text-slate-500'}`}>{item.rightLabel}</span>
-                                                        </div>
-                                                        {item.isBoundary && <span className="text-[10px] text-yellow-400 ml-1">⚡</span>}
+                                                        <p className="mt-3 text-[12px] leading-relaxed text-slate-300 break-keep">
+                                                            <span className="font-bold text-white">{item.dominantType} 쪽이 더 강했어요.</span> {item.narrative}
+                                                        </p>
                                                     </div>
                                                 )
                                             })}
                                         </div>
                                         <p className="text-[11.5px] text-slate-400 text-center mt-6 bg-black/20 px-3 py-4 rounded-xl border border-white/5 break-keep leading-snug font-medium shadow-inner">
-                                            {(() => {
-                                                if (boundaryAxes.length === 0) {
-                                                    return percent >= 85
-                                                        ? "💡 모든 지표가 확고합니다! 어떤 상황에서도 흔들리지 않는 뼛속까지 해당 유형이네요."
-                                                        : "💡 꽤 뚜렷한 성향을 보이지만, 기분이나 직면한 상황에 따라 가끔은 다른 성향이 나타날 수 있어요.";
-                                                }
-                                                const axisNames = boundaryAxes.map(a => `${a.left}/${a.right}`).join(', ');
-                                                return `⚡ ${axisNames} 경향은 오늘 기분과 상황에 따라 쉽게 달라질 수 있어요. 내일 다시 테스트해 보세요!`;
-                                            })()}
+                                            {boundaryCopy}
                                         </p>
 
-                                        {/* 환상의 짝꿍 & 최악의 궁합 */}
+                                        {/* 오늘의 궁합 해석 */}
                                         <div className="flex gap-3 w-full mt-6">
                                             <div className="flex-1 bg-gradient-to-br from-green-500/10 to-emerald-500/5 border border-green-500/20 rounded-xl p-3 flex flex-col items-center justify-center relative overflow-hidden">
                                                 <div className="absolute top-0 right-0 w-16 h-16 bg-green-500/10 blur-xl rounded-full"></div>
-                                                <span className="text-[10px] text-green-300 font-bold mb-1">💖 환상의 짝꿍</span>
-                                                <span className="text-xl font-black text-green-400 mb-0.5">{comp.good}</span>
-                                                <span className="text-[9px] text-green-200/80 text-center font-medium leading-tight tracking-tight break-keep">{window.MBTI_RESULTS[comp.good]?.nickname}</span>
+                                                <span className="text-[10px] text-green-300 font-bold mb-1 text-center">{compCopy.good.title}</span>
+                                                <span className="text-xl font-black text-green-400 mb-0.5">{compCopy.good.type}</span>
+                                                <span className="text-[9px] text-green-200/80 text-center font-medium leading-tight tracking-tight break-keep">{window.MBTI_RESULTS[compCopy.good.type]?.nickname}</span>
+                                                <p className="mt-2 text-[10px] text-center leading-snug text-green-100/80 break-keep">{compCopy.good.description}</p>
                                             </div>
                                             <div className="flex-1 bg-gradient-to-br from-red-500/10 to-rose-500/5 border border-red-500/20 rounded-xl p-3 flex flex-col items-center justify-center relative overflow-hidden">
                                                 <div className="absolute bottom-0 left-0 w-16 h-16 bg-red-500/10 blur-xl rounded-full"></div>
-                                                <span className="text-[10px] text-red-300 font-bold mb-1">💔 피해야 할 궁합</span>
-                                                <span className="text-xl font-black text-red-400 mb-0.5">{comp.bad}</span>
-                                                <span className="text-[9px] text-red-200/80 text-center font-medium leading-tight tracking-tight break-keep">{window.MBTI_RESULTS[comp.bad]?.nickname}</span>
+                                                <span className="text-[10px] text-red-300 font-bold mb-1 text-center">{compCopy.bad.title}</span>
+                                                <span className="text-xl font-black text-red-400 mb-0.5">{compCopy.bad.type}</span>
+                                                <span className="text-[9px] text-red-200/80 text-center font-medium leading-tight tracking-tight break-keep">{window.MBTI_RESULTS[compCopy.bad.type]?.nickname}</span>
+                                                <p className="mt-2 text-[10px] text-center leading-snug text-red-100/80 break-keep">{compCopy.bad.description}</p>
                                             </div>
+                                        </div>
+
+                                        <div className="mt-6 rounded-xl border border-brand/20 bg-brand/10 px-4 py-4">
+                                            <p className="text-[12px] font-bold text-brand">내일의 나는 또 다를 수 있어요</p>
+                                            <p className="mt-2 text-[12px] leading-relaxed text-slate-300 break-keep">
+                                                이 결과는 오늘의 기분, 에너지, 관계 맥락이 반영된 스냅샷에 가까워요. 다른 날 다시 해보면 경계 축이나 우세 흐름이 조금씩 다르게 나타날 수 있어요.
+                                            </p>
                                         </div>
                                     </div>
                                 </div>
@@ -495,6 +633,8 @@
                 );
             };
 
+            const latestHistoryComparison = getHistoryComparison(historyData[0]?.mbti || '', historyData);
+
             return (
                 <div className={`w-full min-h-[100dvh] flex flex-col items-center ${step !== 'result' ? 'justify-center' : 'pt-10'}`}>
                     <AnimatePresence mode="wait">
@@ -503,9 +643,9 @@
                                 <div className="w-24 h-24 mb-6 rounded-3xl bg-gradient-to-br from-brand to-cyan-400 rotate-12 flex items-center justify-center shadow-2xl shadow-brand/40">
                                     <span className="text-4xl text-white font-black -rotate-12">MBTI</span>
                                 </div>
-                                <h1 className="text-4xl font-extrabold mb-3 text-center text-white tracking-tight">당신의 진짜 성향</h1>
+                                <h1 className="text-4xl font-extrabold mb-3 text-center text-white tracking-tight">오늘의 나는 어느 쪽에 더 가까울까?</h1>
                                 <p className="text-slate-300 mb-10 text-center font-medium leading-relaxed">
-                                    수만 개의 데이터로 분석하는<br />초개인화 다이나믹 테스트
+                                    같은 나라도 기분, 에너지, 상황에 따라<br />성향의 결은 조금씩 달라질 수 있어요
                                 </p>
 
                                 <div className="w-full bg-white/5 p-2 rounded-3xl mb-8 backdrop-blur-xl border border-white/10 relative shadow-inner">
@@ -623,12 +763,19 @@
                                 >
                                     <div className="absolute top-[-50px] right-[-50px] w-32 h-32 bg-brand/30 blur-3xl rounded-full"></div>
                                     <h3 className="text-xl font-black text-white mb-6 flex items-center gap-2">
-                                        🕒 나의 기분 기록장
+                                        🕒 최근 변화 기록
                                     </h3>
+
+                                    {latestHistoryComparison && (
+                                        <div className="mb-4 rounded-2xl border border-cyan-400/20 bg-cyan-400/10 px-4 py-4">
+                                            <p className="text-sm font-bold text-cyan-100 break-keep">{latestHistoryComparison.title}</p>
+                                            <p className="mt-2 text-[12px] leading-relaxed text-slate-300 break-keep">{latestHistoryComparison.body}</p>
+                                        </div>
+                                    )}
 
                                     <div className="flex flex-col gap-3 max-h-[60vh] overflow-y-auto pr-2">
                                         {historyData.length === 0 ? (
-                                            <p className="text-slate-400 text-center py-8 text-sm">아직 기록이 없습니다.<br />오늘의 첫 테스트를 시작해보세요!</p>
+                                            <p className="text-slate-400 text-center py-8 text-sm">아직 기록이 없습니다.<br />오늘 결과가 쌓이면 변화 흐름도 함께 보여드릴게요.</p>
                                         ) : (
                                             historyData.map((item, idx) => (
                                                 <div key={idx} className="bg-white/5 border border-white/5 rounded-2xl p-4 flex justify-between items-center">
