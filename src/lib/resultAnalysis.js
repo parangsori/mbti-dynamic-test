@@ -96,7 +96,7 @@ export const getHistoryComparison = (currentMbti, historyData) => {
   if (!previousEntry) {
     return {
       title: '오늘 결과가 첫 기준점이에요',
-      body: '다음 기록부터는 어떤 축이 달라졌는지, 오늘과 무엇이 달라졌는지 바로 비교해볼 수 있어요.'
+      body: '다음 번부터는 어떤 축이 먼저 흔들리는지 바로 비교해볼 수 있어요.'
     };
   }
   const changedAxes = currentMbti
@@ -107,14 +107,14 @@ export const getHistoryComparison = (currentMbti, historyData) => {
 
   if (changedAxes.length === 0) {
     return {
-      title: `직전 기록(${previousEntry.date})과 같은 흐름이에요`,
-      body: `최근 두 번 모두 ${currentMbti}로 나왔어요. 요즘의 선택 기준이 꽤 비슷하게 유지되고 있다는 뜻으로 볼 수 있어요.`
+      title: `직전 기록과 같은 ${currentMbti} 흐름이에요`,
+      body: '요즘은 비슷한 결이 이어지고 있어요. 지금 다시 해보면 어느 축부터 흔들리는지 볼 수 있어요.'
     };
   }
 
   return {
-    title: `직전 기록(${previousEntry.date})과 ${changedAxes.length}개 축이 달라졌어요`,
-    body: `${changedAxes.join(', ')} 축의 결이 달라졌어요. 지금 컨디션이나 주변 상황 변화가 자연스럽게 반영된 결과일 수 있어요.`
+    title: `${changedAxes.join(', ')} 축이 직전 결과와 달라졌어요`,
+    body: '컨디션이나 주변 맥락이 바뀌면 이 축들이 가장 먼저 움직일 수 있어요.'
   };
 };
 
@@ -199,6 +199,17 @@ export const getHistoryEntryNote = (item, idx, historyData) => {
   if (!nextEntry) return '기준점이 되는 기록';
   const changedAxes = getAxisChangeDetails(item.mbti, nextEntry.mbti);
   return changedAxes.length ? `${changedAxes.map((axis) => axis.pair).join(', ')} 축 변화` : `직전 기록과 같은 ${item.mbti} 흐름`;
+};
+
+export const getRetestPrompt = (boundaryAxes, historyInsights) => {
+  if (historyInsights?.mostVolatile?.flips) {
+    return `${historyInsights.mostVolatile.pair} 축이 가장 자주 흔들렸어요. 지금 다시 해보면 여기부터 달라질 수 있어요.`;
+  }
+  if (boundaryAxes.length > 0) {
+    const pairs = boundaryAxes.map((axis) => `${axis.left}/${axis.right}`).join(', ');
+    return `${pairs} 축은 오늘 컨디션 영향을 많이 받을 수 있어요. 다시 해보면 결이 살짝 달라질 수 있어요.`;
+  }
+  return '같은 날 다시 해보면 예상보다 작은 축 하나가 먼저 달라질 수 있어요.';
 };
 
 export const getShareMoodLine = (mbti, info, percent) => {

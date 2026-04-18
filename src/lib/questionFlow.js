@@ -6,21 +6,49 @@ export const createEmptyScores = () => ({ E: 0, I: 0, S: 0, N: 0, T: 0, F: 0, J:
 export const getQuestionTempoMessage = (index, fallback = '지금의 결대로 가볍게 골라보세요', source = []) =>
   source[index] || fallback;
 
+export const formatMicroCopy = (micro = '') => {
+  const trimmed = micro
+    .split(/[,.!]/)[0]
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  if (trimmed.length <= 14) return trimmed;
+  return `${trimmed.slice(0, 13)}…`;
+};
+
 export const getOpeningPriority = (question) => {
   let score = 0;
   if (question.role === 'discriminator') score += 4;
   if (question.role === 'anchor') score += 3;
   if (question.q.length <= 26) score += 2;
   if (/오늘|친구|약속|톡|주말|카페|여행|단톡|소개팅|지금/.test(question.q)) score += 2;
+  if (/뭐해|어디|바로|일단|먼저|주말|휴일|친구|약속|여행|카페|전화|문자/.test(question.q)) score += 3;
   return score;
 };
 
-export const sortQuestionsForTempo = (selected) => {
-  const opening = [...selected]
-    .sort((a, b) => getOpeningPriority(b) - getOpeningPriority(a))
-    .slice(0, 3);
+const shuffle = (items) => [...items].sort(() => Math.random() - 0.5);
+
+const pickRandomSubset = (items, count) => shuffle(items).slice(0, count);
+
+export const sortQuestionsForTempo = (selected, recentIds = new Set()) => {
+  const introCandidates = selected.filter((item) => getOpeningPriority(item) >= 7);
+  const introFresh = introCandidates.filter((item) => !recentIds.has(item.id));
+  const introPool = introFresh.length >= 3 ? introFresh : introCandidates;
+  const opening = pickRandomSubset(introPool, Math.min(3, introPool.length));
   const openingIds = new Set(opening.map((item) => item.id));
-  return [...opening, ...selected.filter((item) => !openingIds.has(item.id))];
+  const remaining = shuffle(selected.filter((item) => !openingIds.has(item.id)));
+
+  if (opening.length < 3) {
+    const supplement = remaining.slice(0, 3 - opening.length);
+    const supplementIds = new Set(supplement.map((item) => item.id));
+    return [
+      ...opening,
+      ...supplement,
+      ...remaining.filter((item) => !supplementIds.has(item.id))
+    ];
+  }
+
+  return [...opening, ...remaining];
 };
 
 export const buildQuestionSession = (recentSessions = []) => {
@@ -88,5 +116,5 @@ export const buildQuestionSession = (recentSessions = []) => {
   });
 
   selected.sort(() => Math.random() - 0.5);
-  return sortQuestionsForTempo(selected);
+  return sortQuestionsForTempo(selected, recentIds);
 };

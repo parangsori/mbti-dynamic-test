@@ -8,7 +8,7 @@ import HistoryModal from './components/HistoryModal.jsx';
 import VersionModal from './components/VersionModal.jsx';
 import AxisGuideModal from './components/AxisGuideModal.jsx';
 import { AXIS_GUIDE, CHANGELOG, DEFAULT_USERNAME, QUESTION_TEMPO_COPY } from './lib/constants.js';
-import { buildQuestionSession, createEmptyScores, getQuestionTempoMessage } from './lib/questionFlow.js';
+import { buildQuestionSession, createEmptyScores, formatMicroCopy, getQuestionTempoMessage } from './lib/questionFlow.js';
 import {
   clearActiveSession,
   readActiveSession,
@@ -111,7 +111,7 @@ export default function App() {
     const weight = currentQuestion?.weight || 1;
     const nextScores = { ...scores, [option.type]: (scores[option.type] || 0) + weight };
     setScores(nextScores);
-    setMicroCopy(option.micro);
+    setMicroCopy(formatMicroCopy(option.micro));
     setQuestionDirection(1);
 
     setTimeout(() => {
@@ -122,6 +122,7 @@ export default function App() {
         setStep('result');
       } else {
         const nextIdx = currIdx + 1;
+        if (nextIdx === 3) trackEvent('question_reach_3');
         setCurrIdx(nextIdx);
         writeActiveSession({
           userName,

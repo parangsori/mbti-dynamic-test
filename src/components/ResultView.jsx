@@ -14,7 +14,8 @@ import {
   getHistoryInsights,
   getTrendAnalysis,
   getDisplayName,
-  getShareCardCopy
+  getShareCardCopy,
+  getRetestPrompt
 } from '../lib/resultAnalysis.js';
 import { writeHistory } from '../lib/storage.js';
 import { getCanvasBlob, renderShareCardCanvas, shareOrSaveBlob } from '../lib/shareCard.js';
@@ -74,6 +75,7 @@ export default function ResultView({
   const historyInsights = getHistoryInsights(effectiveHistory);
   const trendAnalysis = getTrendAnalysis(spectrum, effectiveHistory[1]?.axes);
   const displayName = getDisplayName(userName, defaultUserName);
+  const retestPrompt = getRetestPrompt(boundaryAxes, historyInsights);
   const { shareMoodLine, shareHeadline, shareSummaryShort, shareVibeStamp, shareCardCopy } = getShareCardCopy(mbti, spectrum, badges, info, percent);
 
   useEffect(() => {
@@ -285,7 +287,7 @@ export default function ResultView({
                 </div>
               )}
               {historyInsights?.stableCount >= 2 && (
-                <p className="mt-3 text-[11px] text-emerald-100/80">최근 {historyInsights.stableCount}회 연속 {mbti} 흐름이 이어지고 있어요.</p>
+                <p className="mt-3 text-[11px] text-emerald-100/80">최근 {historyInsights.stableCount}회 비슷한 흐름이 이어졌어요. 다시 해보면 어느 축이 먼저 바뀌는지 보기 좋아요.</p>
               )}
             </div>
           )}
@@ -303,13 +305,13 @@ export default function ResultView({
               <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-4">
                 <p className="text-[11px] font-bold tracking-[0.15em] text-slate-400 uppercase">요즘 가장 자주 나온 흐름</p>
                 <p className="mt-2 text-2xl font-black text-white">{historyInsights.topType?.mbti || mbti}</p>
-                <p className="mt-1 text-[11px] text-slate-300 break-keep">최근 {historyInsights.recentCount}회 중 {historyInsights.topType?.count || 1}회</p>
+                <p className="mt-1 text-[11px] text-slate-300 break-keep">요즘은 이 흐름이 자주 보여요. 다음 결과가 유지될지 보기 좋아요.</p>
               </div>
               <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-4">
                 <p className="text-[11px] font-bold tracking-[0.15em] text-slate-400 uppercase">가장 잘 흔들리는 축</p>
                 <p className="mt-2 text-lg font-black text-white">{historyInsights.mostVolatile?.pair || '-'}</p>
                 <p className="mt-1 text-[11px] text-slate-300 break-keep">
-                  {historyInsights.mostVolatile?.flips ? `${historyInsights.mostVolatile.flips}번 바뀌었어요` : '최근엔 거의 그대로였어요'}
+                  {historyInsights.mostVolatile?.flips ? `다시 하면 이 축부터 달라질 가능성이 커요` : '최근엔 거의 같은 결이 이어졌어요'}
                 </p>
               </div>
             </div>
@@ -425,6 +427,9 @@ export default function ResultView({
         <button onClick={onRestart} className="w-full py-4 mt-2 text-slate-400 underline underline-offset-4 decoration-slate-600 font-medium hover:text-slate-200 transition-colors">
           지금 다시 해보기
         </button>
+        <p className="px-2 text-center text-[12px] leading-relaxed text-slate-400 break-keep">
+          {retestPrompt}
+        </p>
       </div>
     </motion.div>
   );

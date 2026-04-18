@@ -31,13 +31,13 @@ export default function HistoryModal({
             <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-4">
               <p className="text-[11px] text-slate-400 font-bold tracking-[0.15em] uppercase">가장 자주 나온 흐름</p>
               <p className="mt-2 text-2xl font-black text-white">{latestHistoryInsights.topType?.mbti || '-'}</p>
-              <p className="mt-1 text-[11px] text-slate-300">최근 {latestHistoryInsights.recentCount}회 중 {latestHistoryInsights.topType?.count || 0}회</p>
+              <p className="mt-1 text-[11px] text-slate-300 break-keep">요즘은 이 흐름이 자주 보여요. 다음에도 이어질지 보기 좋아요.</p>
             </div>
             <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-4">
               <p className="text-[11px] text-slate-400 font-bold tracking-[0.15em] uppercase">가장 잘 흔들리는 축</p>
               <p className="mt-2 text-lg font-black text-white">{latestHistoryInsights.mostVolatile?.pair || '-'}</p>
               <p className="mt-1 text-[11px] text-slate-300">
-                {latestHistoryInsights.mostVolatile?.flips ? `${latestHistoryInsights.mostVolatile.flips}번 바뀌었어요` : '최근엔 거의 그대로였어요'}
+                {latestHistoryInsights.mostVolatile?.flips ? '다시 해보면 이 축부터 달라질 수 있어요' : '최근엔 거의 같은 결이 이어졌어요'}
               </p>
             </div>
           </div>
