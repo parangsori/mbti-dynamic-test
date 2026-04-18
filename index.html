@@ -62,6 +62,7 @@
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/framer-motion@11.0.8/dist/framer-motion.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
     <!-- Data Source -->
@@ -107,6 +108,34 @@
 
         const CHANGELOG = [
             {
+                version: "v1.3.7",
+                date: "2026.04.18",
+                updates: [
+                    "공유 카드 문구를 반복형 설명에서 반응형 카피 중심으로 전면 개선",
+                    "유형별로 다른 훅 문장, 자랑 문구, 생활형 태그를 적용해 공유 재미 강화",
+                    "SNS에서 더 눈에 띄도록 결과 카드의 캐릭터성과 메시지 위계를 재정비"
+                ]
+            },
+            {
+                version: "v1.3.6",
+                date: "2026.04.17",
+                updates: [
+                    "SNS에 올리기 좋은 1:1 결과 카드 저장 방식으로 개선",
+                    "공유 이미지 상단 MBTI 타이포와 핵심 문구 가독성 강화",
+                    "결과 저장 시 화면 전체가 아닌 전용 공유 카드만 깔끔하게 저장되도록 조정"
+                ]
+            },
+            {
+                version: "v1.3.5",
+                date: "2026.04.17",
+                updates: [
+                    "결과 카드를 이미지로 저장할 수 있는 기능 추가",
+                    "테스트 중 이탈해도 이어서 할 수 있는 복구 기능 추가",
+                    "지난 결과와 비교하는 장기 흐름 리포트 강화",
+                    "문항 전환 애니메이션과 MBTI 지표 설명 UI 개선"
+                ]
+            },
+            {
                 version: "v1.3.4",
                 date: "2026.04.17",
                 updates: [
@@ -132,8 +161,7 @@
                 updates: [
                     "결과 화면에 직전 결과 대비 변화 요약 UI 추가",
                     "기록 모달에 최근 흐름 인사이트 (자주 나온 유형, 흔들리는 축) 추가",
-                    "기록별 변화 메모 노출로 재방문 동기 강화",
-                    "백업 폴더 Git 무시를 위한 .gitignore 준비"
+                    "기록별 변화 메모 노출로 재방문 동기 강화"
                 ]
             },
             {
@@ -196,6 +224,16 @@
                 { pair: 'T/F', left: 'T', right: 'F', label: '판단 기준' },
                 { pair: 'J/P', left: 'J', right: 'P', label: '생활 리듬' }
             ];
+            const AXIS_GUIDE = {
+                E: { title: 'E · 외향', body: '사람과의 상호작용, 대화, 바깥 자극 속에서 에너지가 살아나는 쪽에 가까워요.' },
+                I: { title: 'I · 내향', body: '혼자 정리하고 내 페이스를 지킬 때 에너지가 회복되는 쪽에 가까워요.' },
+                S: { title: 'S · 감각', body: '익숙한 경험, 눈앞의 사실, 검증된 기준을 더 신뢰하는 흐름을 뜻해요.' },
+                N: { title: 'N · 직관', body: '가능성, 큰 그림, 숨어 있는 의미를 먼저 읽어내는 흐름을 뜻해요.' },
+                T: { title: 'T · 사고', body: '판단할 때 감정보다 기준과 논리를 먼저 세우는 쪽에 가까워요.' },
+                F: { title: 'F · 감정', body: '결정할 때 관계의 분위기와 감정의 온도를 함께 살피는 쪽에 가까워요.' },
+                J: { title: 'J · 판단', body: '정리된 흐름, 계획, 예측 가능한 진행을 편하게 느끼는 쪽이에요.' },
+                P: { title: 'P · 인식', body: '열어두고 유연하게 움직이며 상황에 맞춰 가는 흐름을 편하게 느끼는 쪽이에요.' }
+            };
             const DEFAULT_USERNAME = '익명 탐험가';
             const QUESTION_TEMPO_COPY = [
                 "첫 느낌부터 꽤 선명해요",
@@ -216,11 +254,19 @@
             const [userName, setUserName] = useState(() => localStorage.getItem('mbti_username') || '');
             const [showHistory, setShowHistory] = useState(false);
             const [showVersionModal, setShowVersionModal] = useState(false);
+            const [showRecoveryPrompt, setShowRecoveryPrompt] = useState(false);
+            const [recoverableSession, setRecoverableSession] = useState(null);
+            const [axisGuideKey, setAxisGuideKey] = useState(null);
             const [historyData, setHistoryData] = useState([]);
 
             useEffect(() => {
                 const loaded = JSON.parse(localStorage.getItem('mbti_history') || '[]');
                 setHistoryData(loaded);
+                const savedSession = JSON.parse(localStorage.getItem('mbti_active_session') || 'null');
+                if (savedSession && savedSession.questions?.length && savedSession.currIdx < savedSession.questions.length) {
+                    setRecoverableSession(savedSession);
+                    setShowRecoveryPrompt(true);
+                }
             }, []);
             const [questions, setQuestions] = useState([]);
             const [currIdx, setCurrIdx] = useState(0);
@@ -228,6 +274,8 @@
             const [microCopy, setMicroCopy] = useState('');
             const [isTransitioning, setIsTransitioning] = useState(false);
             const [shareCopied, setShareCopied] = useState(false);
+            const [saveImageState, setSaveImageState] = useState('idle');
+            const [questionDirection, setQuestionDirection] = useState(1);
 
             const getDisplayName = (name) => name.trim() || DEFAULT_USERNAME;
 
@@ -274,9 +322,26 @@
 
             const closeVersionInfo = () => setShowVersionModal(false);
 
+            const openAxisGuide = (key) => setAxisGuideKey(key);
+            const closeAxisGuide = () => setAxisGuideKey(null);
+
+            const clearActiveSession = () => {
+                localStorage.removeItem('mbti_active_session');
+                setRecoverableSession(null);
+                setShowRecoveryPrompt(false);
+            };
+
+            const persistActiveSession = (payload) => {
+                localStorage.setItem('mbti_active_session', JSON.stringify({
+                    ...payload,
+                    savedAt: new Date().toISOString()
+                }));
+            };
+
             const handleRestart = () => {
                 trackEvent('restart_click');
                 setShareCopied(false);
+                clearActiveSession();
                 setStep('start');
             };
 
@@ -380,7 +445,32 @@
                 setCurrIdx(0);
                 setMicroCopy('');
                 setShareCopied(false);
+                setQuestionDirection(1);
                 setStep('question');
+                persistActiveSession({
+                    userName: trimmedName,
+                    questions: tempoOrdered,
+                    currIdx: 0,
+                    scores: { E: 0, I: 0, S: 0, N: 0, T: 0, F: 0, J: 0, P: 0 }
+                });
+            };
+
+            const handleResumeSession = () => {
+                if (!recoverableSession) return;
+                setUserName(recoverableSession.userName || '');
+                setQuestions(recoverableSession.questions || []);
+                setCurrIdx(recoverableSession.currIdx || 0);
+                setScores(recoverableSession.scores || { E: 0, I: 0, S: 0, N: 0, T: 0, F: 0, J: 0, P: 0 });
+                setMicroCopy('');
+                setQuestionDirection(1);
+                setShowRecoveryPrompt(false);
+                setStep('question');
+                trackEvent('session_resume');
+            };
+
+            const dismissRecovery = () => {
+                clearActiveSession();
+                trackEvent('session_discard');
             };
 
             const handleAnswer = (option) => {
@@ -390,16 +480,26 @@
                 // Phase 3: 가중 점수화 (문항의 weight 반영)
                 const currentQ = questions[currIdx];
                 const w = (currentQ && currentQ.weight) ? currentQ.weight : 1.0;
-                setScores(prev => ({ ...prev, [option.type]: prev[option.type] + w }));
+                const nextScores = { ...scores, [option.type]: (scores[option.type] || 0) + w };
+                setScores(nextScores);
                 setMicroCopy(option.micro);
+                setQuestionDirection(1);
 
                 setTimeout(() => {
                     setMicroCopy('');
                     if (currIdx + 1 >= 12) {
                         trackEvent('complete_test');
+                        clearActiveSession();
                         setStep('result');
                     } else {
-                        setCurrIdx(prev => prev + 1);
+                        const nextIdx = currIdx + 1;
+                        setCurrIdx(nextIdx);
+                        persistActiveSession({
+                            userName,
+                            questions,
+                            currIdx: nextIdx,
+                            scores: nextScores
+                        });
                     }
                     setIsTransitioning(false);
                 }, 800);
@@ -507,6 +607,35 @@
                 };
             };
 
+            const getTrendAnalysis = (currentSpectrum, previousAxes) => {
+                if (!currentSpectrum?.length || !previousAxes?.length) return null;
+
+                const deltas = currentSpectrum.map((axis, idx) => {
+                    const previousAxis = previousAxes[idx];
+                    if (!previousAxis) return null;
+                    const currentSigned = axis.dominantType === axis.left ? axis.intensity : -axis.intensity;
+                    const previousSigned = previousAxis.dominantType === previousAxis.left ? previousAxis.intensity : -previousAxis.intensity;
+                    return {
+                        pair: axis.pair || `${axis.left}/${axis.right}`,
+                        dominantType: axis.dominantType,
+                        diff: Math.abs(currentSigned - previousSigned)
+                    };
+                }).filter(Boolean).sort((a, b) => b.diff - a.diff);
+
+                const strongestDelta = deltas[0];
+                if (!strongestDelta || strongestDelta.diff < 3) {
+                    return {
+                        title: "지난 결과와 큰 차이는 없어요",
+                        body: "최근 결과와 비교했을 때 오늘의 성향 흐름은 비교적 안정적으로 이어지고 있어요."
+                    };
+                }
+
+                return {
+                    title: `지난번보다 ${strongestDelta.dominantType} 성향이 ${strongestDelta.diff}% 더 두드러졌어요`,
+                    body: `${strongestDelta.pair} 축에서 변화가 가장 크게 나타났어요. 오늘의 기분이나 주변 맥락이 이 축에 특히 반영된 것 같아요.`
+                };
+            };
+
             const getEffectiveHistory = (currentMbti, percent, historyData) => {
                 if (!currentMbti) return historyData;
 
@@ -596,8 +725,164 @@
                 return `${moodLead} · ${info.nickname}`;
             };
 
+            const getShareHeadline = (mbti, info, percent) => {
+                if (percent >= 88) return `오늘은 ${mbti} 무드가 또렷한 날`;
+                if (percent >= 78) return `오늘은 ${mbti} 쪽으로 기운 하루`;
+                return `오늘의 나는 ${mbti}에 조금 더 가까워요`;
+            };
+
+            const getShareSummaryShort = (spectrum) => {
+                const strongestAxis = [...spectrum].sort((a, b) => b.intensity - a.intensity)[0];
+                if (!strongestAxis) return "오늘의 기분과 에너지가 반영된 가벼운 성향 스냅샷";
+                const shortCopyMap = {
+                    E: "사람 속에서 에너지가 더 살아났어요.",
+                    I: "내 페이스를 지키는 쪽이 더 편했어요.",
+                    S: "익숙한 기준과 현실 감각이 더 강했어요.",
+                    N: "가능성과 큰 그림 쪽으로 시선이 갔어요.",
+                    T: "감정보다 기준과 판단이 앞섰어요.",
+                    F: "결론보다 분위기와 관계를 더 살폈어요.",
+                    J: "정리하고 결론 내리는 흐름이 편했어요.",
+                    P: "상황에 맞게 유연하게 가는 쪽이 자연스러웠어요."
+                };
+                return shortCopyMap[strongestAxis.dominantType] || "오늘의 기분과 에너지가 반영된 가벼운 성향 스냅샷";
+            };
+
+            const SHARE_HOOKS = {
+                INFP: "감정은 깊고, 표현은 다정한 타입",
+                ENFP: "분위기를 살리고 판을 키우는 타입",
+                INFJ: "조용한데 제일 깊게 보는 타입",
+                ENFJ: "사람 마음을 먼저 읽는 무드 메이커",
+                INTJ: "말수는 적어도 그림은 크게 보는 타입",
+                ENTJ: "결론 빠르고 추진력 강한 리더형",
+                INTP: "혼자 생각할수록 재밌어지는 타입",
+                ENTP: "아이디어 한 번 꽂히면 끝까지 가는 타입",
+                ISFP: "조용하지만 취향은 선명한 타입",
+                ESFP: "지금 이 분위기를 제일 잘 즐기는 타입",
+                ISTP: "필요할 땐 누구보다 정확한 실전형",
+                ESTP: "순간 판단이 빠르고 움직임이 가벼운 타입",
+                ISFJ: "티 안 나게 챙기는데 존재감은 확실한 타입",
+                ESFJ: "분위기와 사람을 같이 끌어안는 타입",
+                ISTJ: "기준은 단단하고 움직임은 안정적인 타입",
+                ESTJ: "정리와 추진이 동시에 되는 실행형"
+            };
+
+            const SHARE_CARD_COPY = {
+                INFP: {
+                    hook: "혼자 있을수록 더 선명해지는 날",
+                    detail: "오늘은 내 페이스를 지키면서도 감정의 결을 놓치지 않았어요.",
+                    boast: "겉은 조용한데 마음속 서사는 누구보다 풍부한 타입",
+                    tags: ["#혼자충전", "#감정선명", "#은근다정"]
+                },
+                ENFP: {
+                    hook: "분위기만 타면 판을 키우는 날",
+                    detail: "새로운 자극과 사람 사이에서 에너지가 빠르게 붙는 흐름이었어요.",
+                    boast: "가만히 있어도 텐션이 번지는 무드 메이커 타입",
+                    tags: ["#분위기메이커", "#즉흥매력", "#에너지폭발"]
+                },
+                INFJ: {
+                    hook: "조용한데 제일 깊게 보는 날",
+                    detail: "겉으로는 차분했지만 속으로는 누구보다 많은 걸 읽고 있었어요.",
+                    boast: "말수는 적어도 분위기와 마음은 제일 빨리 읽는 타입",
+                    tags: ["#깊게봄", "#조용한통찰", "#분위기레이더"]
+                },
+                ENFJ: {
+                    hook: "사람 마음부터 먼저 읽히는 날",
+                    detail: "대화의 흐름보다 사람의 온도를 먼저 챙기고 싶어졌어요.",
+                    boast: "분위기를 부드럽게 끌고 가는 인간 밸런서 타입",
+                    tags: ["#공감리더", "#분위기조율", "#사람중심"]
+                },
+                INTJ: {
+                    hook: "말보다 그림이 먼저 그려지는 날",
+                    detail: "작은 반응보다 큰 흐름과 다음 수가 더 또렷하게 보였어요.",
+                    boast: "겉은 담백한데 머릿속은 이미 두 수 앞인 타입",
+                    tags: ["#큰그림", "#전략모드", "#조용한확신"]
+                },
+                ENTJ: {
+                    hook: "결론이 빠르고 움직임도 빠른 날",
+                    detail: "머뭇거리기보다 정리하고 밀어붙이는 쪽이 훨씬 편했어요.",
+                    boast: "판단과 추진이 동시에 되는 실전 리더 타입",
+                    tags: ["#결론빠름", "#추진력", "#실행리더"]
+                },
+                INTP: {
+                    hook: "혼자 생각할수록 더 재밌어지는 날",
+                    detail: "사람보다 아이디어와 논리의 흐름 쪽으로 더 깊게 빠져들었어요.",
+                    boast: "겉으로는 무심한데 머릿속 대화는 제일 바쁜 타입",
+                    tags: ["#생각잠수", "#논리모드", "#혼자재밌음"]
+                },
+                ENTP: {
+                    hook: "아이디어가 꼬리를 무는 날",
+                    detail: "정답 하나보다 더 재밌는 가능성이 먼저 눈에 들어왔어요.",
+                    boast: "말 한마디로 판을 흔드는 발상가 타입",
+                    tags: ["#아이디어폭주", "#판흔들기", "#재치있음"]
+                },
+                ISFP: {
+                    hook: "조용하지만 취향은 선명한 날",
+                    detail: "크게 드러내기보다 내 감각과 기분을 더 섬세하게 따랐어요.",
+                    boast: "말보다 분위기와 감각으로 기억되는 타입",
+                    tags: ["#취향선명", "#감각중심", "#조용한매력"]
+                },
+                ESFP: {
+                    hook: "지금 이 분위기를 제일 잘 즐기는 날",
+                    detail: "계획보다 현장감과 재미가 더 크게 움직이는 흐름이었어요.",
+                    boast: "있는 자리의 온도를 바로 끌어올리는 타입",
+                    tags: ["#현장텐션", "#분위기상승", "#재미우선"]
+                },
+                ISTP: {
+                    hook: "필요할 때 제일 정확해지는 날",
+                    detail: "말을 늘리기보다 상황을 보고 바로 움직이는 쪽이 더 편했어요.",
+                    boast: "감정 과잉 없이 핵심만 딱 잡아내는 타입",
+                    tags: ["#실전형", "#군더더기없음", "#핵심파악"]
+                },
+                ESTP: {
+                    hook: "순간 판단이 유난히 빠른 날",
+                    detail: "생각보다 몸이 먼저 반응하고, 선택도 가볍게 이어졌어요.",
+                    boast: "망설임보다 액션이 먼저 나오는 타입",
+                    tags: ["#반응빠름", "#액션모드", "#현장강자"]
+                },
+                ISFJ: {
+                    hook: "티 안 나게 다 챙기고 싶은 날",
+                    detail: "눈에 띄는 것보다 놓치는 사람 없게 챙기는 흐름이 강했어요.",
+                    boast: "조용히 움직이는데 체감 존재감은 확실한 타입",
+                    tags: ["#조용한배려", "#안정감", "#든든함"]
+                },
+                ESFJ: {
+                    hook: "분위기와 사람을 같이 끌어안는 날",
+                    detail: "혼자 빛나기보다 다 같이 편한 흐름을 더 만들고 싶어졌어요.",
+                    boast: "따뜻함으로 판을 정리하는 관계 중심 타입",
+                    tags: ["#분위기케어", "#관계중심", "#다정리더"]
+                },
+                ISTJ: {
+                    hook: "기준이 유난히 단단한 날",
+                    detail: "감정보다 익숙한 원칙과 정리된 흐름 쪽이 더 믿음직했어요.",
+                    boast: "조용하지만 무너지지 않는 기준점 같은 타입",
+                    tags: ["#기준단단", "#안정적", "#신뢰감"]
+                },
+                ESTJ: {
+                    hook: "정리와 추진이 같이 되는 날",
+                    detail: "애매하게 두기보다 결론 내리고 움직이는 쪽이 더 시원했어요.",
+                    boast: "판을 정리하면서 속도까지 챙기는 실행형 타입",
+                    tags: ["#정리본능", "#속도감", "#실행캐릭터"]
+                }
+            };
+
+            const getShareVibeStamp = (mbti, spectrum) => {
+                const strongestAxis = [...spectrum].sort((a, b) => b.intensity - a.intensity)[0];
+                const strongestTagMap = {
+                    E: "밖으로 뻗는 에너지",
+                    I: "혼자일수록 선명한 무드",
+                    S: "현실 감각이 또렷한 날",
+                    N: "직감이 앞서는 날",
+                    T: "판단이 빠른 흐름",
+                    F: "감정 온도가 높은 날",
+                    J: "정리력이 강한 하루",
+                    P: "유연함이 빛나는 하루"
+                };
+                return strongestTagMap[strongestAxis?.dominantType] || `${mbti} 무드 스냅샷`;
+            };
+
             const ResultView = () => {
                 const resultRef = useRef(null);
+                const shareCardRef = useRef(null);
 
                 const getResult = () => {
                     // Phase 3: 가중 점수 기반 축별 강도 계산
@@ -655,7 +940,16 @@
                     const newEntry = {
                         date: new Date().toLocaleDateString('ko-KR', { month: 'short', day: 'numeric', weekday: 'short' }),
                         mbti: mbti,
-                        percent: percent
+                        percent: percent,
+                        axes: spectrum.map((axis) => ({
+                            pair: `${axis.left}/${axis.right}`,
+                            left: axis.left,
+                            right: axis.right,
+                            dominantType: axis.dominantType,
+                            intensity: axis.intensity,
+                            leftScore: axis.leftScore,
+                            rightScore: axis.rightScore
+                        }))
                     };
                     if (!history.length || history[0].mbti !== mbti || history[0].date !== newEntry.date) {
                         const updated = [newEntry, ...history].slice(0, 7);
@@ -673,8 +967,19 @@
                 const historyComparison = getHistoryComparison(mbti, effectiveHistory);
                 const axisChanges = getAxisChangeDetails(mbti, effectiveHistory[1]?.mbti);
                 const historyInsights = getHistoryInsights(effectiveHistory);
+                const trendAnalysis = getTrendAnalysis(spectrum, effectiveHistory[1]?.axes);
                 const displayName = getDisplayName(userName);
                 const shareMoodLine = getShareMoodLine(mbti, info, percent, summaryCopy);
+                const shareHeadline = getShareHeadline(mbti, info, percent);
+                const shareSummaryShort = getShareSummaryShort(spectrum);
+                const shareHook = SHARE_HOOKS[mbti] || `${mbti} 무드가 또렷한 타입`;
+                const shareVibeStamp = getShareVibeStamp(mbti, spectrum);
+                const shareCardCopy = SHARE_CARD_COPY[mbti] || {
+                    hook: shareHook,
+                    detail: shareSummaryShort,
+                    boast: shareMoodLine,
+                    tags: badges.slice(0, 3).map((badge) => `#${badge}`)
+                };
 
                 useEffect(() => {
                     trackEvent('result_view', { mbti, percent });
@@ -692,6 +997,30 @@
                     }
                 };
 
+                const handleSaveImage = async () => {
+                    if (!shareCardRef.current || !window.html2canvas) return;
+                    setSaveImageState('saving');
+                    try {
+                        const canvas = await window.html2canvas(shareCardRef.current, {
+                            backgroundColor: null,
+                            scale: 2,
+                            useCORS: true,
+                            width: shareCardRef.current.offsetWidth,
+                            height: shareCardRef.current.offsetHeight
+                        });
+                        const link = document.createElement('a');
+                        link.download = `today-mbti-${mbti.toLowerCase()}.png`;
+                        link.href = canvas.toDataURL('image/png');
+                        link.click();
+                        setSaveImageState('saved');
+                        trackEvent('result_image_save', { mbti });
+                    } catch (error) {
+                        setSaveImageState('idle');
+                    } finally {
+                        setTimeout(() => setSaveImageState('idle'), 1800);
+                    }
+                };
+
                 // 다이나믹 칭호 로직
                 let dynamicTitle = "";
                 if (percent >= 90) dynamicTitle = `[순도 ${percent}% 완벽한 ${mbti} 모드]`;
@@ -700,6 +1029,113 @@
 
                 return (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center w-full min-h-[100dvh] p-6 text-white pb-20">
+                        <div className="fixed left-[-200vw] top-0 pointer-events-none">
+                            <div
+                                ref={shareCardRef}
+                                className="relative w-[1080px] h-[1080px] overflow-hidden rounded-[64px] border border-white/10 bg-[radial-gradient(circle_at_top,_rgba(34,211,238,0.16),_transparent_26%),radial-gradient(circle_at_bottom_left,_rgba(168,85,247,0.22),_transparent_28%),linear-gradient(145deg,#09111f_0%,#111827_42%,#0f172a_100%)] text-white shadow-[0_40px_120px_rgba(2,6,23,0.7)]"
+                            >
+                                <div className="absolute -right-20 top-[-90px] h-80 w-80 rounded-full bg-brand/20 blur-3xl"></div>
+                                <div className="absolute bottom-[-80px] left-[-40px] h-72 w-72 rounded-full bg-cyan-400/15 blur-3xl"></div>
+                                <div className="absolute left-[70px] top-[132px] h-[460px] w-[460px] rounded-full border border-white/5 bg-cyan-300/[0.04]"></div>
+                                <div className="absolute right-[88px] top-[208px] h-[430px] w-[430px] rounded-[46px] border border-cyan-300/10 bg-cyan-300/[0.04] rotate-[-6deg]"></div>
+                                <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.05),transparent_24%,transparent_72%,rgba(255,255,255,0.03))]"></div>
+
+                                <div className="relative z-10 flex h-full flex-col px-20 py-20">
+                                    <div className="flex items-start justify-between gap-8">
+                                        <div className="max-w-[520px]">
+                                            <p className="text-[24px] font-medium tracking-[-0.02em] text-slate-300">
+                                                <span className="font-extrabold text-white">{displayName}</span>님의 오늘 성향 카드
+                                            </p>
+                                            <p className="mt-5 text-[54px] font-black tracking-[0.12em] text-white drop-shadow-[0_10px_25px_rgba(15,23,42,0.6)]">
+                                                {mbti}
+                                            </p>
+                                            <p className="mt-3 inline-flex rounded-full border border-white/10 bg-white/[0.05] px-5 py-2 text-[21px] font-semibold text-slate-100">
+                                                {info.nickname}
+                                            </p>
+                                        </div>
+                                        <div className="rounded-[32px] border border-white/15 bg-white/10 px-7 py-5 text-right shadow-lg shadow-slate-950/30 backdrop-blur-sm">
+                                            <p className="text-[15px] font-semibold tracking-[0.14em] text-slate-200 uppercase">싱크로율</p>
+                                            <p className="mt-1 text-[42px] font-black text-white">{percent}%</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="mt-9 grid flex-1 grid-cols-[1.02fr_0.98fr] gap-8">
+                                        <div className="flex flex-col justify-between">
+                                            <div>
+                                                <div className="inline-flex items-center gap-3 rounded-full border border-cyan-300/20 bg-cyan-400/10 px-5 py-2.5 text-[17px] font-bold text-cyan-100">
+                                                    <span className="inline-block h-2.5 w-2.5 rounded-full bg-cyan-300 shadow-[0_0_12px_rgba(103,232,249,0.9)]"></span>
+                                                    {shareVibeStamp}
+                                                </div>
+                                                <p className="mt-7 text-[68px] font-black leading-[1.04] tracking-[-0.045em] text-white break-keep">
+                                                    {shareCardCopy.hook}
+                                                </p>
+                                                <p className="mt-6 text-[29px] font-semibold leading-[1.38] text-slate-100 break-keep">
+                                                    {shareCardCopy.detail}
+                                                </p>
+                                                <p className="mt-4 text-[21px] leading-[1.55] text-slate-300 break-keep">
+                                                    {shareHeadline}
+                                                </p>
+                                            </div>
+
+                                            <div className="mt-6 flex flex-wrap gap-3">
+                                                {shareCardCopy.tags.slice(0, 3).map((tag, idx) => (
+                                                    <span
+                                                        key={`${tag}-${idx}`}
+                                                        className="rounded-full border border-white/10 bg-white/[0.06] px-5 py-2.5 text-[18px] font-bold text-white shadow-[0_14px_30px_rgba(2,6,23,0.28)]"
+                                                    >
+                                                        {tag}
+                                                    </span>
+                                                ))}
+                                            </div>
+
+                                            <div className="mt-7 rounded-[34px] border border-white/10 bg-black/25 px-7 py-6 shadow-[0_24px_60px_rgba(2,6,23,0.34)]">
+                                                <p className="text-[14px] font-bold tracking-[0.2em] text-slate-500 uppercase">Share Note</p>
+                                                <p className="mt-3 text-[23px] font-semibold leading-[1.45] text-slate-100 break-keep">
+                                                    {shareCardCopy.boast}
+                                                </p>
+                                            </div>
+
+                                            <div className="mt-auto flex items-center justify-between rounded-[28px] border border-white/10 bg-white/[0.03] px-7 py-5">
+                                                <p className="text-[15px] font-semibold text-slate-300">오늘의 흐름을 가볍게 저장해보세요</p>
+                                                <p className="text-[15px] font-black tracking-[0.14em] text-white">Mood Snapshot</p>
+                                            </div>
+                                        </div>
+
+                                        <div className="flex flex-col">
+                                            <div className="relative flex-1 overflow-hidden rounded-[42px] border border-white/10 bg-[radial-gradient(circle_at_top,_rgba(34,211,238,0.18),_transparent_42%),linear-gradient(180deg,rgba(15,23,42,0.98),rgba(2,6,23,0.92))] shadow-[0_24px_80px_rgba(2,6,23,0.5)]">
+                                                <div className="absolute left-8 top-8 inline-flex rounded-full border border-white/10 bg-white/[0.08] px-5 py-2 text-[15px] font-black tracking-[0.2em] text-slate-100 uppercase">
+                                                    {mbti}
+                                                </div>
+                                                <div className="absolute inset-x-10 top-12 h-20 rounded-full bg-cyan-400/15 blur-3xl"></div>
+                                                <div className="absolute inset-x-12 bottom-28 h-20 rounded-full bg-brand/20 blur-3xl"></div>
+                                                <div className="absolute inset-0 border border-white/5 rounded-[42px]"></div>
+                                                {info.image && (
+                                                    <img
+                                                        src={window.IMAGE_BASE64 && window.IMAGE_BASE64[info.image] ? window.IMAGE_BASE64[info.image] : info.image}
+                                                        alt={mbti}
+                                                        className="relative z-10 mx-auto mt-20 h-[360px] w-[360px] object-contain drop-shadow-[0_24px_48px_rgba(15,23,42,0.82)]"
+                                                    />
+                                                )}
+                                                <div className="absolute right-7 top-7 flex items-center gap-2 rounded-full border border-brand/30 bg-brand/18 px-5 py-2.5 text-[16px] font-black text-white shadow-[0_12px_24px_rgba(168,85,247,0.28)]">
+                                                    <span className="inline-block h-2.5 w-2.5 rounded-full bg-fuchsia-300 shadow-[0_0_10px_rgba(232,121,249,0.95)]"></span>
+                                                    지금 이 무드
+                                                </div>
+                                                <div className="absolute inset-x-8 bottom-8 rounded-[30px] border border-white/10 bg-black/35 px-6 py-6 backdrop-blur-sm">
+                                                    <p className="text-[14px] font-bold tracking-[0.22em] text-slate-500 uppercase">Share Snapshot</p>
+                                                    <p className="mt-3 text-[28px] font-black leading-[1.25] text-white break-keep">
+                                                        {info.nickname}
+                                                    </p>
+                                                    <p className="mt-2 text-[18px] font-semibold text-slate-200 break-keep">
+                                                        {shareCardCopy.boast}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         <div ref={resultRef} className="bg-slate-900 p-8 w-full max-w-sm flex flex-col items-center mt-6 rounded-3xl border border-white/10 shadow-2xl relative overflow-hidden">
                             {/* Inner card background effects */}
                             <div className="absolute top-0 right-0 w-32 h-32 bg-brand/20 blur-3xl rounded-full"></div>
@@ -711,9 +1147,17 @@
                                 </h2>
 
                                 <div className="relative mb-3 mt-3">
-                                    <h1 className="text-6xl font-black bg-gradient-to-r from-brand to-cyan-400 bg-clip-text text-transparent tracking-widest drop-shadow-sm">
-                                        {mbti}
-                                    </h1>
+                                    <div className="flex items-center justify-center gap-1">
+                                        {mbti.split('').map((letter, idx) => (
+                                            <button
+                                                key={`${letter}-${idx}`}
+                                                onClick={() => openAxisGuide(letter)}
+                                                className="text-6xl font-black bg-gradient-to-r from-brand to-cyan-400 bg-clip-text text-transparent tracking-widest drop-shadow-sm hover:scale-105 transition-transform"
+                                            >
+                                                {letter}
+                                            </button>
+                                        ))}
+                                    </div>
                                     <div className="absolute -top-4 -right-10 bg-brand text-white px-2.5 py-1 rounded-full text-[11px] font-black shadow-lg shadow-purple-500/30 transform rotate-12 border border-white/20 whitespace-nowrap">
                                         싱크로율 {percent}%
                                     </div>
@@ -728,6 +1172,7 @@
                                     <p className="mt-2 text-[18px] font-black leading-snug text-white break-keep">{shareMoodLine}</p>
                                     <button
                                         onClick={handleCopyShare}
+                                        data-html2canvas-ignore="true"
                                         className="mt-3 inline-flex items-center justify-center rounded-full border border-cyan-400/20 bg-cyan-400/10 px-4 py-2 text-[12px] font-bold text-cyan-100 hover:bg-cyan-400/15 transition-colors"
                                     >
                                         {shareCopied ? '복사 완료' : '한 줄 결과 복사'}
@@ -780,6 +1225,14 @@
                                                 최근 {historyInsights.stableCount}회 연속 {mbti} 흐름이 이어지고 있어요.
                                             </p>
                                         )}
+                                    </div>
+                                )}
+
+                                {trendAnalysis && (
+                                    <div className="w-full mb-6 rounded-2xl border border-fuchsia-400/20 bg-fuchsia-400/10 px-4 py-4">
+                                        <p className="text-[11px] font-bold tracking-[0.2em] text-fuchsia-200 uppercase">장기 흐름 리포트</p>
+                                        <p className="mt-2 text-[15px] font-semibold leading-relaxed text-white break-keep">{trendAnalysis.title}</p>
+                                        <p className="mt-2 text-[12px] leading-relaxed text-fuchsia-50/90 break-keep">{trendAnalysis.body}</p>
                                     </div>
                                 )}
 
@@ -843,7 +1296,9 @@
                                                     <div key={idx} className={`rounded-xl border px-3 py-3 ${item.isBoundary ? 'border-yellow-500/30 bg-yellow-500/5' : 'border-white/5 bg-black/10'}`}>
                                                         <div className="mb-3 flex items-start justify-between gap-3">
                                                             <div>
-                                                                <p className="text-[12px] font-black text-white tracking-wide">{item.pair || `${item.left}/${item.right}`}</p>
+                                                                <button onClick={() => openAxisGuide(item.left)} className="text-[12px] font-black text-white tracking-wide hover:text-cyan-200 transition-colors">
+                                                                    {item.pair || `${item.left}/${item.right}`}
+                                                                </button>
                                                                 <p className="mt-1 text-[10px] font-semibold text-slate-400">{item.stateLabel}</p>
                                                             </div>
                                                             <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold border ${item.isBoundary ? 'border-yellow-400/30 bg-yellow-500/10 text-yellow-200' : 'border-cyan-400/20 bg-cyan-400/10 text-cyan-100'}`}>
@@ -916,6 +1371,9 @@
                         <div className="flex flex-col gap-3 w-full max-w-sm mt-8">
                             <button onClick={openHistoryModal} className="w-full py-4 bg-white/5 border border-white/10 rounded-3xl text-slate-200 font-bold hover:bg-white/10 transition-colors flex items-center justify-center gap-2">
                                 🕒 나의 MBTI 기록 보기
+                            </button>
+                            <button onClick={handleSaveImage} className="w-full py-4 bg-cyan-400/10 border border-cyan-400/20 rounded-3xl text-cyan-100 font-bold hover:bg-cyan-400/15 transition-colors flex items-center justify-center gap-2">
+                                {saveImageState === 'saving' ? '이미지 만드는 중...' : saveImageState === 'saved' ? '결과 카드 저장 완료' : '결과 카드 이미지로 저장'}
                             </button>
                             <button onClick={handleRestart} className="w-full py-4 mt-2 text-slate-400 underline underline-offset-4 decoration-slate-600 font-medium hover:text-slate-200 transition-colors">
                                 지금 다시 해보기
@@ -994,16 +1452,18 @@
 
                                 <div className="flex-[0.8] flex flex-col justify-center mb-8">
                                     <AnimatePresence mode="wait">
-                                        <motion.h2
+                                        <motion.div
                                             key={currIdx}
-                                            initial={{ opacity: 0, y: 20 }}
-                                            animate={{ opacity: 1, y: 0 }}
-                                            exit={{ opacity: 0, y: -20 }}
-                                            transition={{ duration: 0.3 }}
-                                            className="text-[26px] font-bold text-white leading-snug break-keep text-center"
+                                            initial={{ opacity: 0, x: 56 * questionDirection }}
+                                            animate={{ opacity: 1, x: 0 }}
+                                            exit={{ opacity: 0, x: -56 * questionDirection }}
+                                            transition={{ duration: 0.35, ease: 'easeOut' }}
+                                            className="w-full"
                                         >
-                                            {questions[currIdx].q}
-                                        </motion.h2>
+                                            <h2 className="text-[26px] font-bold text-white leading-snug break-keep text-center">
+                                                {questions[currIdx].q}
+                                            </h2>
+                                        </motion.div>
                                     </AnimatePresence>
                                 </div>
 
@@ -1040,6 +1500,37 @@
                         )}
 
                         {step === 'result' && <ResultView key="result" />}
+                    </AnimatePresence>
+
+                    <AnimatePresence>
+                        {showRecoveryPrompt && recoverableSession && step === 'start' && (
+                            <motion.div
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/60 backdrop-blur-sm"
+                            >
+                                <motion.div
+                                    initial={{ scale: 0.94, y: 16 }}
+                                    animate={{ scale: 1, y: 0 }}
+                                    exit={{ scale: 0.94, y: 16 }}
+                                    className="bg-slate-900 border border-white/10 rounded-3xl p-6 w-full max-w-sm shadow-2xl overflow-hidden relative"
+                                >
+                                    <h3 className="text-xl font-black text-white">이어서 할까요?</h3>
+                                    <p className="mt-3 text-sm leading-relaxed text-slate-300 break-keep">
+                                        {recoverableSession.currIdx + 1}번째 문항까지 진행 중이던 기록이 있어요. 이어서 하면 방금 보던 흐름을 그대로 확인할 수 있어요.
+                                    </p>
+                                    <div className="mt-6 flex flex-col gap-3">
+                                        <button onClick={handleResumeSession} className="w-full py-4 rounded-2xl bg-gradient-to-r from-brand to-cyan-500 text-white font-bold">
+                                            이어서 하기
+                                        </button>
+                                        <button onClick={dismissRecovery} className="w-full py-4 rounded-2xl bg-white/5 border border-white/10 text-slate-300 font-bold">
+                                            새로 시작하기
+                                        </button>
+                                    </div>
+                                </motion.div>
+                            </motion.div>
+                        )}
                     </AnimatePresence>
 
                     {/* 히스토리 모달 */}
@@ -1114,6 +1605,33 @@
                                     </div>
 
                                     <button onClick={closeHistoryModal} className="w-full py-4 mt-6 bg-white/10 border border-white/10 rounded-2xl text-slate-200 font-bold hover:bg-white/20 transition-colors">
+                                        닫기
+                                    </button>
+                                </motion.div>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+
+                    <AnimatePresence>
+                        {axisGuideKey && (
+                            <motion.div
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/60 backdrop-blur-sm"
+                                onClick={closeAxisGuide}
+                            >
+                                <motion.div
+                                    initial={{ scale: 0.95, y: 16 }}
+                                    animate={{ scale: 1, y: 0 }}
+                                    exit={{ scale: 0.95, y: 16 }}
+                                    className="bg-slate-900 border border-white/10 rounded-3xl p-6 w-full max-w-sm shadow-2xl overflow-hidden relative"
+                                    onClick={e => e.stopPropagation()}
+                                >
+                                    <p className="text-sm font-bold tracking-[0.2em] text-cyan-200 uppercase">미니 가이드</p>
+                                    <h3 className="mt-3 text-2xl font-black text-white">{AXIS_GUIDE[axisGuideKey]?.title}</h3>
+                                    <p className="mt-3 text-sm leading-relaxed text-slate-300 break-keep">{AXIS_GUIDE[axisGuideKey]?.body}</p>
+                                    <button onClick={closeAxisGuide} className="w-full py-4 mt-6 bg-white/10 border border-white/10 rounded-2xl text-slate-200 font-bold hover:bg-white/20 transition-colors">
                                         닫기
                                     </button>
                                 </motion.div>
