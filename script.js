@@ -1,3 +1,4 @@
+// Legacy file: 이전 정적 구현 보관용. 현재 Vite 앱에서는 사용하지 않습니다.
 // 성격 유형 지표별 점수 초기화
 let scoreE = 0;
 let scoreS = 0;

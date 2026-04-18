@@ -12,7 +12,7 @@
  *
  * familyId는 같은 세션에 2개 이상 출제되지 않도록 제한하는 데 사용됩니다.
  */
-window.QUESTIONS_META = {
+export const QUESTIONS_META = {
   EI: [
     { id: "EI_001", familyId: "EI_vacation",    role: "anchor",        weight: 1.4 }, // idx 0
     { id: "EI_002", familyId: "EI_weekend",     role: "anchor",        weight: 1.4 }, // idx 1
@@ -94,3 +94,7 @@ window.QUESTIONS_META = {
     { id: "JP_018", familyId: "JP_restaurant",  role: "state",         weight: 0.8 }, // idx 17
   ]
 };
+
+if (typeof window !== 'undefined') {
+  window.QUESTIONS_META = QUESTIONS_META;
+}

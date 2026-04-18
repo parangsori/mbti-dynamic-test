@@ -2,7 +2,7 @@
  * questions_extended.js — 문제은행 확장 (19-54) 및 메타데이터
  */
 
-window.QUESTIONS_EXTENDED = {
+export const QUESTIONS_EXTENDED = {
   EI: [
     /* ── anchor ── */
     {
@@ -1225,4 +1225,9 @@ window.QUESTIONS_EXTENDED = {
 };
 
 // index.html의 handleStart 로직과 호환되도록 평탄화된 변수 추가 할당
-window.QUESTIONS_META_EXTENDED = window.QUESTIONS_EXTENDED._META;
+export const QUESTIONS_META_EXTENDED = QUESTIONS_EXTENDED._META;
+
+if (typeof window !== 'undefined') {
+  window.QUESTIONS_EXTENDED = QUESTIONS_EXTENDED;
+  window.QUESTIONS_META_EXTENDED = QUESTIONS_META_EXTENDED;
+}

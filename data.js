@@ -2,7 +2,7 @@
  * data.js — MBTI 기본 문항 및 결과 데이터 (자원 정리 및 리뉴얼 버전)
  */
 
-window.QUESTIONS_DB = {
+export const QUESTIONS_DB = {
     EI: [
         {
             q: "친구랑 신나게 놀고 집에 가는 길, 내 상태는?",
@@ -517,7 +517,7 @@ window.QUESTIONS_DB = {
     ]
 };
 
-window.MBTI_RESULTS = {
+export const MBTI_RESULTS = {
     "ISTJ": { nickname: "원칙주의 청렴결백 수호자", description: "매우 현실적이고 책임감이 강한 당신! 약속을 철저히 지키며 체계적으로 일하는 것을 선호합니다.", scenario: "휴가 갈 때 엑셀로 분 단위 계획표 다 짜옴", image: "resources/ISTJ.png" },
     "ISFJ": { nickname: "마음 따뜻한 평화주의자", description: "주변 사람들을 헌신적으로 챙기며 세심한 배려를 아끼지 않는 당신! 친절하고 성실한 성격으로 주변의 사랑을 받습니다.", scenario: "친구 생일에 말 안 해도 필요한 거 슥 내밀기", image: "resources/ISFJ.png" },
     "INFJ": { nickname: "깊은 통찰력의 몽상가", description: "사람에 대한 따뜻한 관심과 통찰력을 지닌 당신! 눈앞의 이득보다는 더 큰 의미와 가치를 중요하게 생각합니다.", scenario: "인간관계에 대해 새벽까지 고뇌하다가 일기 5페이지 씀", image: "resources/INFJ.png" },
@@ -536,7 +536,7 @@ window.MBTI_RESULTS = {
     "ENTJ": { nickname: "대담한 전략적 지도자", description: "야망과 자신감이 넘치는 타고난 리더인 당신! 거시적인 안목으로 시스템을 구축하고 효율적으로 목표를 쟁취하는 지략가입니다.", scenario: "비효율적인 회의 방식 다 뜯어고치고 바로 실행함", image: "resources/ENTJ.png" }
 };
 
-window.BADGES = {
+export const BADGES = {
     "E": { 2: "활발한", 3: "에너자이저" },
     "I": { 2: "차분한", 3: "신중한" },
     "S": { 2: "현실적", 3: "실용적" },
@@ -547,4 +547,11 @@ window.BADGES = {
     "P": { 2: "유연한", 3: "즉흥적" }
 };
 
-window.IMAGE_BASE64 = {};
+export const IMAGE_BASE64 = {};
+
+if (typeof window !== 'undefined') {
+    window.QUESTIONS_DB = QUESTIONS_DB;
+    window.MBTI_RESULTS = MBTI_RESULTS;
+    window.BADGES = BADGES;
+    window.IMAGE_BASE64 = IMAGE_BASE64;
+}

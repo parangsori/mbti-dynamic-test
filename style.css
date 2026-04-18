@@ -1,3 +1,4 @@
+/* Legacy file: 이전 정적 구현 보관용. 현재 Vite 앱에서는 사용하지 않습니다. */
 :root {
     --primary-gradient: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
     --bg-gradient: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
