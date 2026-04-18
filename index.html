@@ -997,6 +997,22 @@
                     }
                 };
 
+                const getCanvasBlob = (canvas) => new Promise((resolve, reject) => {
+                    canvas.toBlob((blob) => {
+                        if (blob) resolve(blob);
+                        else reject(new Error('이미지 블롭 생성 실패'));
+                    }, 'image/png');
+                });
+
+                const downloadBlob = (blob, filename) => {
+                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.download = filename;
+                    link.href = url;
+                    link.click();
+                    setTimeout(() => URL.revokeObjectURL(url), 1500);
+                };
+
                 const handleSaveImage = async () => {
                     if (!shareCardRef.current || !window.html2canvas) return;
                     setSaveImageState('saving');
@@ -1008,12 +1024,57 @@
                             width: shareCardRef.current.offsetWidth,
                             height: shareCardRef.current.offsetHeight
                         });
-                        const link = document.createElement('a');
-                        link.download = `today-mbti-${mbti.toLowerCase()}.png`;
-                        link.href = canvas.toDataURL('image/png');
-                        link.click();
+
+                        const blob = await getCanvasBlob(canvas);
+                        const filename = `today-mbti-${mbti.toLowerCase()}.png`;
+                        const file = typeof File !== 'undefined'
+                            ? new File([blob], filename, { type: 'image/png' })
+                            : null;
+
+                        if (file && navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+                            try {
+                                await navigator.share({
+                                    title: `${displayName}님의 오늘 MBTI 카드`,
+                                    text: shareCardCopy.boast,
+                                    files: [file]
+                                });
+                                setSaveImageState('shared');
+                                trackEvent('result_image_share', { mbti });
+                                return;
+                            } catch (shareError) {
+                                if (shareError?.name === 'AbortError') {
+                                    setSaveImageState('idle');
+                                    return;
+                                }
+                            }
+                        }
+
+                        if (window.showSaveFilePicker) {
+                            try {
+                                const handle = await window.showSaveFilePicker({
+                                    suggestedName: filename,
+                                    types: [{
+                                        description: 'PNG Image',
+                                        accept: { 'image/png': ['.png'] }
+                                    }]
+                                });
+                                const writable = await handle.createWritable();
+                                await writable.write(blob);
+                                await writable.close();
+                                setSaveImageState('saved');
+                                trackEvent('result_image_save', { mbti, mode: 'picker' });
+                                return;
+                            } catch (pickerError) {
+                                if (pickerError?.name === 'AbortError') {
+                                    setSaveImageState('idle');
+                                    return;
+                                }
+                            }
+                        }
+
+                        downloadBlob(blob, filename);
                         setSaveImageState('saved');
-                        trackEvent('result_image_save', { mbti });
+                        trackEvent('result_image_save', { mbti, mode: 'download' });
                     } catch (error) {
                         setSaveImageState('idle');
                     } finally {
@@ -1373,7 +1434,13 @@
                                 🕒 나의 MBTI 기록 보기
                             </button>
                             <button onClick={handleSaveImage} className="w-full py-4 bg-cyan-400/10 border border-cyan-400/20 rounded-3xl text-cyan-100 font-bold hover:bg-cyan-400/15 transition-colors flex items-center justify-center gap-2">
-                                {saveImageState === 'saving' ? '이미지 만드는 중...' : saveImageState === 'saved' ? '결과 카드 저장 완료' : '결과 카드 이미지로 저장'}
+                                {saveImageState === 'saving'
+                                    ? '이미지 준비 중...'
+                                    : saveImageState === 'shared'
+                                        ? '공유 시트 열림'
+                                        : saveImageState === 'saved'
+                                            ? '결과 카드 저장 완료'
+                                            : '결과 카드 공유/저장'}
                             </button>
                             <button onClick={handleRestart} className="w-full py-4 mt-2 text-slate-400 underline underline-offset-4 decoration-slate-600 font-medium hover:text-slate-200 transition-colors">
                                 지금 다시 해보기
