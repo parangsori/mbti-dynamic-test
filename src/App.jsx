@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import StartView from './components/StartView.jsx';
 import QuestionView from './components/QuestionView.jsx';
@@ -9,6 +9,7 @@ import VersionModal from './components/VersionModal.jsx';
 import AxisGuideModal from './components/AxisGuideModal.jsx';
 import { AXIS_GUIDE, CHANGELOG, DEFAULT_USERNAME, QUESTION_TEMPO_COPY } from './lib/constants.js';
 import { buildQuestionSession, createEmptyScores, formatMicroCopy, getQuestionTempoMessage } from './lib/questionFlow.js';
+import { isInternalStatsEnabled, summarizeEventStats, verifyInternalPassword } from './lib/internalStats.js';
 import {
   clearActiveSession,
   readActiveSession,
@@ -22,11 +23,17 @@ import {
 } from './lib/storage.js';
 import { getHistoryComparison, getHistoryEntryNote, getHistoryInsights } from './lib/resultAnalysis.js';
 
+const InternalStatsAuthModal = lazy(() => import('./components/InternalStatsAuthModal.jsx'));
+const InternalStatsModal = lazy(() => import('./components/InternalStatsModal.jsx'));
+
 export default function App() {
   const [step, setStep] = useState('start');
   const [userName, setUserName] = useState(readUserName());
   const [showHistory, setShowHistory] = useState(false);
   const [showVersionModal, setShowVersionModal] = useState(false);
+  const [showInternalAuthModal, setShowInternalAuthModal] = useState(false);
+  const [showInternalStatsModal, setShowInternalStatsModal] = useState(false);
+  const [isInternalAuthed, setIsInternalAuthed] = useState(false);
   const [showRecoveryPrompt, setShowRecoveryPrompt] = useState(false);
   const [recoverableSession, setRecoverableSession] = useState(null);
   const [axisGuideKey, setAxisGuideKey] = useState(null);
@@ -37,6 +44,8 @@ export default function App() {
   const [microCopy, setMicroCopy] = useState('');
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [questionDirection, setQuestionDirection] = useState(1);
+  const [versionTapCount, setVersionTapCount] = useState(0);
+  const versionTapTimerRef = useRef(null);
 
   useEffect(() => {
     setHistoryData(readHistory());
@@ -45,6 +54,10 @@ export default function App() {
       setRecoverableSession(savedSession);
       setShowRecoveryPrompt(true);
     }
+  }, []);
+
+  useEffect(() => () => {
+    if (versionTapTimerRef.current) window.clearTimeout(versionTapTimerRef.current);
   }, []);
 
   const openHistoryModal = () => {
@@ -137,6 +150,46 @@ export default function App() {
 
   const latestHistoryComparison = getHistoryComparison(historyData[0]?.mbti || '', historyData);
   const latestHistoryInsights = getHistoryInsights(historyData);
+  const internalStatsSummary = summarizeEventStats();
+
+  const openVersionModal = () => {
+    trackEvent('version_open');
+    setShowVersionModal(true);
+  };
+
+  const handleVersionButtonClick = () => {
+    if (!isInternalStatsEnabled()) {
+      openVersionModal();
+      return;
+    }
+
+    const nextCount = versionTapCount + 1;
+    setVersionTapCount(nextCount);
+
+    if (versionTapTimerRef.current) window.clearTimeout(versionTapTimerRef.current);
+
+    if (nextCount >= 5) {
+      setVersionTapCount(0);
+      setShowVersionModal(false);
+      if (isInternalAuthed) setShowInternalStatsModal(true);
+      else setShowInternalAuthModal(true);
+      return;
+    }
+
+    versionTapTimerRef.current = window.setTimeout(() => {
+      setVersionTapCount(0);
+      openVersionModal();
+    }, 360);
+  };
+
+  const handleInternalAuthSubmit = async (password) => {
+    const ok = await verifyInternalPassword(password);
+    if (!ok) return false;
+    setIsInternalAuthed(true);
+    setShowInternalAuthModal(false);
+    setShowInternalStatsModal(true);
+    return true;
+  };
 
   return (
     <div className={`relative w-full min-h-[100dvh] flex flex-col items-center ${step !== 'result' ? 'justify-center' : 'pt-10'}`}>
@@ -214,15 +267,34 @@ export default function App() {
         </AnimatePresence>
 
         <AnimatePresence>
+          {showInternalAuthModal && (
+            <Suspense fallback={null}>
+              <InternalStatsAuthModal
+                onClose={() => setShowInternalAuthModal(false)}
+                onSubmit={handleInternalAuthSubmit}
+              />
+            </Suspense>
+          )}
+        </AnimatePresence>
+
+        <AnimatePresence>
+          {showInternalStatsModal && (
+            <Suspense fallback={null}>
+              <InternalStatsModal
+                summary={internalStatsSummary}
+                onClose={() => setShowInternalStatsModal(false)}
+              />
+            </Suspense>
+          )}
+        </AnimatePresence>
+
+        <AnimatePresence>
           {axisGuideKey && <AxisGuideModal guide={AXIS_GUIDE[axisGuideKey]} onClose={() => setAxisGuideKey(null)} />}
         </AnimatePresence>
 
         <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-20">
           <button
-            onClick={() => {
-              trackEvent('version_open');
-              setShowVersionModal(true);
-            }}
+            onClick={handleVersionButtonClick}
             className="text-[11px] font-bold text-slate-600 hover:text-slate-400 transition-colors bg-black/20 px-3 py-1 rounded-full border border-white/5 backdrop-blur-sm"
           >
             Version {CHANGELOG[0].version}
