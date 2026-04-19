@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 
 export default function HistoryModal({
+  activitySummary,
   latestHistoryComparison,
   latestHistoryInsights,
   historyData,
@@ -25,7 +26,7 @@ export default function HistoryModal({
         <div className="absolute top-[-50px] right-[-50px] w-32 h-32 bg-brand/30 blur-3xl rounded-full"></div>
 
         <div className="relative z-10 flex items-center justify-between px-5 pt-5 pb-4 border-b border-white/10 bg-slate-900/95 backdrop-blur-sm">
-          <h3 className="text-xl font-black text-white flex items-center gap-2">🕒 최근 변화 기록</h3>
+          <h3 className="text-xl font-black text-white flex items-center gap-2">🕒 나의 기록 & 활동</h3>
           <button
             onClick={onClose}
             className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/5 text-slate-200 text-xl font-medium hover:bg-white/10 transition-colors"
@@ -36,6 +37,31 @@ export default function HistoryModal({
         </div>
 
         <div className="flex-1 overflow-y-auto px-5 py-5">
+          <div className="mb-4 rounded-2xl border border-cyan-400/20 bg-cyan-400/10 px-4 py-4">
+            <p className="text-[11px] font-bold tracking-[0.2em] text-cyan-100 uppercase">나의 활동 리포트</p>
+            <p className="mt-2 text-[15px] font-semibold leading-relaxed text-white break-keep">{activitySummary.headline}</p>
+            <p className="mt-2 text-[12px] leading-relaxed text-cyan-50/90 break-keep">{activitySummary.subline}</p>
+            <p className="mt-3 text-[11px] leading-relaxed text-cyan-100/70 break-keep">{activitySummary.localNote}</p>
+          </div>
+
+          <div className="grid grid-cols-3 gap-3 mb-4">
+            <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-4">
+              <p className="text-[11px] text-slate-400 font-bold tracking-[0.15em] uppercase">테스트 횟수</p>
+              <p className="mt-2 text-2xl font-black text-white">{activitySummary.starts}</p>
+              <p className="mt-1 text-[11px] text-slate-300 break-keep">지금까지 이 브라우저에서 해본 횟수</p>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-4">
+              <p className="text-[11px] text-slate-400 font-bold tracking-[0.15em] uppercase">다시 해본 횟수</p>
+              <p className="mt-2 text-2xl font-black text-white">{activitySummary.restarts}</p>
+              <p className="mt-1 text-[11px] text-slate-300 break-keep">결과를 보고 다시 시작한 횟수</p>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-4">
+              <p className="text-[11px] text-slate-400 font-bold tracking-[0.15em] uppercase">저장·공유</p>
+              <p className="mt-2 text-2xl font-black text-white">{activitySummary.saveOrShare}</p>
+              <p className="mt-1 text-[11px] text-slate-300 break-keep">결과 카드를 남긴 횟수</p>
+            </div>
+          </div>
+
           {latestHistoryComparison && (
             <div className="mb-4 rounded-2xl border border-cyan-400/20 bg-cyan-400/10 px-4 py-4">
               <p className="text-sm font-bold text-cyan-100 break-keep">{latestHistoryComparison.title}</p>
@@ -48,40 +74,49 @@ export default function HistoryModal({
               <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-4">
                 <p className="text-[11px] text-slate-400 font-bold tracking-[0.15em] uppercase">가장 자주 나온 흐름</p>
                 <p className="mt-2 text-2xl font-black text-white">{latestHistoryInsights.topType?.mbti || '-'}</p>
-                <p className="mt-1 text-[11px] text-slate-300 break-keep">요즘은 이 흐름이 자주 보여요. 다음에도 이어질지 보기 좋아요.</p>
+                <p className="mt-1 text-[11px] text-slate-300 break-keep">{activitySummary.topTypeNote}</p>
               </div>
               <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-4">
                 <p className="text-[11px] text-slate-400 font-bold tracking-[0.15em] uppercase">가장 잘 흔들리는 축</p>
                 <p className="mt-2 text-lg font-black text-white">{latestHistoryInsights.mostVolatile?.pair || '-'}</p>
-                <p className="mt-1 text-[11px] text-slate-300">
-                  {latestHistoryInsights.mostVolatile?.flips ? '다시 해보면 이 축부터 달라질 수 있어요' : '최근엔 거의 같은 결이 이어졌어요'}
-                </p>
+                <p className="mt-1 text-[11px] text-slate-300 break-keep">{activitySummary.volatilityNote}</p>
               </div>
+            </div>
+          )}
+
+          {activitySummary.recentFlowNote && (
+            <div className="mb-4 rounded-2xl border border-white/10 bg-white/5 px-4 py-4">
+              <p className="text-[11px] text-slate-400 font-bold tracking-[0.15em] uppercase">최근 흐름</p>
+              <p className="mt-2 text-[13px] leading-relaxed text-white break-keep">{activitySummary.recentFlowNote}</p>
+              <p className="mt-2 text-[11px] text-slate-300 break-keep">{activitySummary.activityNote}</p>
             </div>
           )}
 
           <div className="flex flex-col gap-3 pr-1">
             {historyData.length === 0 ? (
               <p className="text-slate-400 text-center py-8 text-sm">
-                아직 기록이 없습니다.
+                아직 기록이 많지 않아요.
                 <br />
-                오늘 결과가 쌓이면 변화 흐름도 함께 보여드릴게요.
+                몇 번 더 해보면 나만의 흐름이 더 또렷하게 보여요.
               </p>
             ) : (
-              historyData.map((item, idx) => (
-                <div key={idx} className="bg-white/5 border border-white/5 rounded-2xl p-4">
-                  <div className="flex justify-between items-center">
-                    <span className="text-slate-300 font-medium text-sm">{item.date}</span>
-                    <div className="flex flex-col items-end gap-1">
-                      <div className="flex items-center gap-2">
-                        <span className="text-[11px] bg-brand/20 border border-brand/30 text-brand px-2 py-0.5 rounded-full">싱크로율 {item.percent}%</span>
-                        <span className="text-2xl font-black text-cyan-400 drop-shadow-md">{item.mbti}</span>
+              <>
+                <p className="text-[11px] text-slate-400 font-bold tracking-[0.15em] uppercase px-1">이전 결과 상세</p>
+                {historyData.map((item, idx) => (
+                  <div key={idx} className="bg-white/5 border border-white/5 rounded-2xl p-4">
+                    <div className="flex justify-between items-center">
+                      <span className="text-slate-300 font-medium text-sm">{item.date}</span>
+                      <div className="flex flex-col items-end gap-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[11px] bg-brand/20 border border-brand/30 text-brand px-2 py-0.5 rounded-full">싱크로율 {item.percent}%</span>
+                          <span className="text-2xl font-black text-cyan-400 drop-shadow-md">{item.mbti}</span>
+                        </div>
                       </div>
                     </div>
+                    <p className="mt-2 text-[12px] text-slate-400 break-keep">{getHistoryEntryNote(item, idx, historyData)}</p>
                   </div>
-                  <p className="mt-2 text-[12px] text-slate-400 break-keep">{getHistoryEntryNote(item, idx, historyData)}</p>
-                </div>
-              ))
+                ))}
+              </>
             )}
           </div>
         </div>

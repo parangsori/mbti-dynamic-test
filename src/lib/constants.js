@@ -19,6 +19,15 @@ export const COMPATIBILITY = {
 
 export const CHANGELOG = [
   {
+    version: 'v1.3.8',
+    date: '2026.04.20',
+    updates: [
+      '나의 MBTI 기록 보기를 개인 활동 리포트와 상세 기록이 함께 보이는 형태로 확장',
+      '테스트 횟수, 다시하기, 저장·공유 등 내 사용 패턴을 한눈에 확인하도록 개선',
+      '기존 숨김 내부 통계 흐름 대신 사용자에게 자연스러운 공개형 기록 경험으로 정리'
+    ]
+  },
+  {
     version: 'v1.3.7',
     date: '2026.04.18',
     updates: [

@@ -48,7 +48,7 @@ export default function StartView({
 
       {hasHistory && (
         <button onClick={onOpenHistory} className="mt-6 text-sm text-slate-400 underline underline-offset-4 hover:text-white transition-colors">
-          🕒 나의 이전 기록 보기
+          🕒 나의 기록 & 활동 보기
         </button>
       )}
     </motion.div>

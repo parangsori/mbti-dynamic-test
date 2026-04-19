@@ -413,7 +413,7 @@ export default function ResultView({
 
       <div className="flex flex-col gap-3 w-full max-w-sm mt-8">
         <button onClick={openHistoryModal} className="w-full py-4 bg-white/5 border border-white/10 rounded-3xl text-slate-200 font-bold hover:bg-white/10 transition-colors flex items-center justify-center gap-2">
-          🕒 나의 MBTI 기록 보기
+          🕒 나의 기록 & 활동 보기
         </button>
         <button onClick={handleSaveImage} className="w-full py-4 bg-cyan-400/10 border border-cyan-400/20 rounded-3xl text-cyan-100 font-bold hover:bg-cyan-400/15 transition-colors flex items-center justify-center gap-2">
           {saveImageState === 'saving'
