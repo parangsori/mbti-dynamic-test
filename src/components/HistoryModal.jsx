@@ -114,7 +114,10 @@ export default function HistoryModal({
                 {historyData.map((item, idx) => (
                   <div key={idx} className="bg-white/5 border border-white/5 rounded-2xl p-4">
                     <div className="flex justify-between items-center">
-                      <span className="text-slate-300 font-medium text-sm">{item.date}</span>
+                      <div className="flex flex-col">
+                        <span className="text-slate-300 font-medium text-sm">{item.date}</span>
+                        {item.time && <span className="text-[11px] text-slate-500">{item.time}</span>}
+                      </div>
                       <div className="flex flex-col items-end gap-1">
                         <div className="flex items-center gap-2">
                           <span className="text-[11px] bg-brand/20 border border-brand/30 text-brand px-2 py-0.5 rounded-full">싱크로율 {item.percent}%</span>

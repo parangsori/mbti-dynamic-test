@@ -189,6 +189,7 @@ export default function ResultView({
 }) {
   const resultRef = useRef(null);
   const shareCardRef = useRef(null);
+  const currentEntryRef = useRef(null);
   const [shareCopied, setShareCopied] = useState(false);
   const [saveImageState, setSaveImageState] = useState('idle');
   const [detailOpen, setDetailOpen] = useState({ why: false, axes: false, history: false });
@@ -196,9 +197,18 @@ export default function ResultView({
   const { mbti, info, badges, percent, spectrum, boundaryAxes } = computeResult(scores);
   const resolvedImageSrc = info.image ? IMAGE_BASE64[info.image] || info.image : '';
 
+  if (!currentEntryRef.current) {
+    const now = new Date();
+    currentEntryRef.current = {
+      createdAt: now.toISOString(),
+      date: now.toLocaleDateString('ko-KR', { month: 'short', day: 'numeric', weekday: 'short' }),
+      time: now.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false })
+    };
+  }
+
   useEffect(() => {
     const newEntry = {
-      date: new Date().toLocaleDateString('ko-KR', { month: 'short', day: 'numeric', weekday: 'short' }),
+      ...currentEntryRef.current,
       mbti,
       percent,
       axes: spectrum.map((axis) => ({
@@ -212,11 +222,11 @@ export default function ResultView({
       }))
     };
 
-    if (!historyData.length || historyData[0].mbti !== mbti || historyData[0].date !== newEntry.date) {
-      const updated = [newEntry, ...historyData].slice(0, 7);
-      writeHistory(updated);
-      setHistoryData(updated);
-    }
+    if (historyData[0]?.createdAt === newEntry.createdAt) return;
+
+    const updated = [newEntry, ...historyData].slice(0, 7);
+    writeHistory(updated);
+    setHistoryData(updated);
   }, [historyData, mbti, percent, setHistoryData, spectrum]);
 
   const compCopy = getCompatibilityCopy(mbti);
@@ -224,7 +234,20 @@ export default function ResultView({
   const summaryCopy = getResultSummary(mbti, spectrum, percent);
   const consistencyCopy = getConsistencyCopy(percent, boundaryAxes);
   const boundaryCopy = getBoundaryCopy(boundaryAxes);
-  const effectiveHistory = getEffectiveHistory(mbti, percent, historyData);
+  const effectiveHistory = getEffectiveHistory({
+    ...currentEntryRef.current,
+    mbti,
+    percent,
+    axes: spectrum.map((axis) => ({
+      pair: `${axis.left}/${axis.right}`,
+      left: axis.left,
+      right: axis.right,
+      dominantType: axis.dominantType,
+      intensity: axis.intensity,
+      leftScore: axis.leftScore,
+      rightScore: axis.rightScore
+    }))
+  }, historyData);
   const historyComparison = getHistoryComparison(mbti, effectiveHistory);
   const axisChanges = getAxisChangeDetails(mbti, effectiveHistory[1]?.mbti);
   const historyInsights = getHistoryInsights(effectiveHistory);

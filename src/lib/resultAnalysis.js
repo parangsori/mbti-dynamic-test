@@ -92,6 +92,7 @@ export const getCompatibilityCopy = (mbti) => {
 
 export const getHistoryComparison = (currentMbti, historyData) => {
   if (!historyData.length) return null;
+  const resolvedCurrentMbti = currentMbti || historyData[0]?.mbti || '';
   const previousEntry = historyData.length > 1 ? historyData[1] : null;
   if (!previousEntry) {
     return {
@@ -99,7 +100,7 @@ export const getHistoryComparison = (currentMbti, historyData) => {
       body: '다음 번부터는 어떤 축이 먼저 흔들리는지 바로 비교해볼 수 있어요.'
     };
   }
-  const changedAxes = currentMbti
+  const changedAxes = resolvedCurrentMbti
     .split('')
     .map((char, idx) => (char !== previousEntry.mbti[idx] ? idx : null))
     .filter((idx) => idx !== null)
@@ -107,7 +108,7 @@ export const getHistoryComparison = (currentMbti, historyData) => {
 
   if (changedAxes.length === 0) {
     return {
-      title: `직전 기록과 같은 ${currentMbti} 흐름이에요`,
+      title: `직전 기록과 같은 ${resolvedCurrentMbti} 흐름이에요`,
       body: '요즘은 비슷한 결이 이어지고 있어요. 지금 다시 해보면 어느 축부터 흔들리는지 볼 수 있어요.'
     };
   }
@@ -144,16 +145,11 @@ export const getTrendAnalysis = (currentSpectrum, previousAxes) => {
   };
 };
 
-export const getEffectiveHistory = (currentMbti, percent, historyData) => {
-  if (!currentMbti) return historyData;
-  const todayEntry = {
-    date: new Date().toLocaleDateString('ko-KR', { month: 'short', day: 'numeric', weekday: 'short' }),
-    mbti: currentMbti,
-    percent
-  };
-  if (!historyData.length) return [todayEntry];
-  if (historyData[0].mbti === todayEntry.mbti && historyData[0].date === todayEntry.date) return historyData;
-  return [todayEntry, ...historyData].slice(0, 7);
+export const getEffectiveHistory = (currentEntry, historyData) => {
+  if (!currentEntry) return historyData;
+  if (!historyData.length) return [currentEntry];
+  if (historyData[0].createdAt && currentEntry.createdAt && historyData[0].createdAt === currentEntry.createdAt) return historyData;
+  return [currentEntry, ...historyData].slice(0, 7);
 };
 
 export const getAxisChangeDetails = (currentMbti, previousMbti) =>
