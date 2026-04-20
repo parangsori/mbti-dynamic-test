@@ -4,7 +4,6 @@ export default function StartView({
   userName,
   onChangeUserName,
   onStart,
-  hasHistory,
   onOpenHistory
 }) {
   return (
@@ -46,11 +45,9 @@ export default function StartView({
 
       <p className="mt-4 text-[12px] text-slate-400 text-center break-keep">이름 없이도 1초 안에 시작할 수 있어요</p>
 
-      {hasHistory && (
-        <button onClick={onOpenHistory} className="mt-6 text-sm text-slate-400 underline underline-offset-4 hover:text-white transition-colors">
-          🕒 나의 기록 & 활동 보기
-        </button>
-      )}
+      <button onClick={onOpenHistory} className="mt-6 text-sm text-slate-400 underline underline-offset-4 hover:text-white transition-colors">
+        🕒 나의 기록 & 활동 보기
+      </button>
     </motion.div>
   );
 }

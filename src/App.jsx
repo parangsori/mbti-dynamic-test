@@ -3,7 +3,14 @@ import { AnimatePresence } from 'framer-motion';
 import StartView from './components/StartView.jsx';
 import QuestionView from './components/QuestionView.jsx';
 import { AXIS_GUIDE, CHANGELOG, DEFAULT_USERNAME, QUESTION_TEMPO_COPY } from './lib/constants.js';
-import { buildQuestionSession, createEmptyScores, formatMicroCopy, getQuestionTempoMessage } from './lib/questionFlow.js';
+import {
+  buildFollowupQuestions,
+  buildQuestionSession,
+  createEmptyScores,
+  formatMicroCopy,
+  getFollowupTempoMessage,
+  getQuestionTempoMessage
+} from './lib/questionFlow.js';
 import { summarizeActivityReport } from './lib/activityReport.js';
 import {
   clearAllLocalData,
@@ -43,11 +50,15 @@ export default function App() {
   const [axisGuideKey, setAxisGuideKey] = useState(null);
   const [historyData, setHistoryData] = useState([]);
   const [questions, setQuestions] = useState([]);
+  const [followupQuestions, setFollowupQuestions] = useState([]);
   const [currIdx, setCurrIdx] = useState(0);
   const [scores, setScores] = useState(createEmptyScores());
   const [microCopy, setMicroCopy] = useState('');
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [questionDirection, setQuestionDirection] = useState(1);
+  const [questionPhase, setQuestionPhase] = useState('base');
+  const [recentSessionsSnapshot, setRecentSessionsSnapshot] = useState([]);
+  const [sessionQuestionIds, setSessionQuestionIds] = useState([]);
 
   useEffect(() => {
     setHistoryData(readHistory());
@@ -66,6 +77,9 @@ export default function App() {
   const handleRestart = () => {
     trackEvent('restart_click');
     clearActiveSession();
+    setFollowupQuestions([]);
+    setQuestionPhase('base');
+    setSessionQuestionIds([]);
     setStep('start');
   };
 
@@ -77,20 +91,27 @@ export default function App() {
     const recentSessions = readRecentSessions();
     const sessionQuestions = buildQuestionSession(recentSessions);
     const thisSession = sessionQuestions.map((question) => question.id);
-    writeRecentSessions([thisSession, ...recentSessions].slice(0, 3));
 
     setQuestions(sessionQuestions);
+    setFollowupQuestions([]);
     setScores(createEmptyScores());
     setCurrIdx(0);
     setMicroCopy('');
     setQuestionDirection(1);
+    setQuestionPhase('base');
+    setRecentSessionsSnapshot(recentSessions);
+    setSessionQuestionIds(thisSession);
     setStep('question');
 
     writeActiveSession({
       userName: trimmedName,
       questions: sessionQuestions,
+      followupQuestions: [],
       currIdx: 0,
-      scores: createEmptyScores()
+      scores: createEmptyScores(),
+      questionPhase: 'base',
+      recentSessions: recentSessions,
+      sessionQuestionIds: thisSession
     });
   };
 
@@ -98,10 +119,14 @@ export default function App() {
     if (!recoverableSession) return;
     setUserName(recoverableSession.userName || '');
     setQuestions(recoverableSession.questions || []);
+    setFollowupQuestions(recoverableSession.followupQuestions || []);
     setCurrIdx(recoverableSession.currIdx || 0);
     setScores(recoverableSession.scores || createEmptyScores());
     setMicroCopy('');
     setQuestionDirection(1);
+    setQuestionPhase(recoverableSession.questionPhase || 'base');
+    setRecentSessionsSnapshot(recoverableSession.recentSessions || []);
+    setSessionQuestionIds(recoverableSession.sessionQuestionIds || []);
     setShowRecoveryPrompt(false);
     setStep('question');
     trackEvent('session_resume');
@@ -112,38 +137,6 @@ export default function App() {
     setRecoverableSession(null);
     setShowRecoveryPrompt(false);
     trackEvent('session_discard');
-  };
-
-  const handleAnswer = (option) => {
-    if (isTransitioning) return;
-    setIsTransitioning(true);
-
-    const currentQuestion = questions[currIdx];
-    const weight = currentQuestion?.weight || 1;
-    const nextScores = { ...scores, [option.type]: (scores[option.type] || 0) + weight };
-    setScores(nextScores);
-    setMicroCopy(formatMicroCopy(option.micro));
-    setQuestionDirection(1);
-
-    setTimeout(() => {
-      setMicroCopy('');
-      if (currIdx + 1 >= 12) {
-        trackEvent('complete_test');
-        clearActiveSession();
-        setStep('result');
-      } else {
-        const nextIdx = currIdx + 1;
-        if (nextIdx === 3) trackEvent('question_reach_3');
-        setCurrIdx(nextIdx);
-        writeActiveSession({
-          userName,
-          questions,
-          currIdx: nextIdx,
-          scores: nextScores
-        });
-      }
-      setIsTransitioning(false);
-    }, 800);
   };
 
   const latestHistoryComparison = getHistoryComparison(historyData[0]?.mbti || '', historyData);
@@ -172,6 +165,17 @@ export default function App() {
     setShowHistory(false);
   };
 
+  const finishSession = (finalScores, finalSessionIds = sessionQuestionIds) => {
+    writeRecentSessions([finalSessionIds, ...recentSessionsSnapshot].slice(0, 3));
+    trackEvent('complete_test', {
+      usedFollowup: questionPhase === 'followup' || followupQuestions.length > 0,
+      followupCount: followupQuestions.length
+    });
+    clearActiveSession();
+    setScores(finalScores);
+    setStep('result');
+  };
+
   return (
     <div className={`relative w-full min-h-[100dvh] flex flex-col items-center ${step !== 'result' ? 'justify-center' : 'pt-10'}`}>
       <div className="fixed top-[-10%] left-[-10%] w-96 h-96 bg-purple-900 rounded-full mix-blend-screen filter blur-[128px] opacity-40 animate-blob pointer-events-none"></div>
@@ -195,17 +199,98 @@ export default function App() {
             />
           )}
 
-          {step === 'question' && questions[currIdx] && (
+          {step === 'question' && (questionPhase === 'followup' ? followupQuestions[currIdx] : questions[currIdx]) && (
             <QuestionView
-              key="question"
+              key={`question-${questionPhase}-${currIdx}`}
               currIdx={currIdx}
-              totalQuestions={12}
-              question={questions[currIdx]}
+              totalQuestions={questionPhase === 'followup' ? followupQuestions.length : 12}
+              question={(questionPhase === 'followup' ? followupQuestions : questions)[currIdx]}
               microCopy={microCopy}
               isTransitioning={isTransitioning}
               questionDirection={questionDirection}
-              tempoMessage={getQuestionTempoMessage(currIdx, '지금의 결대로 가볍게 골라보세요', QUESTION_TEMPO_COPY)}
-              onAnswer={handleAnswer}
+              tempoMessage={
+                questionPhase === 'followup'
+                  ? getFollowupTempoMessage(currIdx, followupQuestions.length)
+                  : getQuestionTempoMessage(currIdx, '지금의 결대로 가볍게 골라보세요', QUESTION_TEMPO_COPY)
+              }
+              questionLabel={questionPhase === 'followup' ? `보정 ${currIdx + 1}` : undefined}
+              counterText={
+                questionPhase === 'followup'
+                  ? `보정 질문 ${currIdx + 1} / ${followupQuestions.length}`
+                  : undefined
+              }
+              onAnswer={(option) => {
+                if (isTransitioning) return;
+                setIsTransitioning(true);
+
+                const activeQuestions = questionPhase === 'followup' ? followupQuestions : questions;
+                const currentQuestion = activeQuestions[currIdx];
+                const weight = currentQuestion?.weight || 1;
+                const nextScores = { ...scores, [option.type]: (scores[option.type] || 0) + weight };
+                setScores(nextScores);
+                setMicroCopy(formatMicroCopy(option.micro));
+                setQuestionDirection(1);
+
+                setTimeout(() => {
+                  setMicroCopy('');
+
+                  if (questionPhase === 'base') {
+                    if (currIdx + 1 >= 12) {
+                      const nextFollowupQuestions = buildFollowupQuestions(nextScores, recentSessionsSnapshot, sessionQuestionIds);
+                      if (nextFollowupQuestions.length > 0) {
+                        const nextSessionIds = [...sessionQuestionIds, ...nextFollowupQuestions.map((item) => item.id)];
+                        setFollowupQuestions(nextFollowupQuestions);
+                        setQuestionPhase('followup');
+                        setCurrIdx(0);
+                        setSessionQuestionIds(nextSessionIds);
+                        writeActiveSession({
+                          userName,
+                          questions,
+                          followupQuestions: nextFollowupQuestions,
+                          currIdx: 0,
+                          scores: nextScores,
+                          questionPhase: 'followup',
+                          recentSessions: recentSessionsSnapshot,
+                          sessionQuestionIds: nextSessionIds
+                        });
+                      } else {
+                        finishSession(nextScores);
+                      }
+                    } else {
+                      const nextIdx = currIdx + 1;
+                      if (nextIdx === 3) trackEvent('question_reach_3');
+                      setCurrIdx(nextIdx);
+                      writeActiveSession({
+                        userName,
+                        questions,
+                        followupQuestions,
+                        currIdx: nextIdx,
+                        scores: nextScores,
+                        questionPhase,
+                        recentSessions: recentSessionsSnapshot,
+                        sessionQuestionIds
+                      });
+                    }
+                  } else if (currIdx + 1 >= followupQuestions.length) {
+                    finishSession(nextScores);
+                  } else {
+                    const nextIdx = currIdx + 1;
+                    setCurrIdx(nextIdx);
+                    writeActiveSession({
+                      userName,
+                      questions,
+                      followupQuestions,
+                      currIdx: nextIdx,
+                      scores: nextScores,
+                      questionPhase,
+                      recentSessions: recentSessionsSnapshot,
+                      sessionQuestionIds
+                    });
+                  }
+
+                  setIsTransitioning(false);
+                }, 800);
+              }}
             />
           )}
 

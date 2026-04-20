@@ -4,6 +4,8 @@ export default function QuestionView({
   currIdx,
   totalQuestions,
   question,
+  questionLabel,
+  counterText,
   microCopy,
   isTransitioning,
   questionDirection,
@@ -20,8 +22,8 @@ export default function QuestionView({
     >
       <div className="w-full mb-10">
         <div className="flex justify-between items-end mb-3 text-slate-300 font-bold">
-          <span className="text-2xl bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-brand tracking-widest italic">Q{currIdx + 1}</span>
-          <span className="text-sm font-medium bg-white/10 px-3 py-1 rounded-full">{currIdx + 1} / {totalQuestions}</span>
+          <span className="text-2xl bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-brand tracking-widest italic">{questionLabel || `Q${currIdx + 1}`}</span>
+          <span className="text-sm font-medium bg-white/10 px-3 py-1 rounded-full">{counterText || `${currIdx + 1} / ${totalQuestions}`}</span>
         </div>
         <div className="h-2.5 w-full bg-slate-800 rounded-full overflow-hidden border border-white/5">
           <motion.div

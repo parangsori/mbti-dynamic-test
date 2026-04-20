@@ -19,6 +19,15 @@ export const COMPATIBILITY = {
 
 export const CHANGELOG = [
   {
+    version: 'v1.3.9',
+    date: '2026.04.20',
+    updates: [
+      '경계 축 결과에만 최대 3개의 보정 질문을 추가해 성향 정확도 보강',
+      '애매한 축은 추가 확인 후 최종 결과를 계산하도록 개선',
+      '시작 화면에서 나의 기록 & 활동 보기를 항상 바로 열 수 있도록 정리'
+    ]
+  },
+  {
     version: 'v1.3.8',
     date: '2026.04.20',
     updates: [

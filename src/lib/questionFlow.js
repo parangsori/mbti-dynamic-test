@@ -1,5 +1,10 @@
 import { QUESTIONS_DB } from '../data/mbtiData.js';
-import { QUESTIONS_META, QUESTIONS_EXTENDED, QUESTIONS_META_EXTENDED } from '../data/questionPools.js';
+import {
+  FOLLOWUP_QUESTIONS,
+  QUESTIONS_META,
+  QUESTIONS_EXTENDED,
+  QUESTIONS_META_EXTENDED
+} from '../data/questionPools.js';
 
 export const createEmptyScores = () => ({ E: 0, I: 0, S: 0, N: 0, T: 0, F: 0, J: 0, P: 0 });
 
@@ -29,6 +34,74 @@ export const getOpeningPriority = (question) => {
 const shuffle = (items) => [...items].sort(() => Math.random() - 0.5);
 
 const pickRandomSubset = (items, count) => shuffle(items).slice(0, count);
+
+const AXIS_CONFIG = [
+  { code: 'EI', left: 'E', right: 'I' },
+  { code: 'SN', left: 'S', right: 'N' },
+  { code: 'TF', left: 'T', right: 'F' },
+  { code: 'JP', left: 'J', right: 'P' }
+];
+
+const getAxisConfidence = (scores) =>
+  AXIS_CONFIG.map(({ code, left, right }) => {
+    const leftScore = scores[left] || 0;
+    const rightScore = scores[right] || 0;
+    const total = leftScore + rightScore || 1;
+    const dominantType = leftScore >= rightScore ? left : right;
+    const dominantScore = Math.max(leftScore, rightScore);
+    const intensity = Math.round((dominantScore / total) * 100);
+    const diff = Math.abs(leftScore - rightScore);
+    return {
+      code,
+      left,
+      right,
+      leftScore,
+      rightScore,
+      total,
+      dominantType,
+      intensity,
+      diff
+    };
+  });
+
+export const getFollowupAxes = (scores, maxAxes = 3) =>
+  getAxisConfidence(scores)
+    .filter((axis) => axis.intensity < 60 || axis.diff <= 1)
+    .sort((a, b) => {
+      if (a.intensity !== b.intensity) return a.intensity - b.intensity;
+      return a.diff - b.diff;
+    })
+    .slice(0, maxAxes);
+
+const pickFollowupQuestion = (axisCode, recentIds, usedIds) => {
+  const pool = FOLLOWUP_QUESTIONS[axisCode] || [];
+  const fresh = pool.filter((item) => !recentIds.has(item.id) && !usedIds.has(item.id));
+  const reusable = pool.filter((item) => !usedIds.has(item.id));
+  const candidates = fresh.length > 0 ? fresh : reusable.length > 0 ? reusable : pool;
+  if (!candidates.length) return null;
+  return candidates[Math.floor(Math.random() * candidates.length)];
+};
+
+export const buildFollowupQuestions = (scores, recentSessions = [], currentIds = []) => {
+  const recentIds = new Set(recentSessions.flat());
+  const usedIds = new Set(currentIds);
+
+  return getFollowupAxes(scores).map((axis) => {
+    const question = pickFollowupQuestion(axis.code, recentIds, usedIds);
+    if (question) usedIds.add(question.id);
+    return question
+      ? {
+          ...question,
+          _axis: axis.code,
+          trigger: {
+            intensity: axis.intensity,
+            diff: axis.diff,
+            dominantType: axis.dominantType
+          }
+        }
+      : null;
+  }).filter(Boolean);
+};
 
 export const sortQuestionsForTempo = (selected, recentIds = new Set()) => {
   const introCandidates = selected.filter((item) => getOpeningPriority(item) >= 7);
@@ -117,4 +190,11 @@ export const buildQuestionSession = (recentSessions = []) => {
 
   selected.sort(() => Math.random() - 0.5);
   return sortQuestionsForTempo(selected, recentIds);
+};
+
+export const getFollowupTempoMessage = (index, total) => {
+  if (total <= 1) return '결과 정확도를 위해 한 문항만 더 볼게요';
+  if (index === 0) return '결과 정확도를 위해 몇 문항만 더 볼게요';
+  if (index === total - 1) return '마지막 보정 질문이에요. 결과가 더 또렷해져요';
+  return '조금만 더 보면 결과가 더 또렷해져요';
 };
