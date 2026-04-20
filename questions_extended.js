@@ -146,7 +146,7 @@ export const QUESTIONS_EXTENDED = {
       q: "내가 에너지를 얻는 근본적인 통로는?",
       options: [
         { text: "세상 밖으로 나가 여러 사람과 상호작용하는 것", type: "E", micro: "외부 세계로의 접속 🔌" },
-        { text: "세상과 단절하고 내면의 세계로 침잠하는 것", type: "I", micro: "내면 세계로의 접속 🔄" }
+        { text: "세상과 조금 거리를 두고 내면에 깊이 잠기는 것", type: "I", micro: "내면 세계로의 접속 🔄" }
       ]
     },
     {
@@ -302,7 +302,7 @@ export const QUESTIONS_EXTENDED = {
     {
       q: "친구에게 겪었던 재미있는 일을 전달할 때 내 화법은?",
       options: [
-        { text: "누가, 언제, 어디서 그랬는지 팩트 위주로 생생하게 전달", type: "S", micro: "인간 CCTV급 묘사 📹" },
+        { text: "누가, 언제, 어디서 그랬는지 팩트 위주로 생생하게 전달", type: "S", micro: "장면 묘사 장인 📹" },
         { text: "그 상황이 준 전체적인 느낌과 여운을 중심으로 전달", type: "N", micro: "분위기가 핵심 🎨" }
       ]
     },
@@ -719,7 +719,7 @@ export const QUESTIONS_EXTENDED = {
     {
       q: "나랑 더 가까운 스타일은?",
       options: [
-        { text: "팩트로 뼈 때리는 솔직한 사람", type: "T", micro: "솔직함 🏳️" },
+        { text: "팩트로 콕 짚어주는 솔직한 사람", type: "T", micro: "솔직함 🏳️" },
         { text: "상처 안 주려 끝까지 노력하는 따뜻한 사람", type: "F", micro: "자상함 💞" }
       ]
     },
@@ -734,7 +734,7 @@ export const QUESTIONS_EXTENDED = {
       q: "내가 더 견디기 힘든 것은?",
       options: [
         { text: "말투는 친절한데 일 열나게 못 하는 사람", type: "T", micro: "무능력 💡" },
-        { text: "일은 기가 막히게 잘하는데 말투가 개차반인 사람", type: "F", micro: "무례함 🌸" }
+        { text: "일은 기가 막히게 잘하는데 말투가 너무 거친 사람", type: "F", micro: "무례함 🌸" }
       ]
     },
     {
@@ -764,7 +764,7 @@ export const QUESTIONS_EXTENDED = {
       q: "팀원들과 사이가 안 좋을 때 일 효율은?",
       options: [
         { text: "사이가 안 좋아도 일은 일이니까 상관없음", type: "T", micro: "공사 구분 ⚙️" },
-        { text: "사이가 안 좋으면 기빨려서 일도 안 됨", type: "F", micro: "공사 일체 🌟" }
+        { text: "사이가 안 좋으면 신경 쓰여서 일도 잘 안 됨", type: "F", micro: "공사 일체 🌟" }
       ]
     },
 
@@ -789,7 +789,7 @@ export const QUESTIONS_EXTENDED = {
       q: "친구의 연애 고민을 들어줄 때 나는?",
       options: [
         { text: "그 연인의 행동이 왜 나쁜지 논리적으로 분석해줌", type: "T", micro: "해결사 🔧" },
-        { text: "친구의 마음이 얼마나 아플지 같이 울며 들어줌", type: "F", micro: "동조자 🌊" }
+        { text: "친구의 마음이 얼마나 아플지 깊게 공감하며 들어줌", type: "F", micro: "동조자 🌊" }
       ]
     },
     {
@@ -891,7 +891,7 @@ export const QUESTIONS_EXTENDED = {
       q: "약속 시간 1시간 전, 약속 상대가 못 온다고 연락하면?",
       options: [
         { text: "내 일정이 싹 다 꼬인 느낌이라 좀 허무함", type: "J", micro: "균열 😤" },
-        { text: "오예! 프리 타임 생겼다! 뭐하고 놀지 고민함", type: "P", micro: "자유 🧩" }
+        { text: "오, 빈 시간이 생겼네! 뭐할지 즐겁게 고민함", type: "P", micro: "자유 🧩" }
       ]
     },
     {
@@ -928,7 +928,7 @@ export const QUESTIONS_EXTENDED = {
       q: "손님이 찾아온다고 할 때 내 준비는?",
       options: [
         { text: "이미 며칠 전부터 쓸고 닦고 준비 완료", type: "J", micro: "완성 🏠" },
-        { text: "오기 10분 전부터 폭풍같이 짐 치움", type: "P", micro: "기적 👐" }
+        { text: "오기 10분 전부터 빠르게 짐을 치움", type: "P", micro: "기적 👐" }
       ]
     },
     {
@@ -942,7 +942,7 @@ export const QUESTIONS_EXTENDED = {
       q: "미완료된 과업을 남겨두고 잠자리에 들 때?",
       options: [
         { text: "머릿속에서 자꾸 떠올라서 은근히 스트레스받음", type: "J", micro: "찜찜 😰" },
-        { text: "내일의 내가 해결하겠지... 꿀잠 가능", type: "P", micro: "안식 🛋️" }
+        { text: "내일의 내가 해결하겠지... 하고도 잘 잠", type: "P", micro: "안식 🛋️" }
       ]
     },
     {
@@ -1055,7 +1055,7 @@ export const QUESTIONS_EXTENDED = {
       ]
     },
     {
-      q: "미룬 일에 침잠하는 나의 태도는?",
+      q: "미뤄둔 일을 떠올릴 때 나의 태도는?",
       options: [
         { text: "죄책감에 시달리지만 결국 꾸역꾸역 해냄", type: "J", micro: "강박 🏋️" },
         { text: "그럴 수도 있지... 기분이 좋아지면 그때 함", type: "P", micro: "긍정 ♟️" }
