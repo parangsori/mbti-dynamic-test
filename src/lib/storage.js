@@ -23,6 +23,10 @@ export const removeItem = (key) => {
   localStorage.removeItem(key);
 };
 
+export const clearAllLocalData = () => {
+  Object.values(STORAGE_KEYS).forEach((key) => removeItem(key));
+};
+
 export const readHistory = () => readJson(STORAGE_KEYS.history, []);
 export const writeHistory = (history) => writeJson(STORAGE_KEYS.history, history);
 

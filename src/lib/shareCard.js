@@ -1,7 +1,6 @@
-import html2canvas from 'html2canvas';
-
 export const renderShareCardCanvas = async (target) => {
   if (!target) throw new Error('공유 카드 대상이 없습니다.');
+  const { default: html2canvas } = await import('html2canvas');
   return html2canvas(target, {
     backgroundColor: '#111827',
     scale: 2,

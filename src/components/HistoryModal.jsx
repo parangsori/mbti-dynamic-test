@@ -6,7 +6,8 @@ export default function HistoryModal({
   latestHistoryInsights,
   historyData,
   getHistoryEntryNote,
-  onClose
+  onClose,
+  onClearData
 }) {
   return (
     <motion.div
@@ -26,7 +27,15 @@ export default function HistoryModal({
         <div className="absolute top-[-50px] right-[-50px] w-32 h-32 bg-brand/30 blur-3xl rounded-full"></div>
 
         <div className="relative z-10 flex items-center justify-between px-5 pt-5 pb-4 border-b border-white/10 bg-slate-900/95 backdrop-blur-sm">
-          <h3 className="text-xl font-black text-white flex items-center gap-2">🕒 나의 기록 & 활동</h3>
+          <div className="flex items-center gap-3">
+            <h3 className="text-xl font-black text-white flex items-center gap-2">🕒 나의 기록 & 활동</h3>
+            <button
+              onClick={onClearData}
+              className="inline-flex items-center justify-center rounded-full border border-rose-400/15 bg-rose-500/8 px-3 py-1.5 text-[11px] font-bold text-rose-200 hover:bg-rose-500/14 transition-colors"
+            >
+              초기화
+            </button>
+          </div>
           <button
             onClick={onClose}
             className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/5 text-slate-200 text-xl font-medium hover:bg-white/10 transition-colors"

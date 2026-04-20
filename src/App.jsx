@@ -1,16 +1,12 @@
-import { useEffect, useState } from 'react';
+import { Suspense, lazy, useEffect, useState } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import StartView from './components/StartView.jsx';
 import QuestionView from './components/QuestionView.jsx';
-import ResultView from './components/ResultView.jsx';
-import RecoveryPrompt from './components/RecoveryPrompt.jsx';
-import HistoryModal from './components/HistoryModal.jsx';
-import VersionModal from './components/VersionModal.jsx';
-import AxisGuideModal from './components/AxisGuideModal.jsx';
 import { AXIS_GUIDE, CHANGELOG, DEFAULT_USERNAME, QUESTION_TEMPO_COPY } from './lib/constants.js';
 import { buildQuestionSession, createEmptyScores, formatMicroCopy, getQuestionTempoMessage } from './lib/questionFlow.js';
 import { summarizeActivityReport } from './lib/activityReport.js';
 import {
+  clearAllLocalData,
   clearActiveSession,
   readActiveSession,
   readHistory,
@@ -22,6 +18,20 @@ import {
   writeUserName
 } from './lib/storage.js';
 import { getHistoryComparison, getHistoryEntryNote, getHistoryInsights } from './lib/resultAnalysis.js';
+
+const ResultView = lazy(() => import('./components/ResultView.jsx'));
+const RecoveryPrompt = lazy(() => import('./components/RecoveryPrompt.jsx'));
+const HistoryModal = lazy(() => import('./components/HistoryModal.jsx'));
+const VersionModal = lazy(() => import('./components/VersionModal.jsx'));
+const AxisGuideModal = lazy(() => import('./components/AxisGuideModal.jsx'));
+
+const ScreenFallback = (
+  <div className="w-full max-w-sm px-6 py-10">
+    <div className="rounded-3xl border border-white/10 bg-white/5 px-6 py-10 text-center text-sm font-semibold text-slate-300">
+      화면을 준비하고 있어요...
+    </div>
+  </div>
+);
 
 export default function App() {
   const [step, setStep] = useState('start');
@@ -150,6 +160,18 @@ export default function App() {
     setShowVersionModal(true);
   };
 
+  const handleClearLocalData = () => {
+    const ok = window.confirm('이 브라우저에 저장된 이름, 기록, 활동 리포트를 모두 지울까요?');
+    if (!ok) return;
+
+    clearAllLocalData();
+    setUserName('');
+    setHistoryData([]);
+    setRecoverableSession(null);
+    setShowRecoveryPrompt(false);
+    setShowHistory(false);
+  };
+
   return (
     <div className={`relative w-full min-h-[100dvh] flex flex-col items-center ${step !== 'result' ? 'justify-center' : 'pt-10'}`}>
       <div className="fixed top-[-10%] left-[-10%] w-96 h-96 bg-purple-900 rounded-full mix-blend-screen filter blur-[128px] opacity-40 animate-blob pointer-events-none"></div>
@@ -188,46 +210,61 @@ export default function App() {
           )}
 
           {step === 'result' && (
-            <ResultView
-              key="result"
-              scores={scores}
-              userName={userName}
-              historyData={historyData}
-              setHistoryData={setHistoryData}
-              defaultUserName={DEFAULT_USERNAME}
-              openHistoryModal={openHistoryModal}
-              onRestart={handleRestart}
-              onOpenAxisGuide={setAxisGuideKey}
-              trackEvent={trackEvent}
-            />
+            <Suspense fallback={ScreenFallback}>
+              <ResultView
+                key="result"
+                scores={scores}
+                userName={userName}
+                historyData={historyData}
+                setHistoryData={setHistoryData}
+                defaultUserName={DEFAULT_USERNAME}
+                openHistoryModal={openHistoryModal}
+                onRestart={handleRestart}
+                onOpenAxisGuide={setAxisGuideKey}
+                trackEvent={trackEvent}
+              />
+            </Suspense>
           )}
         </AnimatePresence>
 
         <AnimatePresence>
           {showRecoveryPrompt && recoverableSession && step === 'start' && (
-            <RecoveryPrompt session={recoverableSession} onResume={handleResumeSession} onDismiss={dismissRecovery} />
+            <Suspense fallback={null}>
+              <RecoveryPrompt session={recoverableSession} onResume={handleResumeSession} onDismiss={dismissRecovery} />
+            </Suspense>
           )}
         </AnimatePresence>
 
         <AnimatePresence>
           {showHistory && (
-            <HistoryModal
-              activitySummary={activitySummary}
-              latestHistoryComparison={latestHistoryComparison}
-              latestHistoryInsights={latestHistoryInsights}
-              historyData={historyData}
-              getHistoryEntryNote={getHistoryEntryNote}
-              onClose={() => setShowHistory(false)}
-            />
+            <Suspense fallback={null}>
+              <HistoryModal
+                activitySummary={activitySummary}
+                latestHistoryComparison={latestHistoryComparison}
+                latestHistoryInsights={latestHistoryInsights}
+                historyData={historyData}
+                getHistoryEntryNote={getHistoryEntryNote}
+                onClose={() => setShowHistory(false)}
+                onClearData={handleClearLocalData}
+              />
+            </Suspense>
           )}
         </AnimatePresence>
 
         <AnimatePresence>
-          {showVersionModal && <VersionModal changelog={CHANGELOG} onClose={() => setShowVersionModal(false)} />}
+          {showVersionModal && (
+            <Suspense fallback={null}>
+              <VersionModal changelog={CHANGELOG} onClose={() => setShowVersionModal(false)} />
+            </Suspense>
+          )}
         </AnimatePresence>
 
         <AnimatePresence>
-          {axisGuideKey && <AxisGuideModal guide={AXIS_GUIDE[axisGuideKey]} onClose={() => setAxisGuideKey(null)} />}
+          {axisGuideKey && (
+            <Suspense fallback={null}>
+              <AxisGuideModal guide={AXIS_GUIDE[axisGuideKey]} onClose={() => setAxisGuideKey(null)} />
+            </Suspense>
+          )}
         </AnimatePresence>
 
         <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-20">
