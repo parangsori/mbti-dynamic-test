@@ -6,6 +6,7 @@ import { AXIS_GUIDE, CHANGELOG, DEFAULT_USERNAME, QUESTION_TEMPO_COPY } from './
 import {
   buildFollowupQuestions,
   buildQuestionSession,
+  createEmptyNeutralSignals,
   createEmptyScores,
   formatMicroCopy,
   getFollowupTempoMessage,
@@ -59,6 +60,8 @@ export default function App() {
   const [questionPhase, setQuestionPhase] = useState('base');
   const [recentSessionsSnapshot, setRecentSessionsSnapshot] = useState([]);
   const [sessionQuestionIds, setSessionQuestionIds] = useState([]);
+  const [neutralSignals, setNeutralSignals] = useState(createEmptyNeutralSignals());
+  const [neutralQuestionIds, setNeutralQuestionIds] = useState([]);
 
   useEffect(() => {
     setHistoryData(readHistory());
@@ -80,6 +83,8 @@ export default function App() {
     setFollowupQuestions([]);
     setQuestionPhase('base');
     setSessionQuestionIds([]);
+    setNeutralSignals(createEmptyNeutralSignals());
+    setNeutralQuestionIds([]);
     setStep('start');
   };
 
@@ -101,6 +106,8 @@ export default function App() {
     setQuestionPhase('base');
     setRecentSessionsSnapshot(recentSessions);
     setSessionQuestionIds(thisSession);
+    setNeutralSignals(createEmptyNeutralSignals());
+    setNeutralQuestionIds([]);
     setStep('question');
 
     writeActiveSession({
@@ -111,7 +118,9 @@ export default function App() {
       scores: createEmptyScores(),
       questionPhase: 'base',
       recentSessions: recentSessions,
-      sessionQuestionIds: thisSession
+      sessionQuestionIds: thisSession,
+      neutralSignals: createEmptyNeutralSignals(),
+      neutralQuestionIds: []
     });
   };
 
@@ -127,6 +136,8 @@ export default function App() {
     setQuestionPhase(recoverableSession.questionPhase || 'base');
     setRecentSessionsSnapshot(recoverableSession.recentSessions || []);
     setSessionQuestionIds(recoverableSession.sessionQuestionIds || []);
+    setNeutralSignals(recoverableSession.neutralSignals || createEmptyNeutralSignals());
+    setNeutralQuestionIds(recoverableSession.neutralQuestionIds || []);
     setShowRecoveryPrompt(false);
     setStep('question');
     trackEvent('session_resume');
@@ -169,11 +180,109 @@ export default function App() {
     writeRecentSessions([finalSessionIds, ...recentSessionsSnapshot].slice(0, 3));
     trackEvent('complete_test', {
       usedFollowup: questionPhase === 'followup' || followupQuestions.length > 0,
-      followupCount: followupQuestions.length
+      followupCount: followupQuestions.length,
+      neutralCount: neutralQuestionIds.length
     });
     clearActiveSession();
     setScores(finalScores);
     setStep('result');
+  };
+
+  const activeQuestions = questionPhase === 'followup' ? followupQuestions : questions;
+  const activeQuestion = activeQuestions[currIdx];
+  const followupHasNeutralReview = questionPhase === 'followup' && followupQuestions.some((item) => (item.trigger?.neutralCount || 0) > 0);
+  const questionPhaseHint =
+    questionPhase === 'followup'
+      ? followupHasNeutralReview
+        ? '방금 애매했던 부분을 조금 더 또렷하게 볼게요'
+        : '경계에 있는 축을 한 번 더 확인하고 있어요'
+      : activeQuestion?.allowMiddle
+        ? '둘 중 하나가 딱 안 잡히면 보조 버튼으로 넘어갈 수 있어요'
+        : '';
+
+  const advanceWithResponse = ({
+    nextScores,
+    nextNeutralSignals = neutralSignals,
+    nextNeutralQuestionIds = neutralQuestionIds,
+    microText = ''
+  }) => {
+    setScores(nextScores);
+    setNeutralSignals(nextNeutralSignals);
+    setNeutralQuestionIds(nextNeutralQuestionIds);
+    setMicroCopy(formatMicroCopy(microText));
+    setQuestionDirection(1);
+
+    setTimeout(() => {
+      setMicroCopy('');
+
+      if (questionPhase === 'base') {
+        if (currIdx + 1 >= 12) {
+          const nextFollowupQuestions = buildFollowupQuestions(
+            nextScores,
+            recentSessionsSnapshot,
+            sessionQuestionIds,
+            nextNeutralSignals
+          );
+
+          if (nextFollowupQuestions.length > 0) {
+            const nextSessionIds = [...sessionQuestionIds, ...nextFollowupQuestions.map((item) => item.id)];
+            setFollowupQuestions(nextFollowupQuestions);
+            setQuestionPhase('followup');
+            setCurrIdx(0);
+            setSessionQuestionIds(nextSessionIds);
+            writeActiveSession({
+              userName,
+              questions,
+              followupQuestions: nextFollowupQuestions,
+              currIdx: 0,
+              scores: nextScores,
+              questionPhase: 'followup',
+              recentSessions: recentSessionsSnapshot,
+              sessionQuestionIds: nextSessionIds,
+              neutralSignals: nextNeutralSignals,
+              neutralQuestionIds: nextNeutralQuestionIds
+            });
+          } else {
+            finishSession(nextScores);
+          }
+        } else {
+          const nextIdx = currIdx + 1;
+          if (nextIdx === 3) trackEvent('question_reach_3');
+          setCurrIdx(nextIdx);
+          writeActiveSession({
+            userName,
+            questions,
+            followupQuestions,
+            currIdx: nextIdx,
+            scores: nextScores,
+            questionPhase,
+            recentSessions: recentSessionsSnapshot,
+            sessionQuestionIds,
+            neutralSignals: nextNeutralSignals,
+            neutralQuestionIds: nextNeutralQuestionIds
+          });
+        }
+      } else if (currIdx + 1 >= followupQuestions.length) {
+        finishSession(nextScores);
+      } else {
+        const nextIdx = currIdx + 1;
+        setCurrIdx(nextIdx);
+        writeActiveSession({
+          userName,
+          questions,
+          followupQuestions,
+          currIdx: nextIdx,
+          scores: nextScores,
+          questionPhase,
+          recentSessions: recentSessionsSnapshot,
+          sessionQuestionIds,
+          neutralSignals: nextNeutralSignals,
+          neutralQuestionIds: nextNeutralQuestionIds
+        });
+      }
+
+      setIsTransitioning(false);
+    }, 800);
   };
 
   return (
@@ -199,12 +308,12 @@ export default function App() {
             />
           )}
 
-          {step === 'question' && (questionPhase === 'followup' ? followupQuestions[currIdx] : questions[currIdx]) && (
+          {step === 'question' && activeQuestion && (
             <QuestionView
               key={`question-${questionPhase}-${currIdx}`}
               currIdx={currIdx}
               totalQuestions={questionPhase === 'followup' ? followupQuestions.length : 12}
-              question={(questionPhase === 'followup' ? followupQuestions : questions)[currIdx]}
+              question={activeQuestion}
               microCopy={microCopy}
               isTransitioning={isTransitioning}
               questionDirection={questionDirection}
@@ -213,83 +322,41 @@ export default function App() {
                   ? getFollowupTempoMessage(currIdx, followupQuestions.length)
                   : getQuestionTempoMessage(currIdx, '지금의 결대로 가볍게 골라보세요', QUESTION_TEMPO_COPY)
               }
+              phaseHint={questionPhaseHint}
               questionLabel={questionPhase === 'followup' ? `보정 ${currIdx + 1}` : undefined}
               counterText={
                 questionPhase === 'followup'
                   ? `보정 질문 ${currIdx + 1} / ${followupQuestions.length}`
                   : undefined
               }
+              showMiddleOption={questionPhase === 'base' && Boolean(activeQuestion.allowMiddle)}
+              middleLabel="둘 다 비슷해요"
               onAnswer={(option) => {
                 if (isTransitioning) return;
                 setIsTransitioning(true);
 
-                const activeQuestions = questionPhase === 'followup' ? followupQuestions : questions;
-                const currentQuestion = activeQuestions[currIdx];
-                const weight = currentQuestion?.weight || 1;
+                const weight = activeQuestion?.weight || 1;
                 const nextScores = { ...scores, [option.type]: (scores[option.type] || 0) + weight };
-                setScores(nextScores);
-                setMicroCopy(formatMicroCopy(option.micro));
-                setQuestionDirection(1);
+                advanceWithResponse({ nextScores, microText: option.micro });
+              }}
+              onMiddleAnswer={() => {
+                if (isTransitioning) return;
+                setIsTransitioning(true);
 
-                setTimeout(() => {
-                  setMicroCopy('');
+                const axisCode = activeQuestion?._axis;
+                const nextNeutralSignals = axisCode
+                  ? { ...neutralSignals, [axisCode]: (neutralSignals[axisCode] || 0) + 1 }
+                  : neutralSignals;
+                const nextNeutralQuestionIds = activeQuestion?.id
+                  ? [...neutralQuestionIds, activeQuestion.id]
+                  : neutralQuestionIds;
 
-                  if (questionPhase === 'base') {
-                    if (currIdx + 1 >= 12) {
-                      const nextFollowupQuestions = buildFollowupQuestions(nextScores, recentSessionsSnapshot, sessionQuestionIds);
-                      if (nextFollowupQuestions.length > 0) {
-                        const nextSessionIds = [...sessionQuestionIds, ...nextFollowupQuestions.map((item) => item.id)];
-                        setFollowupQuestions(nextFollowupQuestions);
-                        setQuestionPhase('followup');
-                        setCurrIdx(0);
-                        setSessionQuestionIds(nextSessionIds);
-                        writeActiveSession({
-                          userName,
-                          questions,
-                          followupQuestions: nextFollowupQuestions,
-                          currIdx: 0,
-                          scores: nextScores,
-                          questionPhase: 'followup',
-                          recentSessions: recentSessionsSnapshot,
-                          sessionQuestionIds: nextSessionIds
-                        });
-                      } else {
-                        finishSession(nextScores);
-                      }
-                    } else {
-                      const nextIdx = currIdx + 1;
-                      if (nextIdx === 3) trackEvent('question_reach_3');
-                      setCurrIdx(nextIdx);
-                      writeActiveSession({
-                        userName,
-                        questions,
-                        followupQuestions,
-                        currIdx: nextIdx,
-                        scores: nextScores,
-                        questionPhase,
-                        recentSessions: recentSessionsSnapshot,
-                        sessionQuestionIds
-                      });
-                    }
-                  } else if (currIdx + 1 >= followupQuestions.length) {
-                    finishSession(nextScores);
-                  } else {
-                    const nextIdx = currIdx + 1;
-                    setCurrIdx(nextIdx);
-                    writeActiveSession({
-                      userName,
-                      questions,
-                      followupQuestions,
-                      currIdx: nextIdx,
-                      scores: nextScores,
-                      questionPhase,
-                      recentSessions: recentSessionsSnapshot,
-                      sessionQuestionIds
-                    });
-                  }
-
-                  setIsTransitioning(false);
-                }, 800);
+                advanceWithResponse({
+                  nextScores: scores,
+                  nextNeutralSignals,
+                  nextNeutralQuestionIds,
+                  microText: '이 축은 한 번 더 볼게요'
+                });
               }}
             />
           )}
@@ -307,6 +374,8 @@ export default function App() {
                 onRestart={handleRestart}
                 onOpenAxisGuide={setAxisGuideKey}
                 trackEvent={trackEvent}
+                neutralCount={neutralQuestionIds.length}
+                usedFollowup={followupQuestions.length > 0}
               />
             </Suspense>
           )}

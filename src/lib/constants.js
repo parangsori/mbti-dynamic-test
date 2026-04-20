@@ -19,6 +19,15 @@ export const COMPATIBILITY = {
 
 export const CHANGELOG = [
   {
+    version: 'v1.4.0',
+    date: '2026.04.20',
+    updates: [
+      '애매한 질문에는 `둘 다 비슷해요` 보조 선택지를 제한적으로 도입해 억지 선택 부담 완화',
+      'TF·JP 중심으로 상태형/보정형 문제은행을 1차 보강해 경계 결과 정확도 개선',
+      '애매했던 답변은 추가 질문으로 다시 확인했다는 흐름을 질문·결과 화면에서 더 자연스럽게 안내'
+    ]
+  },
+  {
     version: 'v1.3.9',
     date: '2026.04.20',
     updates: [

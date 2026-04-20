@@ -29,7 +29,9 @@ export default function ResultView({
   openHistoryModal,
   onRestart,
   onOpenAxisGuide,
-  trackEvent
+  trackEvent,
+  neutralCount = 0,
+  usedFollowup = false
 }) {
   const resultRef = useRef(null);
   const shareCardRef = useRef(null);
@@ -77,6 +79,12 @@ export default function ResultView({
   const displayName = getDisplayName(userName, defaultUserName);
   const retestPrompt = getRetestPrompt(boundaryAxes, historyInsights);
   const { shareMoodLine, shareHeadline, shareSummaryShort, shareVibeStamp, shareCardCopy } = getShareCardCopy(mbti, spectrum, badges, info, percent);
+  const neutralReviewNote =
+    neutralCount > 0
+      ? usedFollowup
+        ? '애매했던 답변은 추가 질문으로 한 번 더 확인했어요.'
+        : '애매했던 답변은 결과 해석에 참고했어요.'
+      : '';
 
   useEffect(() => {
     trackEvent('result_view', { mbti, percent });
@@ -270,6 +278,7 @@ export default function ResultView({
             <p className="text-[11px] font-bold tracking-[0.2em] text-slate-400 uppercase">오늘 답변 기준 성향 흐름</p>
             <p className="mt-2 text-2xl font-black text-white">{percent}%</p>
             <p className="mt-2 text-[13px] leading-relaxed text-slate-300 break-keep">{consistencyCopy}</p>
+            {neutralReviewNote && <p className="mt-3 text-[11px] leading-relaxed text-cyan-100/80 break-keep">{neutralReviewNote}</p>}
           </div>
 
           {historyComparison && (

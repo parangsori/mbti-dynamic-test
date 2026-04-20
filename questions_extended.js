@@ -266,6 +266,20 @@ export const QUESTIONS_EXTENDED = {
         { text: "어색함을 깨기 위해 내가 먼저 가벼운 질문을 던짐", type: "E", micro: "아이스브레이킹 달인 🧭" },
         { text: "조용히 경청하며 분위기가 무르익을 때까지 기다림", type: "I", micro: "침묵의 신사 🦉" }
       ]
+    },
+    {
+      q: "오늘 누가 먼저 만나자고 하면 솔직히 더 드는 마음은?",
+      options: [
+        { text: "좋아, 나가서 바람도 쐬고 얘기도 하고 싶어짐", type: "E", micro: "밖으로 마음이 움직여요 🌤️" },
+        { text: "반갑긴 한데 오늘은 혼자 쉬고 싶다는 생각이 듦", type: "I", micro: "혼자 충전이 더 당겨요 🌙" }
+      ]
+    },
+    {
+      q: "머리를 식히고 싶을 때 더 끌리는 건?",
+      options: [
+        { text: "누군가랑 가볍게 얘기하며 기분 전환하기", type: "E", micro: "대화가 숨통을 틔워줘요 💬" },
+        { text: "혼자 걷거나 쉬면서 조용히 정리하기", type: "I", micro: "고요함이 먼저 필요해요 🌿" }
+      ]
     }
   ],
 
@@ -531,6 +545,20 @@ export const QUESTIONS_EXTENDED = {
       options: [
         { text: "귀를 즐겁게 하는 선율과 리듬, 완벽한 사운드", type: "S", micro: "사운드 🎵" },
         { text: "가사가 가진 철학적인 의미와 그 노래가 주는 정서", type: "N", micro: "가사 📜" }
+      ]
+    },
+    {
+      q: "오늘 무언가를 고를 때 더 끌리는 기준은?",
+      options: [
+        { text: "지금 바로 도움 되거나 쓸모 있는 쪽", type: "S", micro: "실용성이 먼저 보여요 🧰" },
+        { text: "설명은 안 돼도 묘하게 끌리고 궁금한 쪽", type: "N", micro: "감이 먼저 오기도 해요 ✨" }
+      ]
+    },
+    {
+      q: "낯선 장소에 갔을 때 더 먼저 남는 건?",
+      options: [
+        { text: "어디에 뭐가 있었는지, 실제 구조와 디테일", type: "S", micro: "장면이 또렷하게 남아요 🗺️" },
+        { text: "그 공간이 주는 분위기와 전체적인 인상", type: "N", micro: "느낌이 먼저 기억나요 🎐" }
       ]
     }
   ],
@@ -798,6 +826,34 @@ export const QUESTIONS_EXTENDED = {
         { text: "그건 사실이 아니야. 당시 상황은 이랬어.", type: "T", micro: "입증 📐" },
         { text: "어떻게 나를 그렇게 생각할 수 있어? 서운해.", type: "F", micro: "토로 🌡️" }
       ]
+    },
+    {
+      q: "친구 고민을 들을 때 오늘의 나는 더 가까운 쪽은?",
+      options: [
+        { text: "지금 뭐부터 풀면 좋을지 같이 정리해주는 쪽", type: "T", micro: "해결 순서가 먼저 보여요 🧩" },
+        { text: "지금 얼마나 힘들지 마음부터 읽어주는 쪽", type: "F", micro: "마음부터 살피게 돼요 💗" }
+      ]
+    },
+    {
+      q: "누군가 실수했을 때 먼저 신경 쓰이는 건?",
+      options: [
+        { text: "어디서 어긋났고 다음엔 어떻게 줄일지", type: "T", micro: "원인부터 보게 돼요 🔍" },
+        { text: "얼마나 민망하고 위축됐을지", type: "F", micro: "사람 마음이 먼저 보여요 🫂" }
+      ]
+    },
+    {
+      q: "부탁을 거절해야 할 때 더 고민되는 건?",
+      options: [
+        { text: "이유를 납득되게 설명했는지", type: "T", micro: "말의 논리가 신경 쓰여요 📌" },
+        { text: "상대가 상처받지 않게 말했는지", type: "F", micro: "말의 온도가 신경 쓰여요 🌷" }
+      ]
+    },
+    {
+      q: "의견이 다를 때 더 먼저 챙기는 건?",
+      options: [
+        { text: "내 생각을 분명하게 전달하는 것", type: "T", micro: "핵심을 또렷하게 말하고 싶어요 🧠" },
+        { text: "분위기가 틀어지지 않게 조율하는 것", type: "F", micro: "관계가 먼저 보일 때가 있어요 🤝" }
+      ]
     }
   ],
 
@@ -1064,6 +1120,34 @@ export const QUESTIONS_EXTENDED = {
         { text: "여행 가서 고생 안 하려고 꼼꼼히 짜는 게 즐거움", type: "J", micro: "준비 🗺️" },
         { text: "계획 세우는 건 귀찮고 가서 노는 게 더 좋음", type: "P", micro: "실전 🌍" }
       ]
+    },
+    {
+      q: "오늘 할 일이 생기면 더 마음 편한 쪽은?",
+      options: [
+        { text: "순서부터 정리해두고 하나씩 처리하는 것", type: "J", micro: "정리되면 마음이 놓여요 🗂️" },
+        { text: "큰 틀만 보고 그때그때 손 가는 것부터 하는 것", type: "P", micro: "흐름대로 해야 덜 답답해요 🌊" }
+      ]
+    },
+    {
+      q: "약속 전 시간이 남으면 보통 나는?",
+      options: [
+        { text: "준비물이나 동선 한 번 더 체크하며 기다림", type: "J", micro: "미리 맞춰두면 편해요 ⏱️" },
+        { text: "딴짓하다가 슬슬 맞춰 나갈 준비를 시작함", type: "P", micro: "직전에 움직여도 괜찮아요 🎈" }
+      ]
+    },
+    {
+      q: "집중해야 할 일이 있을 때 더 잘 맞는 방식은?",
+      options: [
+        { text: "어느 순서로 끝낼지 정해두고 들어가는 것", type: "J", micro: "순서가 잡혀야 집중돼요 📋" },
+        { text: "해보면서 흐름 타는 대로 밀고 가는 것", type: "P", micro: "타이밍이 올 때 제일 잘돼요 ⚡" }
+      ]
+    },
+    {
+      q: "하루가 잘 굴러갔다고 느끼는 기준은?",
+      options: [
+        { text: "생각한 걸 대부분 끝냈을 때", type: "J", micro: "정리된 하루가 만족스러워요 ✅" },
+        { text: "예상 못한 재미나 여유가 생겼을 때", type: "P", micro: "뜻밖의 흐름이 더 기억나요 🎉" }
+      ]
     }
   ],
 
@@ -1105,7 +1189,9 @@ export const QUESTIONS_EXTENDED = {
       { id: "EI_051", familyId: "EI_SUDDEN_STAGE", role: "parallel", weight: 1.0 },
       { id: "EI_052", familyId: "EI_BDAY_CHOICE", role: "parallel", weight: 1.0 },
       { id: "EI_053", familyId: "EI_SUN_MORNING", role: "parallel", weight: 1.0 },
-      { id: "EI_054", familyId: "EI_STRANGER_INIT", role: "parallel", weight: 1.0 }
+      { id: "EI_054", familyId: "EI_STRANGER_INIT", role: "parallel", weight: 1.0 },
+      { id: "EI_055", familyId: "EI_TODAY_MEET_INVITE", role: "state", weight: 0.8, allowMiddleCandidate: true },
+      { id: "EI_056", familyId: "EI_COOL_HEAD_WAY", role: "parallel", weight: 1.0, allowMiddleCandidate: true }
     ],
     SN: [
       { id: "SN_019", familyId: "SN_ALGO_POINT", role: "anchor", weight: 1.4 },
@@ -1143,7 +1229,9 @@ export const QUESTIONS_EXTENDED = {
       { id: "SN_051", familyId: "SN_NO_MAP", role: "parallel", weight: 1.0 },
       { id: "SN_052", familyId: "SN_TRAVEL_INFO", role: "parallel", weight: 1.0 },
       { id: "SN_053", familyId: "SN_GAME_STYLE", role: "parallel", weight: 1.0 },
-      { id: "SN_054", familyId: "SN_MUSIC_POINT", role: "parallel", weight: 1.0 }
+      { id: "SN_054", familyId: "SN_MUSIC_POINT", role: "parallel", weight: 1.0 },
+      { id: "SN_055", familyId: "SN_TODAY_PICK_POINT", role: "state", weight: 0.8, allowMiddleCandidate: true },
+      { id: "SN_056", familyId: "SN_NEW_PLACE_MEMORY", role: "parallel", weight: 1.0, allowMiddleCandidate: true }
     ],
     TF: [
       { id: "TF_019", familyId: "TF_OH_MY_GOD", role: "anchor", weight: 1.4 },
@@ -1181,7 +1269,11 @@ export const QUESTIONS_EXTENDED = {
       { id: "TF_051", familyId: "TF_GIFT_POINT", role: "parallel", weight: 1.0 },
       { id: "TF_052", familyId: "TF_GAME_GOAL", role: "parallel", weight: 1.0 },
       { id: "TF_053", familyId: "TF_PRAISE_STD", role: "parallel", weight: 1.0 },
-      { id: "TF_054", familyId: "TF_MISUNDERSTAND", role: "parallel", weight: 1.0 }
+      { id: "TF_054", familyId: "TF_MISUNDERSTAND", role: "parallel", weight: 1.0 },
+      { id: "TF_055", familyId: "TF_TODAY_FRIEND_WORRY", role: "state", weight: 0.8, allowMiddleCandidate: true },
+      { id: "TF_056", familyId: "TF_MISTAKE_FIRST_POINT", role: "state", weight: 0.8, allowMiddleCandidate: true },
+      { id: "TF_057", familyId: "TF_DECLINE_WORRY", role: "parallel", weight: 1.0, allowMiddleCandidate: true },
+      { id: "TF_058", familyId: "TF_DIFF_FIRST_POINT", role: "parallel", weight: 1.0, allowMiddleCandidate: true }
     ],
     JP: [
       { id: "JP_019", familyId: "JP_FIRST_DAY", role: "anchor", weight: 1.4 },
@@ -1219,7 +1311,11 @@ export const QUESTIONS_EXTENDED = {
       { id: "JP_051", familyId: "JP_PROJECT_ROLE", role: "parallel", weight: 1.0 },
       { id: "JP_052", familyId: "JP_DATE_STD", role: "parallel", weight: 1.0 },
       { id: "JP_053", familyId: "JP_HOME_SCREEN", role: "parallel", weight: 1.0 },
-      { id: "JP_054", familyId: "JP_TRAVEL_PREP", role: "parallel", weight: 1.0 }
+      { id: "JP_054", familyId: "JP_TRAVEL_PREP", role: "parallel", weight: 1.0 },
+      { id: "JP_055", familyId: "JP_TODAY_TASK_COMFORT", role: "state", weight: 0.8, allowMiddleCandidate: true },
+      { id: "JP_056", familyId: "JP_BEFORE_APPOINTMENT", role: "state", weight: 0.8, allowMiddleCandidate: true },
+      { id: "JP_057", familyId: "JP_FOCUS_WORK_STYLE", role: "parallel", weight: 1.0, allowMiddleCandidate: true },
+      { id: "JP_058", familyId: "JP_GOOD_DAY_RULE", role: "parallel", weight: 1.0, allowMiddleCandidate: true }
     ]
   }
 };

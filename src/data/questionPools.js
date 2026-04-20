@@ -95,6 +95,28 @@ export const FOLLOWUP_QUESTIONS = {
         { text: '사람들과 부딪히며 분위기가 살아날 때', type: 'E', micro: '사람이 곧 활력소예요' },
         { text: '혼자 내 취향에 몰입할 시간을 가질 때', type: 'I', micro: '혼자일 때 진짜 편안해져요' }
       ]
+    },
+    {
+      id: 'EI_FOLLOWUP_009',
+      familyId: 'EI_followup_late_night',
+      role: 'followup',
+      weight: FOLLOWUP_WEIGHT,
+      q: '하루 종일 혼자 보내고 밤이 되면 더 드는 마음은?',
+      options: [
+        { text: '누군가와 조금이라도 연결되고 싶어짐', type: 'E', micro: '사람 쪽으로 에너지가 움직여요' },
+        { text: '이 정도면 충분히 편해서 그대로 있고 싶음', type: 'I', micro: '혼자 있는 시간이 잘 맞아요' }
+      ]
+    },
+    {
+      id: 'EI_FOLLOWUP_010',
+      familyId: 'EI_followup_idea_share',
+      role: 'followup',
+      weight: FOLLOWUP_WEIGHT,
+      q: '중요한 아이디어가 떠올랐을 때 더 먼저 하는 건?',
+      options: [
+        { text: '누군가에게 말해보며 반응을 보고 싶어짐', type: 'E', micro: '말하면서 생각이 살아나요' },
+        { text: '혼자 더 다듬고 정리한 뒤 꺼내고 싶어짐', type: 'I', micro: '혼자 정리해야 또렷해져요' }
+      ]
     }
   ],
   SN: [
@@ -184,6 +206,28 @@ export const FOLLOWUP_QUESTIONS = {
       options: [
         { text: '이미 검증된 경험과 구체적 정보', type: 'S', micro: '검증된 정보가 믿음직해요' },
         { text: '묘하게 끌리는 가능성과 직감', type: 'N', micro: '감이 올 때가 있어요' }
+      ]
+    },
+    {
+      id: 'SN_FOLLOWUP_009',
+      familyId: 'SN_followup_first_question',
+      role: 'followup',
+      weight: FOLLOWUP_WEIGHT,
+      q: '처음 보는 설명을 들을 때 더 먼저 궁금한 건?',
+      options: [
+        { text: '그래서 실제로 어떻게 쓰고 적용하는지', type: 'S', micro: '실제 쓰임이 먼저 궁금해요' },
+        { text: '왜 이런 원리로 돌아가는지의 배경', type: 'N', micro: '원리와 맥락이 먼저 궁금해요' }
+      ]
+    },
+    {
+      id: 'SN_FOLLOWUP_010',
+      familyId: 'SN_followup_memory_bias',
+      role: 'followup',
+      weight: FOLLOWUP_WEIGHT,
+      q: '무언가를 기억할 때 더 오래 남는 건?',
+      options: [
+        { text: '장면, 정보, 실제로 있었던 디테일', type: 'S', micro: '디테일이 오래 남아요' },
+        { text: '그때 느낀 의미, 분위기, 연결감', type: 'N', micro: '느낌과 의미가 오래 남아요' }
       ]
     }
   ],
@@ -275,6 +319,50 @@ export const FOLLOWUP_QUESTIONS = {
         { text: '필요하다면 불편해도 핵심을 분명히 말함', type: 'T', micro: '필요한 말은 해야 한다고 봐요' },
         { text: '내용보다 전달 방식과 타이밍을 더 고민함', type: 'F', micro: '어떻게 말할지가 더 중요해요' }
       ]
+    },
+    {
+      id: 'TF_FOLLOWUP_009',
+      familyId: 'TF_followup_honesty_balance',
+      role: 'followup',
+      weight: FOLLOWUP_WEIGHT,
+      q: '친한 사람에게 솔직한 말을 해야 할 때 더 우선하는 건?',
+      options: [
+        { text: '핵심을 정확히 말해주는 것', type: 'T', micro: '정확한 말이 우선이에요' },
+        { text: '상처를 덜 받게 말해주는 것', type: 'F', micro: '말의 온도를 먼저 보게 돼요' }
+      ]
+    },
+    {
+      id: 'TF_FOLLOWUP_010',
+      familyId: 'TF_followup_problem_sort',
+      role: 'followup',
+      weight: FOLLOWUP_WEIGHT,
+      q: '문제가 터졌을 때 먼저 정리하는 건?',
+      options: [
+        { text: '원인과 해결 순서', type: 'T', micro: '구조부터 정리하고 싶어요' },
+        { text: '사람들 감정과 관계의 흐름', type: 'F', micro: '사람 마음부터 살피고 싶어요' }
+      ]
+    },
+    {
+      id: 'TF_FOLLOWUP_011',
+      familyId: 'TF_followup_expectation_gap',
+      role: 'followup',
+      weight: FOLLOWUP_WEIGHT,
+      q: '누군가 기대에 못 미쳤을 때 더 먼저 드는 말은?',
+      options: [
+        { text: '어디부터 고치면 좋을지 같이 보자', type: 'T', micro: '개선 포인트가 먼저 떠올라요' },
+        { text: '많이 부담됐겠다, 일단 괜찮아', type: 'F', micro: '마음을 먼저 안정시키고 싶어요' }
+      ]
+    },
+    {
+      id: 'TF_FOLLOWUP_012',
+      familyId: 'TF_followup_regret_reason',
+      role: 'followup',
+      weight: FOLLOWUP_WEIGHT,
+      q: '결정을 내리고 후회가 남는 이유는 대체로?',
+      options: [
+        { text: '논리적으로 더 나은 선택이 있었던 것 같아서', type: 'T', micro: '타당성이 계속 남아요' },
+        { text: '누군가 마음 상했을까 계속 걸려서', type: 'F', micro: '사람 마음이 오래 남아요' }
+      ]
     }
   ],
   JP: [
@@ -364,6 +452,50 @@ export const FOLLOWUP_QUESTIONS = {
       options: [
         { text: '체크리스트를 지워가며 진도가 보일 때', type: 'J', micro: '체크되는 흐름이 좋아요' },
         { text: '자유롭게 오가며 아이디어가 붙을 때', type: 'P', micro: '열린 흐름이 더 잘 맞아요' }
+      ]
+    },
+    {
+      id: 'JP_FOLLOWUP_009',
+      familyId: 'JP_followup_empty_slot',
+      role: 'followup',
+      weight: FOLLOWUP_WEIGHT,
+      q: '계획이 비는 시간이 생기면 더 마음 편한 건?',
+      options: [
+        { text: '다음 순서를 채워두는 것', type: 'J', micro: '빈칸을 메워야 편해요' },
+        { text: '그 비어 있는 상태로 두는 것', type: 'P', micro: '열어둬야 마음이 편해요' }
+      ]
+    },
+    {
+      id: 'JP_FOLLOWUP_010',
+      familyId: 'JP_followup_workload',
+      role: 'followup',
+      weight: FOLLOWUP_WEIGHT,
+      q: '일이 몰릴 때 더 먼저 하는 건?',
+      options: [
+        { text: '목록을 만들고 순서를 정함', type: 'J', micro: '정리부터 해야 움직여요' },
+        { text: '쉽거나 끌리는 것부터 바로 시작함', type: 'P', micro: '일단 손이 가는 걸 하고 봐요' }
+      ]
+    },
+    {
+      id: 'JP_FOLLOWUP_011',
+      familyId: 'JP_followup_unexpected_offer',
+      role: 'followup',
+      weight: FOLLOWUP_WEIGHT,
+      q: '예상치 못한 제안이 들어오면 첫 반응은?',
+      options: [
+        { text: '일정과 조건부터 확인하고 판단함', type: 'J', micro: '정리부터 해야 결정돼요' },
+        { text: '재밌어 보이면 일단 끌림이 먼저 옴', type: 'P', micro: '흥미가 먼저 움직여요' }
+      ]
+    },
+    {
+      id: 'JP_FOLLOWUP_012',
+      familyId: 'JP_followup_rest_day',
+      role: 'followup',
+      weight: FOLLOWUP_WEIGHT,
+      q: '쉬는 날을 잘 보냈다고 느끼는 기준은?',
+      options: [
+        { text: '생각해둔 걸 대부분 해냈을 때', type: 'J', micro: '마무리된 느낌이 좋아요' },
+        { text: '흐름대로 즐기다 예상 밖 재미가 생겼을 때', type: 'P', micro: '뜻밖의 재미가 더 기억나요' }
       ]
     }
   ]

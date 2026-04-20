@@ -1,14 +1,15 @@
 {
   "name": "mbti-dynamic-test",
   "private": true,
-  "version": "1.3.9",
+  "version": "1.4.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "preview:mobile": "vite preview --host 0.0.0.0 --port 4173",
     "build": "vite build",
     "preview": "vite preview",
-    "tunnel:mobile": "cloudflared tunnel --url http://127.0.0.1:4173"
+    "tunnel:mobile": "cloudflared tunnel --url http://127.0.0.1:4173",
+    "test:accuracy": "node scripts/compareAccuracyScenarios.mjs"
   },
   "dependencies": {
     "framer-motion": "^11.18.2",

@@ -7,6 +7,7 @@ import {
 } from '../data/questionPools.js';
 
 export const createEmptyScores = () => ({ E: 0, I: 0, S: 0, N: 0, T: 0, F: 0, J: 0, P: 0 });
+export const createEmptyNeutralSignals = () => ({ EI: 0, SN: 0, TF: 0, JP: 0 });
 
 export const getQuestionTempoMessage = (index, fallback = '지금의 결대로 가볍게 골라보세요', source = []) =>
   source[index] || fallback;
@@ -64,10 +65,15 @@ const getAxisConfidence = (scores) =>
     };
   });
 
-export const getFollowupAxes = (scores, maxAxes = 3) =>
+export const getFollowupAxes = (scores, neutralSignals = {}, maxAxes = 3) =>
   getAxisConfidence(scores)
-    .filter((axis) => axis.intensity < 60 || axis.diff <= 1)
+    .map((axis) => ({
+      ...axis,
+      neutralCount: neutralSignals?.[axis.code] || 0
+    }))
+    .filter((axis) => axis.neutralCount > 0 || axis.intensity < 60 || axis.diff <= 1)
     .sort((a, b) => {
+      if (a.neutralCount !== b.neutralCount) return b.neutralCount - a.neutralCount;
       if (a.intensity !== b.intensity) return a.intensity - b.intensity;
       return a.diff - b.diff;
     })
@@ -82,11 +88,11 @@ const pickFollowupQuestion = (axisCode, recentIds, usedIds) => {
   return candidates[Math.floor(Math.random() * candidates.length)];
 };
 
-export const buildFollowupQuestions = (scores, recentSessions = [], currentIds = []) => {
+export const buildFollowupQuestions = (scores, recentSessions = [], currentIds = [], neutralSignals = {}) => {
   const recentIds = new Set(recentSessions.flat());
   const usedIds = new Set(currentIds);
 
-  return getFollowupAxes(scores).map((axis) => {
+  return getFollowupAxes(scores, neutralSignals).map((axis) => {
     const question = pickFollowupQuestion(axis.code, recentIds, usedIds);
     if (question) usedIds.add(question.id);
     return question
@@ -96,7 +102,8 @@ export const buildFollowupQuestions = (scores, recentSessions = [], currentIds =
           trigger: {
             intensity: axis.intensity,
             diff: axis.diff,
-            dominantType: axis.dominantType
+            dominantType: axis.dominantType,
+            neutralCount: axis.neutralCount
           }
         }
       : null;
@@ -146,6 +153,7 @@ export const buildQuestionSession = (recentSessions = []) => {
       familyId: meta[i]?.familyId,
       role: meta[i]?.role,
       weight: meta[i]?.weight,
+      allowMiddleCandidate: meta[i]?.allowMiddleCandidate || false,
       _axis: axis
     }));
 
@@ -162,12 +170,13 @@ export const buildQuestionSession = (recentSessions = []) => {
     selected.push(anchor);
 
     const rest = pool2.filter((q) => !usedIds.has(q.id) && !usedFamilyIds.has(q.familyId));
-    const totalW = rest.reduce((sum, q) => sum + q.weight, 0);
+    const getSelectionWeight = (question) => question.weight * (question.allowMiddleCandidate ? 1.35 : 1);
+    const totalW = rest.reduce((sum, q) => sum + getSelectionWeight(q), 0);
     const pick = (exclude) => {
       let r = Math.random() * totalW;
       for (const q of rest) {
         if (exclude.has(q.id) || usedFamilyIds.has(q.familyId)) continue;
-        r -= q.weight;
+        r -= getSelectionWeight(q);
         if (r <= 0) return q;
       }
       return rest.find((q) => !exclude.has(q.id) && !usedFamilyIds.has(q.familyId)) || rest[0];
@@ -189,7 +198,26 @@ export const buildQuestionSession = (recentSessions = []) => {
   });
 
   selected.sort(() => Math.random() - 0.5);
-  return sortQuestionsForTempo(selected, recentIds);
+  const ordered = sortQuestionsForTempo(selected, recentIds);
+  let totalMiddleSlots = 0;
+  let openingMiddleSlots = 0;
+
+  return ordered.map((question, idx) => {
+    const canAllowMiddle =
+      question.allowMiddleCandidate &&
+      totalMiddleSlots < 2 &&
+      (idx >= 3 || openingMiddleSlots < 1);
+
+    if (canAllowMiddle) {
+      totalMiddleSlots += 1;
+      if (idx < 3) openingMiddleSlots += 1;
+    }
+
+    return {
+      ...question,
+      allowMiddle: canAllowMiddle
+    };
+  });
 };
 
 export const getFollowupTempoMessage = (index, total) => {

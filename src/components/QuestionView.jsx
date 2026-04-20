@@ -6,11 +6,15 @@ export default function QuestionView({
   question,
   questionLabel,
   counterText,
+  phaseHint,
+  showMiddleOption,
+  middleLabel,
   microCopy,
   isTransitioning,
   questionDirection,
   tempoMessage,
-  onAnswer
+  onAnswer,
+  onMiddleAnswer
 }) {
   return (
     <motion.div
@@ -34,6 +38,7 @@ export default function QuestionView({
           />
         </div>
         <p className="mt-3 text-[12px] text-center font-semibold text-cyan-200/90 break-keep">{tempoMessage}</p>
+        {phaseHint && <p className="mt-2 text-[11px] text-center text-slate-400 break-keep">{phaseHint}</p>}
       </div>
 
       <div className="flex-[0.8] flex flex-col justify-center mb-8">
@@ -62,6 +67,16 @@ export default function QuestionView({
             {option.text}
           </button>
         ))}
+
+        {showMiddleOption && (
+          <button
+            onClick={onMiddleAnswer}
+            disabled={isTransitioning}
+            className={`mx-auto mt-1 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-[13px] font-semibold text-slate-300 transition-all hover:bg-white/10 hover:text-white active:scale-[0.98] ${isTransitioning ? 'opacity-40' : 'opacity-100'}`}
+          >
+            {middleLabel}
+          </button>
+        )}
 
         <AnimatePresence>
           {microCopy && (
