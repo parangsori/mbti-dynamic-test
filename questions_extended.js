@@ -310,7 +310,7 @@ export const QUESTIONS_EXTENDED = {
       q: "책을 읽거나 강의를 볼 때 더 끌리는 내용은?",
       options: [
         { text: "실제로 문제를 해결할 수 있는 단계별 프로세스", type: "S", micro: "실질적 도움 🔧" },
-        { text: "세상을 바라보는 새로운 시너 이면의 숨겨진 원리", type: "N", micro: "지적인 확장 🗺️" }
+        { text: "세상을 바라보는 새로운 시선과 그 이면의 숨겨진 원리", type: "N", micro: "지적인 확장 🗺️" }
       ]
     },
     {
