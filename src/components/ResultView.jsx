@@ -15,6 +15,7 @@ import {
   getTrendAnalysis,
   getDisplayName,
   getShareCardCopy,
+  getResultPresentation,
   getRetestPrompt
 } from '../lib/resultAnalysis.js';
 import { writeHistory } from '../lib/storage.js';
@@ -38,6 +39,71 @@ const getPrecisionBadge = ({ percent, neutralReviewNote, boundaryAxes }) => {
   if (boundaryAxes.length > 0) return '경계 축이 조금 보여도 흐름은 읽히는 결과';
   return '오늘 컨디션을 가볍게 담은 결과';
 };
+
+const RESULT_THEME_CLASSES = {
+  spark: {
+    shell: 'bg-[radial-gradient(circle_at_top,_rgba(251,191,36,0.18),_transparent_31%),radial-gradient(circle_at_bottom_left,_rgba(236,72,153,0.16),_transparent_28%),linear-gradient(180deg,rgba(15,23,42,0.1),rgba(15,23,42,0))]',
+    shareShell: 'bg-[radial-gradient(circle_at_top,_rgba(251,191,36,0.22),_transparent_26%),radial-gradient(circle_at_bottom_left,_rgba(236,72,153,0.2),_transparent_28%),linear-gradient(145deg,#111827_0%,#1f1b2e_48%,#0f172a_100%)]',
+    haloTop: 'bg-amber-300/20',
+    haloBottom: 'bg-pink-400/[0.18]',
+    imageFrame: 'border-amber-300/20 bg-[radial-gradient(circle_at_top,_rgba(251,191,36,0.2),_transparent_44%),linear-gradient(180deg,rgba(15,23,42,0.98),rgba(2,6,23,0.92))]',
+    panel: 'border-amber-300/20 bg-amber-300/[0.08]',
+    label: 'text-amber-100',
+    chip: 'border-amber-300/20 bg-amber-300/[0.12] text-amber-100',
+    dot: 'bg-amber-300 shadow-[0_0_12px_rgba(252,211,77,0.9)]',
+    letterGradient: 'bg-gradient-to-r from-amber-200 via-pink-200 to-rose-200'
+  },
+  wave: {
+    shell: 'bg-[radial-gradient(circle_at_top,_rgba(45,212,191,0.16),_transparent_32%),radial-gradient(circle_at_bottom_left,_rgba(59,130,246,0.18),_transparent_28%),linear-gradient(180deg,rgba(15,23,42,0.1),rgba(15,23,42,0))]',
+    shareShell: 'bg-[radial-gradient(circle_at_top,_rgba(45,212,191,0.2),_transparent_26%),radial-gradient(circle_at_bottom_left,_rgba(59,130,246,0.22),_transparent_28%),linear-gradient(145deg,#061621_0%,#123044_48%,#0f172a_100%)]',
+    haloTop: 'bg-teal-300/[0.18]',
+    haloBottom: 'bg-blue-400/[0.18]',
+    imageFrame: 'border-teal-300/20 bg-[radial-gradient(circle_at_top,_rgba(45,212,191,0.2),_transparent_44%),linear-gradient(180deg,rgba(15,23,42,0.98),rgba(2,6,23,0.92))]',
+    panel: 'border-teal-300/20 bg-teal-300/[0.08]',
+    label: 'text-teal-100',
+    chip: 'border-teal-300/20 bg-teal-300/[0.12] text-teal-100',
+    dot: 'bg-teal-300 shadow-[0_0_12px_rgba(94,234,212,0.9)]',
+    letterGradient: 'bg-gradient-to-r from-teal-200 via-cyan-200 to-blue-200'
+  },
+  neon: {
+    shell: 'bg-[radial-gradient(circle_at_top,_rgba(34,211,238,0.18),_transparent_32%),radial-gradient(circle_at_bottom_left,_rgba(168,85,247,0.2),_transparent_28%),linear-gradient(180deg,rgba(15,23,42,0.1),rgba(15,23,42,0))]',
+    shareShell: 'bg-[radial-gradient(circle_at_top,_rgba(34,211,238,0.2),_transparent_26%),radial-gradient(circle_at_bottom_left,_rgba(168,85,247,0.24),_transparent_28%),linear-gradient(145deg,#09111f_0%,#111827_42%,#0f172a_100%)]',
+    haloTop: 'bg-cyan-400/[0.18]',
+    haloBottom: 'bg-brand/[0.18]',
+    imageFrame: 'border-cyan-300/20 bg-[radial-gradient(circle_at_top,_rgba(34,211,238,0.18),_transparent_45%),linear-gradient(180deg,rgba(15,23,42,0.98),rgba(2,6,23,0.92))]',
+    panel: 'border-cyan-300/20 bg-cyan-300/[0.08]',
+    label: 'text-cyan-100',
+    chip: 'border-cyan-300/20 bg-cyan-300/[0.12] text-cyan-100',
+    dot: 'bg-cyan-300 shadow-[0_0_12px_rgba(103,232,249,0.9)]',
+    letterGradient: 'bg-gradient-to-r from-cyan-300 via-violet-200 to-fuchsia-200'
+  },
+  steady: {
+    shell: 'bg-[radial-gradient(circle_at_top,_rgba(52,211,153,0.14),_transparent_32%),radial-gradient(circle_at_bottom_left,_rgba(148,163,184,0.16),_transparent_30%),linear-gradient(180deg,rgba(15,23,42,0.1),rgba(15,23,42,0))]',
+    shareShell: 'bg-[radial-gradient(circle_at_top,_rgba(52,211,153,0.18),_transparent_26%),radial-gradient(circle_at_bottom_left,_rgba(148,163,184,0.18),_transparent_28%),linear-gradient(145deg,#071814_0%,#16251f_48%,#0f172a_100%)]',
+    haloTop: 'bg-emerald-300/[0.16]',
+    haloBottom: 'bg-slate-300/[0.12]',
+    imageFrame: 'border-emerald-300/20 bg-[radial-gradient(circle_at_top,_rgba(52,211,153,0.18),_transparent_44%),linear-gradient(180deg,rgba(15,23,42,0.98),rgba(2,6,23,0.92))]',
+    panel: 'border-emerald-300/20 bg-emerald-300/[0.08]',
+    label: 'text-emerald-100',
+    chip: 'border-emerald-300/20 bg-emerald-300/[0.12] text-emerald-100',
+    dot: 'bg-emerald-300 shadow-[0_0_12px_rgba(110,231,183,0.9)]',
+    letterGradient: 'bg-gradient-to-r from-emerald-200 via-slate-100 to-teal-200'
+  },
+  'soft-shift': {
+    shell: 'bg-[radial-gradient(circle_at_top,_rgba(244,114,182,0.15),_transparent_32%),radial-gradient(circle_at_bottom_left,_rgba(129,140,248,0.18),_transparent_28%),linear-gradient(180deg,rgba(15,23,42,0.1),rgba(15,23,42,0))]',
+    shareShell: 'bg-[radial-gradient(circle_at_top,_rgba(244,114,182,0.2),_transparent_26%),radial-gradient(circle_at_bottom_left,_rgba(129,140,248,0.22),_transparent_28%),linear-gradient(145deg,#171124_0%,#20233c_48%,#0f172a_100%)]',
+    haloTop: 'bg-pink-300/[0.16]',
+    haloBottom: 'bg-indigo-300/[0.18]',
+    imageFrame: 'border-pink-300/20 bg-[radial-gradient(circle_at_top,_rgba(244,114,182,0.18),_transparent_44%),linear-gradient(180deg,rgba(15,23,42,0.98),rgba(2,6,23,0.92))]',
+    panel: 'border-pink-300/20 bg-pink-300/[0.08]',
+    label: 'text-pink-100',
+    chip: 'border-pink-300/20 bg-pink-300/[0.12] text-pink-100',
+    dot: 'bg-pink-300 shadow-[0_0_12px_rgba(249,168,212,0.9)]',
+    letterGradient: 'bg-gradient-to-r from-pink-200 via-indigo-200 to-sky-200'
+  }
+};
+
+const getThemeClasses = (themeKey) => RESULT_THEME_CLASSES[themeKey] || RESULT_THEME_CLASSES.neon;
 
 const getDetailPreview = ({ section, summaryCopy, consistencyCopy, historyComparison, trendAnalysis, historyInsights }) => {
   if (section === 'why') return consistencyCopy || summaryCopy;
@@ -71,6 +137,38 @@ function DetailSection({ title, preview, open, onToggle, children }) {
   );
 }
 
+function MiniResultCard({ title, value, description, tone = 'green' }) {
+  const toneClasses = tone === 'rose'
+    ? 'border-rose-400/20 bg-rose-400/[0.08] text-rose-50/90'
+    : 'border-green-400/20 bg-green-400/[0.08] text-green-50/90';
+  const titleClass = tone === 'rose' ? 'text-rose-100' : 'text-green-100';
+
+  return (
+    <div className={`grid min-h-[184px] grid-rows-[44px_56px_minmax(58px,1fr)] rounded-2xl border px-4 py-4 text-center ${toneClasses}`}>
+      <p className={`flex items-center justify-center text-[11px] font-black leading-[1.35] tracking-[0.16em] uppercase break-keep ${titleClass}`}>
+        {title}
+      </p>
+      <p className="flex items-center justify-center text-[28px] font-black leading-none text-white">{value}</p>
+      <p className="flex items-start justify-center text-[12px] leading-relaxed break-keep">{description}</p>
+    </div>
+  );
+}
+
+function MoodPointCard({ presentation, themeClasses }) {
+  return (
+    <div className={`mt-4 w-full rounded-[1.45rem] border px-4 py-4 ${themeClasses.panel}`}>
+      <div className="flex items-center justify-between gap-3">
+        <p className={`text-[11px] font-black tracking-[0.18em] uppercase ${themeClasses.label}`}>오늘만의 포인트</p>
+        <span className={`shrink-0 rounded-full border px-3 py-1 text-[10px] font-black ${themeClasses.chip}`}>
+          {presentation.stateLabel}
+        </span>
+      </div>
+      <p className="mt-3 text-[18px] font-black leading-[1.22] text-white break-keep">{presentation.hook}</p>
+      <p className="mt-2 text-[12px] leading-relaxed text-slate-100 break-keep">{presentation.detail}</p>
+    </div>
+  );
+}
+
 function ShareCard({ context }) {
   const {
     displayName,
@@ -83,15 +181,17 @@ function ShareCard({ context }) {
     resolvedImageSrc,
     todayLabel,
     timeLabel,
-    precisionBadge
+    precisionBadge,
+    presentation
   } = context;
+  const themeClasses = getThemeClasses(presentation?.themeKey);
 
   return (
-    <div className="relative h-[1080px] w-[1080px] overflow-hidden rounded-[64px] border border-white/10 bg-[radial-gradient(circle_at_top,_rgba(34,211,238,0.16),_transparent_26%),radial-gradient(circle_at_bottom_left,_rgba(168,85,247,0.22),_transparent_28%),linear-gradient(145deg,#09111f_0%,#111827_42%,#0f172a_100%)] text-white shadow-[0_40px_120px_rgba(2,6,23,0.7)]">
-      <div className="absolute -right-20 top-[-90px] h-80 w-80 rounded-full bg-brand/20 blur-3xl"></div>
-      <div className="absolute bottom-[-80px] left-[-40px] h-72 w-72 rounded-full bg-cyan-400/15 blur-3xl"></div>
-      <div className="absolute left-[70px] top-[132px] h-[460px] w-[460px] rounded-full border border-white/5 bg-cyan-300/[0.04]"></div>
-      <div className="absolute right-[88px] top-[208px] h-[430px] w-[430px] rounded-[46px] border border-cyan-300/10 bg-cyan-300/[0.04] rotate-[-6deg]"></div>
+    <div className={`relative h-[1080px] w-[1080px] overflow-hidden rounded-[64px] border border-white/10 ${themeClasses.shareShell} text-white shadow-[0_40px_120px_rgba(2,6,23,0.7)]`}>
+      <div className={`absolute -right-20 top-[-90px] h-80 w-80 rounded-full ${themeClasses.haloBottom} blur-3xl`}></div>
+      <div className={`absolute bottom-[-80px] left-[-40px] h-72 w-72 rounded-full ${themeClasses.haloTop} blur-3xl`}></div>
+      <div className="absolute left-[70px] top-[132px] h-[460px] w-[460px] rounded-full border border-white/5 bg-white/[0.04]"></div>
+      <div className="absolute right-[88px] top-[208px] h-[430px] w-[430px] rounded-[46px] border border-white/10 bg-white/[0.04] rotate-[-6deg]"></div>
       <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.05),transparent_24%,transparent_72%,rgba(255,255,255,0.03))]"></div>
 
       <div className="relative z-10 flex h-full flex-col px-20 py-20">
@@ -100,7 +200,9 @@ function ShareCard({ context }) {
             <p className="text-[24px] font-medium tracking-[-0.02em] text-slate-300">
               <span className="font-extrabold text-white">{displayName}</span>님의 오늘 성향 카드
             </p>
-            <p className="mt-5 text-[54px] font-black tracking-[0.12em] text-white drop-shadow-[0_10px_25px_rgba(15,23,42,0.6)]">{mbti}</p>
+            <p className={`mt-5 text-[54px] font-black tracking-[0.12em] drop-shadow-[0_10px_25px_rgba(15,23,42,0.6)] ${themeClasses.label}`}>
+              {mbti}
+            </p>
             <p className="mt-3 inline-flex rounded-full border border-white/10 bg-white/[0.05] px-5 py-2 text-[21px] font-semibold text-slate-100">
               {info.nickname}
             </p>
@@ -120,8 +222,8 @@ function ShareCard({ context }) {
         <div className="mt-9 grid flex-1 grid-cols-[1.02fr_0.98fr] gap-8">
           <div className="flex flex-col justify-between">
             <div>
-              <div className="inline-flex items-center gap-3 rounded-full border border-cyan-300/20 bg-cyan-400/10 px-5 py-2.5 text-[17px] font-bold text-cyan-100">
-                <span className="inline-block h-2.5 w-2.5 rounded-full bg-cyan-300 shadow-[0_0_12px_rgba(103,232,249,0.9)]"></span>
+              <div className={`inline-flex items-center gap-3 rounded-full border px-5 py-2.5 text-[17px] font-bold ${themeClasses.chip}`}>
+                <span className={`inline-block h-2.5 w-2.5 rounded-full ${themeClasses.dot}`}></span>
                 {shareVibeStamp}
               </div>
               <p className="mt-7 text-[68px] font-black leading-[1.04] tracking-[-0.045em] text-white break-keep">{shareCardCopy.hook}</p>
@@ -138,31 +240,37 @@ function ShareCard({ context }) {
             </div>
 
             <div className="mt-7 rounded-[34px] border border-white/10 bg-black/25 px-7 py-6 shadow-[0_24px_60px_rgba(2,6,23,0.34)]">
-              <p className="text-[14px] font-bold tracking-[0.2em] text-slate-500 uppercase">Share Note</p>
+              <p className="text-[14px] font-bold tracking-[0.2em] text-slate-500 uppercase">오늘의 한 줄</p>
               <p className="mt-3 text-[23px] font-semibold leading-[1.45] text-slate-100 break-keep">{shareCardCopy.boast}</p>
             </div>
 
             <div className="mt-auto flex items-center justify-between rounded-[28px] border border-white/10 bg-white/[0.03] px-7 py-5">
               <p className="text-[15px] font-semibold text-slate-300">{precisionBadge}</p>
-              <p className="text-[15px] font-black tracking-[0.14em] text-white">Mood Snapshot</p>
+              <p className="text-[15px] font-black tracking-[0.14em] text-white">오늘 무드 카드</p>
             </div>
           </div>
 
           <div className="flex flex-col">
-            <div className="relative flex-1 overflow-hidden rounded-[42px] border border-white/10 bg-[radial-gradient(circle_at_top,_rgba(34,211,238,0.18),_transparent_42%),linear-gradient(180deg,rgba(15,23,42,0.98),rgba(2,6,23,0.92))] shadow-[0_24px_80px_rgba(2,6,23,0.5)]">
+            <div className={`relative flex-1 overflow-hidden rounded-[42px] border ${themeClasses.imageFrame} shadow-[0_24px_80px_rgba(2,6,23,0.5)]`}>
               <div className="absolute left-8 top-8 inline-flex rounded-full border border-white/10 bg-white/[0.08] px-5 py-2 text-[15px] font-black tracking-[0.2em] text-slate-100 uppercase">{mbti}</div>
-              <div className="absolute inset-x-10 top-12 h-20 rounded-full bg-cyan-400/15 blur-3xl"></div>
-              <div className="absolute inset-x-12 bottom-28 h-20 rounded-full bg-brand/20 blur-3xl"></div>
+              <div className={`absolute inset-x-10 top-12 h-20 rounded-full ${themeClasses.haloTop} blur-3xl`}></div>
+              <div className={`absolute inset-x-12 bottom-28 h-20 rounded-full ${themeClasses.haloBottom} blur-3xl`}></div>
               <div className="absolute inset-0 border border-white/5 rounded-[42px]"></div>
-              {resolvedImageSrc && (
-                <img src={resolvedImageSrc} alt={mbti} className="relative z-10 mx-auto mt-20 h-[360px] w-[360px] object-contain drop-shadow-[0_24px_48px_rgba(15,23,42,0.82)]" />
-              )}
-              <div className="absolute right-7 top-7 flex items-center gap-2 rounded-full border border-brand/30 bg-brand/18 px-5 py-2.5 text-[16px] font-black text-white shadow-[0_12px_24px_rgba(168,85,247,0.28)]">
-                <span className="inline-block h-2.5 w-2.5 rounded-full bg-fuchsia-300 shadow-[0_0_10px_rgba(232,121,249,0.95)]"></span>
-                지금 이 무드
+              <div className={`absolute right-7 top-7 flex items-center gap-2 rounded-full border px-5 py-2.5 text-[16px] font-black shadow-[0_12px_24px_rgba(15,23,42,0.28)] ${themeClasses.chip}`}>
+                <span className={`inline-block h-2.5 w-2.5 rounded-full ${themeClasses.dot}`}></span>
+                {presentation?.themeLabel || '오늘 무드'}
               </div>
+              {resolvedImageSrc && (
+                <div className="relative z-10 mx-auto mt-20 flex h-[390px] w-[390px] items-center justify-center rounded-[34px] border border-white/70 bg-white p-7 shadow-[0_24px_48px_rgba(15,23,42,0.82)]">
+                  <img
+                    src={resolvedImageSrc}
+                    alt={mbti}
+                    className="h-full w-full object-contain"
+                  />
+                </div>
+              )}
               <div className="absolute inset-x-8 bottom-8 rounded-[30px] border border-white/10 bg-black/35 px-6 py-6 backdrop-blur-sm">
-                <p className="text-[14px] font-bold tracking-[0.22em] text-slate-500 uppercase">Share Snapshot</p>
+                <p className="text-[14px] font-bold tracking-[0.22em] text-slate-500 uppercase">오늘의 무드</p>
                 <p className="mt-3 text-[28px] font-black leading-[1.25] text-white break-keep">{info.nickname}</p>
                 <p className="mt-2 text-[18px] font-semibold text-slate-200 break-keep">{shareCardCopy.boast}</p>
               </div>
@@ -206,29 +314,6 @@ export default function ResultView({
     };
   }
 
-  useEffect(() => {
-    const newEntry = {
-      ...currentEntryRef.current,
-      mbti,
-      percent,
-      axes: spectrum.map((axis) => ({
-        pair: `${axis.left}/${axis.right}`,
-        left: axis.left,
-        right: axis.right,
-        dominantType: axis.dominantType,
-        intensity: axis.intensity,
-        leftScore: axis.leftScore,
-        rightScore: axis.rightScore
-      }))
-    };
-
-    if (historyData[0]?.createdAt === newEntry.createdAt) return;
-
-    const updated = [newEntry, ...historyData].slice(0, 7);
-    writeHistory(updated);
-    setHistoryData(updated);
-  }, [historyData, mbti, percent, setHistoryData, spectrum]);
-
   const compCopy = getCompatibilityCopy(mbti);
   const axisNarratives = getAxisNarratives(spectrum);
   const summaryCopy = getResultSummary(mbti, spectrum, percent);
@@ -254,7 +339,16 @@ export default function ResultView({
   const trendAnalysis = getTrendAnalysis(spectrum, effectiveHistory[1]?.axes);
   const displayName = getDisplayName(userName, defaultUserName);
   const retestPrompt = getRetestPrompt(boundaryAxes, historyInsights);
-  const { shareMoodLine, shareHeadline, shareCardCopy, shareVibeStamp } = getShareCardCopy(mbti, spectrum, badges, info, percent);
+  const presentation = getResultPresentation({
+    mbti,
+    spectrum,
+    percent,
+    historyInsights,
+    historyComparison,
+    createdAt: currentEntryRef.current.createdAt
+  });
+  const themeClasses = getThemeClasses(presentation.themeKey);
+  const { shareMoodLine, shareHeadline, shareCardCopy, shareVibeStamp } = getShareCardCopy(mbti, spectrum, badges, info, percent, presentation);
   const neutralReviewNote = neutralCount > 0
     ? usedFollowup
       ? '애매했던 축은 추가 질문으로 다시 확인했어요.'
@@ -267,11 +361,36 @@ export default function ResultView({
   const timeLabel = getTimeLabel();
 
   useEffect(() => {
+    const newEntry = {
+      ...currentEntryRef.current,
+      mbti,
+      percent,
+      variantKey: presentation.variantKey,
+      themeKey: presentation.themeKey,
+      axes: spectrum.map((axis) => ({
+        pair: `${axis.left}/${axis.right}`,
+        left: axis.left,
+        right: axis.right,
+        dominantType: axis.dominantType,
+        intensity: axis.intensity,
+        leftScore: axis.leftScore,
+        rightScore: axis.rightScore
+      }))
+    };
+
+    if (historyData[0]?.createdAt === newEntry.createdAt) return;
+
+    const updated = [newEntry, ...historyData].slice(0, 7);
+    writeHistory(updated);
+    setHistoryData(updated);
+  }, [historyData, mbti, percent, presentation.themeKey, presentation.variantKey, setHistoryData, spectrum]);
+
+  useEffect(() => {
     trackEvent('result_view', { mbti, percent });
   }, [mbti, percent, trackEvent]);
 
   const handleCopyShare = async () => {
-    const shareText = `${displayName}님의 오늘 결과\n${shareMoodLine}\n${summaryCopy}\n싱크로율 ${percent}%`;
+    const shareText = `${displayName}님의 오늘 결과\n${shareCardCopy.hook}\n${shareCardCopy.detail}\n싱크로율 ${percent}%`;
     try {
       await navigator.clipboard.writeText(shareText);
       setShareCopied(true);
@@ -317,7 +436,8 @@ export default function ResultView({
     resolvedImageSrc,
     todayLabel,
     timeLabel,
-    precisionBadge
+    precisionBadge,
+    presentation
   };
 
   const detailSections = {
@@ -369,7 +489,7 @@ export default function ResultView({
                     </button>
                     <p className="mt-1 text-[11px] text-slate-400">{item.stateLabel}</p>
                   </div>
-                  <span className={`rounded-full px-3 py-1 text-[11px] font-bold ${item.isBoundary ? 'border border-yellow-300/20 bg-yellow-400/12 text-yellow-100' : 'border border-cyan-300/20 bg-cyan-300/10 text-cyan-100'}`}>
+                  <span className={`rounded-full px-3 py-1 text-[11px] font-bold ${item.isBoundary ? 'border border-yellow-300/20 bg-yellow-400/[0.12] text-yellow-100' : 'border border-cyan-300/20 bg-cyan-300/[0.1] text-cyan-100'}`}>
                     {item.dominantType} 우세 {item.intensity}%
                   </span>
                 </div>
@@ -427,16 +547,17 @@ export default function ResultView({
           </div>
         )}
         <div className="grid grid-cols-2 gap-3">
-          <div className="rounded-2xl border border-green-400/20 bg-green-400/[0.08] px-4 py-4 text-center">
-            <p className="text-[11px] font-black tracking-[0.16em] text-green-100 uppercase">잘 통할 가능성</p>
-            <p className="mt-2 text-[28px] font-black text-white">{compCopy.good.type}</p>
-            <p className="mt-1 text-[12px] leading-relaxed text-green-50/90 break-keep">{compCopy.good.description}</p>
-          </div>
-          <div className="rounded-2xl border border-rose-400/20 bg-rose-400/[0.08] px-4 py-4 text-center">
-            <p className="text-[11px] font-black tracking-[0.16em] text-rose-100 uppercase">오늘은 살짝 부딪힐 수 있음</p>
-            <p className="mt-2 text-[28px] font-black text-white">{compCopy.bad.type}</p>
-            <p className="mt-1 text-[12px] leading-relaxed text-rose-50/90 break-keep">{compCopy.bad.description}</p>
-          </div>
+          <MiniResultCard
+            title={compCopy.good.title}
+            value={compCopy.good.type}
+            description={compCopy.good.description}
+          />
+          <MiniResultCard
+            title={compCopy.bad.title}
+            value={compCopy.bad.type}
+            description={compCopy.bad.description}
+            tone="rose"
+          />
         </div>
       </div>
     )
@@ -451,7 +572,7 @@ export default function ResultView({
       </div>
 
       <div ref={resultRef} className="relative mt-4 w-full max-w-sm overflow-hidden rounded-[2rem] border border-white/10 bg-slate-900/95 p-6 shadow-[0_30px_90px_rgba(2,6,23,0.55)]">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(34,211,238,0.14),_transparent_32%),radial-gradient(circle_at_bottom_left,_rgba(168,85,247,0.18),_transparent_28%),linear-gradient(180deg,rgba(15,23,42,0.1),rgba(15,23,42,0))]" />
+        <div className={`absolute inset-0 ${themeClasses.shell}`} />
         <div className="relative z-10 flex flex-col items-center">
           <div className="w-full rounded-[1.8rem] border border-white/10 bg-[linear-gradient(145deg,rgba(15,23,42,0.96),rgba(17,24,39,0.88))] p-5 shadow-[0_26px_80px_rgba(2,6,23,0.44)]">
             <div className="flex items-start justify-between gap-4">
@@ -463,7 +584,7 @@ export default function ResultView({
                       key={`${letter}-${idx}`}
                       type="button"
                       onClick={() => onOpenAxisGuide(letter)}
-                      className="bg-gradient-to-r from-brand via-violet-300 to-cyan-300 bg-clip-text text-[70px] font-black leading-none tracking-[0.14em] text-transparent drop-shadow-[0_14px_30px_rgba(99,102,241,0.22)]"
+                      className={`${themeClasses.letterGradient} bg-clip-text text-[70px] font-black leading-none tracking-[0.14em] text-transparent drop-shadow-[0_14px_30px_rgba(99,102,241,0.22)]`}
                     >
                       {letter}
                     </button>
@@ -472,7 +593,7 @@ export default function ResultView({
                 <p className="mt-3 inline-flex rounded-full border border-white/10 bg-white/[0.05] px-4 py-2 text-[14px] font-bold text-slate-100">{info.nickname}</p>
               </div>
               <div className="flex flex-col items-end gap-2">
-                <div className="rounded-[1.3rem] border border-brand/25 bg-brand/15 px-4 py-3 text-right shadow-[0_14px_28px_rgba(168,85,247,0.22)]">
+                <div className={`rounded-[1.3rem] border px-4 py-3 text-right shadow-[0_14px_28px_rgba(15,23,42,0.22)] ${themeClasses.chip}`}>
                   <p className="text-[10px] font-black tracking-[0.2em] text-purple-100 uppercase">싱크로율</p>
                   <p className="mt-1 text-[28px] font-black text-white">{percent}%</p>
                 </div>
@@ -481,25 +602,31 @@ export default function ResultView({
             </div>
 
             <div className="mt-4 flex flex-wrap gap-2">
-              <span className="rounded-full border border-white/10 bg-white/[0.06] px-3 py-1.5 text-[11px] font-bold text-slate-100">{shareVibeStamp}</span>
+              <span className={`rounded-full border px-3 py-1.5 text-[11px] font-bold ${themeClasses.chip}`}>{shareVibeStamp}</span>
+              <span className="rounded-full border border-white/10 bg-white/[0.06] px-3 py-1.5 text-[11px] font-bold text-slate-100">{presentation.themeLabel}</span>
               {topChangeChip && <span className="rounded-full border border-amber-300/20 bg-amber-300/[0.12] px-3 py-1.5 text-[11px] font-bold text-amber-100">{topChangeChip}</span>}
               {neutralReviewNote && <span className="rounded-full border border-cyan-300/20 bg-cyan-300/[0.1] px-3 py-1.5 text-[11px] font-bold text-cyan-100">보정 질문 반영</span>}
             </div>
+
+            <MoodPointCard presentation={presentation} themeClasses={themeClasses} />
           </div>
 
           <div className="mt-5 flex w-full flex-col gap-4 rounded-[1.8rem] border border-white/10 bg-[linear-gradient(180deg,rgba(10,16,29,0.94),rgba(15,23,42,0.88))] p-5 shadow-[0_22px_70px_rgba(2,6,23,0.38)]">
             {resolvedImageSrc && (
-              <div className="relative flex items-center justify-center overflow-hidden rounded-[1.6rem] border border-white/10 bg-[radial-gradient(circle_at_top,_rgba(34,211,238,0.18),_transparent_45%),linear-gradient(180deg,rgba(15,23,42,0.98),rgba(2,6,23,0.92))] px-3 py-4">
-                <div className="absolute inset-x-6 top-3 h-14 rounded-full bg-cyan-400/15 blur-2xl" />
-                <div className="absolute inset-x-6 bottom-3 h-16 rounded-full bg-brand/15 blur-2xl" />
+              <div className={`relative flex items-center justify-center overflow-hidden rounded-[1.6rem] border px-3 py-4 ${themeClasses.imageFrame}`}>
+                <div className={`absolute inset-x-6 top-3 h-14 rounded-full ${themeClasses.haloTop} blur-2xl`} />
+                <div className={`absolute inset-x-6 bottom-3 h-16 rounded-full ${themeClasses.haloBottom} blur-2xl`} />
                 <img src={resolvedImageSrc} alt={mbti} className="relative z-10 h-44 w-44 object-contain drop-shadow-[0_16px_34px_rgba(15,23,42,0.76)]" />
               </div>
             )}
 
-            <div className="rounded-[1.5rem] border border-cyan-300/20 bg-cyan-300/[0.08] px-4 py-4">
-              <p className="text-[11px] font-black tracking-[0.2em] text-cyan-100 uppercase">오늘의 핵심 무드</p>
-              <p className="mt-2 text-[26px] font-black leading-[1.18] text-white break-keep">{shareMoodLine}</p>
-              <p className="mt-3 text-[14px] leading-relaxed text-slate-100 break-keep">{summaryCopy}</p>
+            <div className={`rounded-[1.5rem] border px-4 py-4 ${themeClasses.panel}`}>
+              <div className="flex items-center justify-between gap-3">
+                <p className={`text-[11px] font-black tracking-[0.2em] uppercase ${themeClasses.label}`}>오늘의 무드 테마</p>
+                <span className={`rounded-full border px-3 py-1 text-[10px] font-black ${themeClasses.chip}`}>{presentation.themeShortLabel}</span>
+              </div>
+              <p className="mt-2 text-[25px] font-black leading-[1.18] text-white break-keep">{presentation.themeLabel}</p>
+              <p className="mt-3 text-[14px] leading-relaxed text-slate-100 break-keep">{shareCardCopy.boast}</p>
             </div>
 
             <div className="grid grid-cols-2 gap-3">

@@ -177,7 +177,7 @@ export default function App() {
   };
 
   const finishSession = (finalScores, finalSessionIds = sessionQuestionIds) => {
-    writeRecentSessions([finalSessionIds, ...recentSessionsSnapshot].slice(0, 3));
+    writeRecentSessions([finalSessionIds, ...recentSessionsSnapshot].slice(0, 6));
     trackEvent('complete_test', {
       usedFollowup: questionPhase === 'followup' || followupQuestions.length > 0,
       followupCount: followupQuestions.length,

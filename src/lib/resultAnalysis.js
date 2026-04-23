@@ -208,6 +208,187 @@ export const getRetestPrompt = (boundaryAxes, historyInsights) => {
   return '같은 날 다시 해보면 예상보다 작은 축 하나가 먼저 달라질 수 있어요.';
 };
 
+const PRESENTATION_THEMES = [
+  {
+    key: 'spark',
+    label: '불꽃 무드',
+    shortLabel: '불꽃',
+    stampSuffix: '번쩍 올라온 오늘'
+  },
+  {
+    key: 'wave',
+    label: '파도 무드',
+    shortLabel: '파도',
+    stampSuffix: '흐름을 타는 오늘'
+  },
+  {
+    key: 'neon',
+    label: '네온 무드',
+    shortLabel: '네온',
+    stampSuffix: '선명하게 켜진 오늘'
+  },
+  {
+    key: 'steady',
+    label: '스테디 무드',
+    shortLabel: '스테디',
+    stampSuffix: '탄탄하게 잡힌 오늘'
+  },
+  {
+    key: 'soft-shift',
+    label: '소프트 시프트',
+    shortLabel: '시프트',
+    stampSuffix: '살짝 달라진 오늘'
+  }
+];
+
+const PRESENTATION_VARIANTS = {
+  streak: [
+    {
+      key: 'streak-glow',
+      stateLabel: '연속 결과',
+      hook: (mbti) => `또 ${mbti}, 그런데 오늘은 결이 더 선명한 날`,
+      detail: '같은 유형이 이어져도 답변의 온도와 강한 축은 조금씩 달라지고 있어요.',
+      boast: '반복될수록 내 패턴이 더 또렷하게 보이는 타입',
+      tags: ['#연속무드', '#패턴발견', '#오늘의차이']
+    },
+    {
+      key: 'streak-twist',
+      stateLabel: '연속 결과',
+      hook: (mbti) => `${mbti} 흐름은 유지, 포인트는 살짝 바뀐 날`,
+      detail: '큰 방향은 비슷하지만 오늘은 특정 축의 힘이 다르게 들어왔어요.',
+      boast: '같은 결과 안에서도 미묘한 변화를 잘 남기는 타입',
+      tags: ['#같지만다름', '#미묘한변화', '#축포인트']
+    }
+  ],
+  shift: [
+    {
+      key: 'shift-pop',
+      stateLabel: '변화 감지',
+      hook: (mbti) => `오늘은 ${mbti} 쪽으로 새로 방향 튼 날`,
+      detail: '직전 결과와 다른 축이 움직이면서 오늘의 컨디션이 더 크게 반영됐어요.',
+      boast: '상황에 따라 분위기가 확 바뀌는 반전형 타입',
+      tags: ['#무드전환', '#오늘은다름', '#축변화']
+    },
+    {
+      key: 'shift-signal',
+      stateLabel: '변화 감지',
+      hook: (mbti) => `${mbti} 신호가 새로 들어온 날`,
+      detail: '평소 흐름과 다른 선택이 섞이면서 오늘만의 성향 신호가 잡혔어요.',
+      boast: '변화가 생길 때 자기 상태가 더 잘 드러나는 타입',
+      tags: ['#새신호', '#컨디션반영', '#변화감지']
+    }
+  ],
+  boundary: [
+    {
+      key: 'boundary-float',
+      stateLabel: '경계 축',
+      hook: (mbti) => `${mbti}지만 몇 축은 살짝 떠 있는 날`,
+      detail: '한쪽으로 딱 잠기기보다 상황과 사람에 따라 흔들릴 여지가 보여요.',
+      boast: '고정된 답보다 오늘의 분위기를 더 잘 타는 타입',
+      tags: ['#경계축', '#상황영향', '#유연한무드']
+    },
+    {
+      key: 'boundary-pulse',
+      stateLabel: '경계 축',
+      hook: (mbti) => `${mbti} 안에서 작은 파동이 있는 날`,
+      detail: '결과는 나왔지만 몇몇 판단은 오늘 컨디션을 많이 따라갔어요.',
+      boast: '같은 유형 안에서도 감도와 리듬이 살아 있는 타입',
+      tags: ['#작은파동', '#오늘감도', '#흔들리는축']
+    }
+  ],
+  clear: [
+    {
+      key: 'clear-bright',
+      stateLabel: '선명한 결과',
+      hook: (mbti) => `${mbti} 무드가 꽤 또렷하게 켜진 날`,
+      detail: '여러 답변에서 비슷한 방향이 반복되며 오늘의 성향이 선명하게 잡혔어요.',
+      boast: '오늘만큼은 자기 결이 분명하게 드러나는 타입',
+      tags: ['#선명한무드', '#답변일치', '#오늘확신']
+    },
+    {
+      key: 'clear-drive',
+      stateLabel: '선명한 결과',
+      hook: (mbti) => `${mbti} 쪽으로 힘이 제대로 실린 날`,
+      detail: '강한 축이 결과를 끌고 가면서 오늘의 반응 방식이 뚜렷했어요.',
+      boast: '에너지 방향이 정해지면 존재감이 확 살아나는 타입',
+      tags: ['#힘실림', '#존재감', '#성향선명']
+    }
+  ],
+  default: [
+    {
+      key: 'daily-snap',
+      stateLabel: '오늘 스냅샷',
+      hook: (mbti) => `오늘의 나는 ${mbti} 쪽으로 기운 날`,
+      detail: '짧은 답변 안에서도 오늘의 기분과 선택 기준이 가볍게 드러났어요.',
+      boast: '매일 조금씩 다른 결을 남기는 데일리 스냅샷 타입',
+      tags: ['#오늘의나', '#데일리MBTI', '#무드스냅샷']
+    },
+    {
+      key: 'daily-layer',
+      stateLabel: '오늘 스냅샷',
+      hook: (mbti) => `${mbti} 위에 오늘의 분위기가 한 겹 얹힌 날`,
+      detail: '기본 성향 위로 지금의 상황, 사람, 컨디션이 자연스럽게 섞였어요.',
+      boast: '고정된 타입보다 오늘의 장면까지 같이 보여주는 타입',
+      tags: ['#오늘분위기', '#성향레이어', '#지금이느낌']
+    }
+  ]
+};
+
+const getStableSeed = (parts) =>
+  parts.join('|').split('').reduce((hash, char) => {
+    const nextHash = ((hash << 5) - hash) + char.charCodeAt(0);
+    return nextHash | 0;
+  }, 0);
+
+const pickSeeded = (items, seed) => items[Math.abs(seed) % items.length];
+
+const getPresentationState = ({ percent, spectrum, historyInsights, historyComparison }) => {
+  const boundaryCount = spectrum.filter((item) => item.isBoundary).length;
+  const hasChanged = historyComparison?.title?.includes('달라졌어요');
+
+  if (historyInsights?.stableCount >= 2) return 'streak';
+  if (hasChanged) return 'shift';
+  if (boundaryCount >= 1 || percent < 72) return 'boundary';
+  if (percent >= 85) return 'clear';
+  return 'default';
+};
+
+export const getResultPresentation = ({
+  mbti,
+  spectrum,
+  percent,
+  historyInsights = null,
+  historyComparison = null,
+  createdAt = ''
+}) => {
+  const strongestAxis = [...spectrum].sort((a, b) => b.intensity - a.intensity)[0];
+  const state = getPresentationState({ percent, spectrum, historyInsights, historyComparison });
+  const seed = getStableSeed([
+    createdAt,
+    mbti,
+    strongestAxis?.dominantType || '',
+    strongestAxis?.intensity || '',
+    historyInsights?.stableCount || 0,
+    historyComparison?.title || ''
+  ]);
+  const variant = pickSeeded(PRESENTATION_VARIANTS[state] || PRESENTATION_VARIANTS.default, seed);
+  const theme = pickSeeded(PRESENTATION_THEMES, seed + state.length + (strongestAxis?.intensity || 0));
+
+  return {
+    state,
+    variantKey: variant.key,
+    themeKey: theme.key,
+    themeLabel: theme.label,
+    themeShortLabel: theme.shortLabel,
+    stateLabel: variant.stateLabel,
+    hook: variant.hook(mbti),
+    detail: variant.detail,
+    boast: variant.boast,
+    tags: variant.tags,
+    stamp: `${theme.stampSuffix} · ${getShareVibeStamp(mbti, spectrum)}`
+  };
+};
+
 export const getShareMoodLine = (mbti, info, percent) => {
   const moodLead = percent >= 85 ? `오늘은 ${mbti} 모드가 꽤 선명한 날` : `오늘은 ${mbti} 쪽으로 조금 더 기울어진 날`;
   return `${moodLead} · ${info.nickname}`;
@@ -288,22 +469,32 @@ export const getShareVibeStamp = (mbti, spectrum) => {
   return strongestTagMap[strongestAxis?.dominantType] || `${mbti} 무드 스냅샷`;
 };
 
-export const getShareCardCopy = (mbti, spectrum, badges, info, percent) => {
+export const getShareCardCopy = (mbti, spectrum, badges, info, percent, presentation = null) => {
   const shareMoodLine = getShareMoodLine(mbti, info, percent);
   const shareHeadline = getShareHeadline(mbti, info, percent);
   const shareSummaryShort = getShareSummaryShort(spectrum);
   const shareHook = SHARE_HOOKS[mbti] || `${mbti} 무드가 또렷한 타입`;
+  const baseCopy = SHARE_CARD_COPY[mbti] || {
+    hook: shareHook,
+    detail: shareSummaryShort,
+    boast: shareMoodLine,
+    tags: badges.slice(0, 3).map((badge) => `#${badge}`)
+  };
+  const presentationCopy = presentation
+    ? {
+        hook: presentation.hook,
+        detail: presentation.detail,
+        boast: presentation.boast,
+        tags: [...presentation.tags, ...baseCopy.tags].slice(0, 4)
+      }
+    : baseCopy;
+
   return {
     shareMoodLine,
     shareHeadline,
     shareSummaryShort,
     shareHook,
-    shareVibeStamp: getShareVibeStamp(mbti, spectrum),
-    shareCardCopy: SHARE_CARD_COPY[mbti] || {
-      hook: shareHook,
-      detail: shareSummaryShort,
-      boast: shareMoodLine,
-      tags: badges.slice(0, 3).map((badge) => `#${badge}`)
-    }
+    shareVibeStamp: presentation?.stamp || getShareVibeStamp(mbti, spectrum),
+    shareCardCopy: presentationCopy
   };
 };

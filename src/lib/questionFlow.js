@@ -36,6 +36,40 @@ const shuffle = (items) => [...items].sort(() => Math.random() - 0.5);
 
 const pickRandomSubset = (items, count) => shuffle(items).slice(0, count);
 
+const getSelectionWeight = (question) => {
+  const roleBoost = question.role === 'state' || question.role === 'parallel' ? 1.18 : 1;
+  const middleBoost = question.allowMiddleCandidate ? 1.25 : 1;
+  return (question.weight || 1) * roleBoost * middleBoost;
+};
+
+const pickWeightedQuestion = (pool, { recentIds, usedIds, usedFamilyIds }) => {
+  const usable = pool.filter((question) =>
+    !usedIds.has(question.id) &&
+    !usedFamilyIds.has(question.familyId)
+  );
+  if (!usable.length) return null;
+
+  const fresh = usable.filter((question) => !recentIds.has(question.id));
+  const candidates = fresh.length > 0 ? fresh : usable;
+  const totalWeight = candidates.reduce((sum, question) => sum + getSelectionWeight(question), 0);
+  let cursor = Math.random() * totalWeight;
+
+  for (const question of candidates) {
+    cursor -= getSelectionWeight(question);
+    if (cursor <= 0) return question;
+  }
+
+  return candidates[0];
+};
+
+const addPickedQuestion = (question, selected, usedIds, usedFamilyIds) => {
+  if (!question) return false;
+  selected.push(question);
+  usedIds.add(question.id);
+  usedFamilyIds.add(question.familyId);
+  return true;
+};
+
 const AXIS_CONFIG = [
   { code: 'EI', left: 'E', right: 'I' },
   { code: 'SN', left: 'S', right: 'N' },
@@ -149,55 +183,35 @@ export const buildQuestionSession = (recentSessions = []) => {
 
     const enriched = pool.map((q, i) => ({
       ...q,
-      id: meta[i]?.id,
-      familyId: meta[i]?.familyId,
+      id: meta[i]?.id || `${axis}_${i + 1}`,
+      familyId: meta[i]?.familyId || `${axis}_${i + 1}`,
       role: meta[i]?.role,
-      weight: meta[i]?.weight,
+      weight: meta[i]?.weight || 1,
       allowMiddleCandidate: meta[i]?.allowMiddleCandidate || false,
       _axis: axis
     }));
 
-    const candidates = enriched.filter((q) => !recentIds.has(q.id));
-    const pool2 = candidates.length >= 4 ? candidates : enriched;
+    const rolePools = [
+      enriched.filter((question) => question.role === 'anchor'),
+      enriched.filter((question) => ['discriminator', 'forced_choice'].includes(question.role)),
+      enriched.filter((question) => ['state', 'parallel'].includes(question.role))
+    ];
 
-    const anchors = pool2.filter((q) => q.role === 'anchor' && !usedFamilyIds.has(q.familyId));
-    const anchor = anchors.length > 0
-      ? anchors[Math.floor(Math.random() * anchors.length)]
-      : pool2[Math.floor(Math.random() * pool2.length)];
+    rolePools.forEach((rolePool) => {
+      const question = pickWeightedQuestion(rolePool.length ? rolePool : enriched, {
+        recentIds,
+        usedIds,
+        usedFamilyIds
+      });
+      addPickedQuestion(question, selected, usedIds, usedFamilyIds);
+    });
 
-    usedFamilyIds.add(anchor.familyId);
-    usedIds.add(anchor.id);
-    selected.push(anchor);
-
-    const rest = pool2.filter((q) => !usedIds.has(q.id) && !usedFamilyIds.has(q.familyId));
-    const getSelectionWeight = (question) => question.weight * (question.allowMiddleCandidate ? 1.35 : 1);
-    const totalW = rest.reduce((sum, q) => sum + getSelectionWeight(q), 0);
-    const pick = (exclude) => {
-      let r = Math.random() * totalW;
-      for (const q of rest) {
-        if (exclude.has(q.id) || usedFamilyIds.has(q.familyId)) continue;
-        r -= getSelectionWeight(q);
-        if (r <= 0) return q;
-      }
-      return rest.find((q) => !exclude.has(q.id) && !usedFamilyIds.has(q.familyId)) || rest[0];
-    };
-
-    const pick1 = pick(usedIds);
-    if (pick1) {
-      usedFamilyIds.add(pick1.familyId);
-      usedIds.add(pick1.id);
-      selected.push(pick1);
-    }
-
-    const pick2 = pick(usedIds);
-    if (pick2) {
-      usedFamilyIds.add(pick2.familyId);
-      usedIds.add(pick2.id);
-      selected.push(pick2);
+    while (selected.filter((question) => question._axis === axis).length < 3) {
+      const fallback = pickWeightedQuestion(enriched, { recentIds, usedIds, usedFamilyIds });
+      if (!addPickedQuestion(fallback, selected, usedIds, usedFamilyIds)) break;
     }
   });
 
-  selected.sort(() => Math.random() - 0.5);
   const ordered = sortQuestionsForTempo(selected, recentIds);
   let totalMiddleSlots = 0;
   let openingMiddleSlots = 0;
