@@ -105,6 +105,24 @@ const RESULT_THEME_CLASSES = {
 
 const getThemeClasses = (themeKey) => RESULT_THEME_CLASSES[themeKey] || RESULT_THEME_CLASSES.neon;
 
+const getShareHookClasses = (hook = '') => {
+  const length = hook.replace(/\s+/g, '').length;
+
+  if (length <= 18) {
+    return 'text-[68px] leading-[1.04]';
+  }
+
+  if (length <= 24) {
+    return 'text-[62px] leading-[1.05]';
+  }
+
+  if (length <= 30) {
+    return 'text-[56px] leading-[1.08]';
+  }
+
+  return 'text-[50px] leading-[1.1]';
+};
+
 const getDetailPreview = ({ section, summaryCopy, consistencyCopy, historyComparison, trendAnalysis, historyInsights }) => {
   if (section === 'why') return consistencyCopy || summaryCopy;
   if (section === 'axes') return trendAnalysis?.title || '축별 밸런스와 우세 흐름을 자세히 볼 수 있어요.';
@@ -185,6 +203,7 @@ function ShareCard({ context }) {
     presentation
   } = context;
   const themeClasses = getThemeClasses(presentation?.themeKey);
+  const shareHookClasses = getShareHookClasses(shareCardCopy.hook);
 
   return (
     <div className={`relative h-[1080px] w-[1080px] overflow-hidden rounded-[64px] border border-white/10 ${themeClasses.shareShell} text-white shadow-[0_40px_120px_rgba(2,6,23,0.7)]`}>
@@ -219,14 +238,14 @@ function ShareCard({ context }) {
           </div>
         </div>
 
-        <div className="mt-9 grid flex-1 grid-cols-[1.02fr_0.98fr] gap-8">
+        <div className="mt-9 grid flex-1 grid-cols-[1.02fr_0.98fr] items-start gap-8">
           <div className="flex flex-col justify-between">
             <div>
               <div className={`inline-flex items-center gap-3 rounded-full border px-5 py-2.5 text-[17px] font-bold ${themeClasses.chip}`}>
                 <span className={`inline-block h-2.5 w-2.5 rounded-full ${themeClasses.dot}`}></span>
                 {shareVibeStamp}
               </div>
-              <p className="mt-7 text-[68px] font-black leading-[1.04] tracking-[-0.045em] text-white break-keep">{shareCardCopy.hook}</p>
+              <p className={`mt-7 font-black tracking-[-0.045em] text-white break-keep ${shareHookClasses}`}>{shareCardCopy.hook}</p>
               <p className="mt-6 text-[29px] font-semibold leading-[1.38] text-slate-100 break-keep">{shareCardCopy.detail}</p>
               <p className="mt-4 text-[21px] leading-[1.55] text-slate-300 break-keep">{shareHeadline}</p>
             </div>
@@ -251,28 +270,41 @@ function ShareCard({ context }) {
           </div>
 
           <div className="flex flex-col">
-            <div className={`relative flex-1 overflow-hidden rounded-[42px] border ${themeClasses.imageFrame} shadow-[0_24px_80px_rgba(2,6,23,0.5)]`}>
-              <div className="absolute left-8 top-8 inline-flex rounded-full border border-white/10 bg-white/[0.08] px-5 py-2 text-[15px] font-black tracking-[0.2em] text-slate-100 uppercase">{mbti}</div>
+            <div className={`relative h-[690px] overflow-hidden rounded-[42px] border ${themeClasses.imageFrame} shadow-[0_24px_80px_rgba(2,6,23,0.5)]`}>
               <div className={`absolute inset-x-10 top-12 h-20 rounded-full ${themeClasses.haloTop} blur-3xl`}></div>
               <div className={`absolute inset-x-12 bottom-28 h-20 rounded-full ${themeClasses.haloBottom} blur-3xl`}></div>
               <div className="absolute inset-0 border border-white/5 rounded-[42px]"></div>
-              <div className={`absolute right-7 top-7 flex items-center gap-2 rounded-full border px-5 py-2.5 text-[16px] font-black shadow-[0_12px_24px_rgba(15,23,42,0.28)] ${themeClasses.chip}`}>
-                <span className={`inline-block h-2.5 w-2.5 rounded-full ${themeClasses.dot}`}></span>
-                {presentation?.themeLabel || '오늘 무드'}
-              </div>
-              {resolvedImageSrc && (
-                <div className="relative z-10 mx-auto mt-20 flex h-[390px] w-[390px] items-center justify-center rounded-[34px] border border-white/70 bg-white p-7 shadow-[0_24px_48px_rgba(15,23,42,0.82)]">
-                  <img
-                    src={resolvedImageSrc}
-                    alt={mbti}
-                    className="h-full w-full object-contain"
-                  />
+
+              <div className="relative z-10 grid h-full grid-rows-[92px_1fr_182px] px-8 pb-8 pt-8">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="inline-flex rounded-full border border-white/10 bg-white/[0.08] px-5 py-2 text-[15px] font-black tracking-[0.2em] text-slate-100 uppercase">
+                    {mbti}
+                  </div>
+                  <div className={`flex items-center gap-2 rounded-full border px-5 py-2.5 text-[16px] font-black shadow-[0_12px_24px_rgba(15,23,42,0.28)] ${themeClasses.chip}`}>
+                    <span className={`inline-block h-2.5 w-2.5 rounded-full ${themeClasses.dot}`}></span>
+                    {presentation?.themeLabel || '오늘 무드'}
+                  </div>
                 </div>
-              )}
-              <div className="absolute inset-x-8 bottom-8 rounded-[30px] border border-white/10 bg-black/35 px-6 py-6 backdrop-blur-sm">
-                <p className="text-[14px] font-bold tracking-[0.22em] text-slate-500 uppercase">오늘의 무드</p>
-                <p className="mt-3 text-[28px] font-black leading-[1.25] text-white break-keep">{info.nickname}</p>
-                <p className="mt-2 text-[18px] font-semibold text-slate-200 break-keep">{shareCardCopy.boast}</p>
+
+                <div className="flex items-center justify-center">
+                  {resolvedImageSrc && (
+                    <div className="flex h-[390px] w-[390px] items-center justify-center rounded-[34px] border border-white/70 bg-white p-7 shadow-[0_24px_48px_rgba(15,23,42,0.82)]">
+                      <img
+                        src={resolvedImageSrc}
+                        alt={mbti}
+                        className="h-full w-full object-contain"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex items-end">
+                  <div className="w-full rounded-[30px] border border-white/10 bg-black/35 px-6 py-6 backdrop-blur-sm">
+                    <p className="text-[14px] font-bold tracking-[0.22em] text-slate-500 uppercase">오늘의 무드</p>
+                    <p className="mt-3 text-[28px] font-black leading-[1.25] text-white break-keep">{info.nickname}</p>
+                    <p className="mt-2 text-[18px] font-semibold text-slate-200 break-keep">{shareCardCopy.boast}</p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
