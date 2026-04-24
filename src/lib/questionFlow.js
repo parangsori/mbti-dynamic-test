@@ -9,6 +9,51 @@ import {
 export const createEmptyScores = () => ({ E: 0, I: 0, S: 0, N: 0, T: 0, F: 0, J: 0, P: 0 });
 export const createEmptyNeutralSignals = () => ({ EI: 0, SN: 0, TF: 0, JP: 0 });
 
+const DEFAULT_CONTEXT_TAG = 'daily';
+
+const CONTEXT_LABELS = {
+  today: '오늘 컨디션',
+  relationship: '관계 상황',
+  daily: '일상 선택',
+  situation: '상황 반응',
+  calibration: '보정 문항'
+};
+
+const CONTEXT_PRIORITY = ['relationship', 'today', 'situation', 'calibration', 'daily'];
+
+const getQuestionContextTag = (question = {}) => {
+  if (question.contextTag) return question.contextTag;
+  if (question.role === 'followup') return 'calibration';
+  if (question.role === 'state') return 'today';
+  if (['forced_choice', 'parallel'].includes(question.role)) return 'situation';
+  return DEFAULT_CONTEXT_TAG;
+};
+
+export const summarizeQuestionContext = (baseQuestions = [], followupQuestions = []) => {
+  const allQuestions = [...baseQuestions, ...followupQuestions].filter(Boolean);
+  const counts = CONTEXT_PRIORITY.reduce((acc, tag) => ({ ...acc, [tag]: 0 }), {});
+
+  allQuestions.forEach((question) => {
+    const tag = getQuestionContextTag(question);
+    counts[tag] = (counts[tag] || 0) + 1;
+  });
+
+  const topTag = Object.entries(counts)
+    .filter(([, count]) => count > 0)
+    .sort(([tagA, countA], [tagB, countB]) => {
+      if (countA !== countB) return countB - countA;
+      return CONTEXT_PRIORITY.indexOf(tagA) - CONTEXT_PRIORITY.indexOf(tagB);
+    })[0]?.[0] || DEFAULT_CONTEXT_TAG;
+
+  return {
+    topTag,
+    topLabel: CONTEXT_LABELS[topTag] || CONTEXT_LABELS[DEFAULT_CONTEXT_TAG],
+    counts,
+    usedCalibration: (counts.calibration || 0) > 0,
+    total: allQuestions.length
+  };
+};
+
 export const getQuestionTempoMessage = (index, fallback = '지금의 결대로 가볍게 골라보세요', source = []) =>
   source[index] || fallback;
 
@@ -187,6 +232,7 @@ export const buildQuestionSession = (recentSessions = []) => {
       familyId: meta[i]?.familyId || `${axis}_${i + 1}`,
       role: meta[i]?.role,
       weight: meta[i]?.weight || 1,
+      contextTag: meta[i]?.contextTag || q.contextTag,
       allowMiddleCandidate: meta[i]?.allowMiddleCandidate || false,
       _axis: axis
     }));

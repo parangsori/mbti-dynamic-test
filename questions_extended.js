@@ -1,5 +1,5 @@
 /**
- * questions_extended.js — 문제은행 확장 (19-54) 및 메타데이터
+ * questions_extended.js — 문제은행 확장 및 메타데이터
  */
 
 export const QUESTIONS_EXTENDED = {
@@ -280,6 +280,48 @@ export const QUESTIONS_EXTENDED = {
         { text: "누군가랑 가볍게 얘기하며 기분 전환하기", type: "E", micro: "대화가 숨통을 틔워줘요 💬" },
         { text: "혼자 걷거나 쉬면서 조용히 정리하기", type: "I", micro: "고요함이 먼저 필요해요 🌿" }
       ]
+    },
+    {
+      q: "오늘 새로 생긴 단톡방에서 더 자연스러운 내 위치는?",
+      options: [
+        { text: "초반에 가볍게 반응하며 분위기를 열어주는 쪽", type: "E", micro: "먼저 온도를 올려요" },
+        { text: "흐름을 읽다가 필요한 순간에만 정확히 말하는 쪽", type: "I", micro: "타이밍을 고르는 편이에요" }
+      ]
+    },
+    {
+      q: "친구가 갑자기 근처라며 커피 한잔하자고 하면?",
+      options: [
+        { text: "시간만 되면 바로 나가서 얼굴 보고 얘기하고 싶음", type: "E", micro: "즉석 만남도 반가워요" },
+        { text: "반갑지만 오늘 에너지와 내 시간을 먼저 확인함", type: "I", micro: "내 여유부터 살펴요" }
+      ]
+    },
+    {
+      q: "새로운 취미 클래스를 고른다면 더 끌리는 쪽은?",
+      options: [
+        { text: "사람들과 함께 배우며 서로 반응을 주고받는 수업", type: "E", micro: "함께 배우면 더 살아나요" },
+        { text: "내 속도대로 따라가며 조용히 몰입할 수 있는 수업", type: "I", micro: "내 페이스가 중요해요" }
+      ]
+    },
+    {
+      q: "갑자기 빈 시간이 한 시간 생겼을 때 내 첫 움직임은?",
+      options: [
+        { text: "누구와 연결할 수 있을지 메시지부터 확인함", type: "E", micro: "빈칸에 사람을 떠올려요" },
+        { text: "혼자 할 수 있는 작은 쉼이나 취향 시간을 고름", type: "I", micro: "빈칸을 나로 채워요" }
+      ]
+    },
+    {
+      q: "나를 더 빠르게 회복시키는 장면은?",
+      options: [
+        { text: "좋아하는 사람들과 웃으며 기분이 다시 올라오는 순간", type: "E", micro: "같이 웃으면 충전돼요" },
+        { text: "아무 말 없이 내 리듬을 되찾는 조용한 시간", type: "I", micro: "조용할수록 돌아와요" }
+      ]
+    },
+    {
+      q: "처음 만난 사람과 친해지는 속도는 보통?",
+      options: [
+        { text: "대화가 맞으면 첫날에도 꽤 가까워질 수 있음", type: "E", micro: "거리 좁히기가 빠른 편" },
+        { text: "좋은 사람이어도 몇 번은 봐야 마음이 놓임", type: "I", micro: "천천히 믿음이 쌓여요" }
+      ]
     }
   ],
 
@@ -559,6 +601,48 @@ export const QUESTIONS_EXTENDED = {
       options: [
         { text: "어디에 뭐가 있었는지, 실제 구조와 디테일", type: "S", micro: "장면이 또렷하게 남아요 🗺️" },
         { text: "그 공간이 주는 분위기와 전체적인 인상", type: "N", micro: "느낌이 먼저 기억나요 🎐" }
+      ]
+    },
+    {
+      q: "오늘 본 짧은 영상이 오래 남는 이유는?",
+      options: [
+        { text: "정보가 정확하고 바로 써먹을 포인트가 있어서", type: "S", micro: "쓸모가 기억에 남아요" },
+        { text: "장면 너머의 의미나 여운이 계속 떠올라서", type: "N", micro: "여운이 머릿속에 남아요" }
+      ]
+    },
+    {
+      q: "친구가 새 아이디어를 말했을 때 내가 먼저 묻는 건?",
+      options: [
+        { text: "그래서 실제로 어떻게 시작할 수 있어?", type: "S", micro: "첫 단계가 궁금해요" },
+        { text: "그게 잘되면 어디까지 이어질 수 있을까?", type: "N", micro: "확장 그림이 보여요" }
+      ]
+    },
+    {
+      q: "처음 가는 동네에서 더 재미있는 발견은?",
+      options: [
+        { text: "숨은 가게, 길 이름, 메뉴 같은 구체적인 디테일", type: "S", micro: "현장의 단서가 좋아요" },
+        { text: "그 동네만 가진 분위기와 묘한 이야기감", type: "N", micro: "공간의 결이 좋아요" }
+      ]
+    },
+    {
+      q: "갑자기 설명이 부족한 일을 맡게 되면 먼저 찾는 건?",
+      options: [
+        { text: "예시, 자료, 체크리스트처럼 바로 확인할 수 있는 것", type: "S", micro: "확인 가능한 게 필요해요" },
+        { text: "전체 목적과 맥락, 왜 하는지에 대한 큰 그림", type: "N", micro: "방향을 먼저 잡아요" }
+      ]
+    },
+    {
+      q: "내가 더 쉽게 믿는 추천 방식은?",
+      options: [
+        { text: "실제 사용 후기와 구체적인 장단점이 있는 추천", type: "S", micro: "증거가 있으면 편해요" },
+        { text: "묘하게 내 취향과 가능성을 건드리는 추천", type: "N", micro: "느낌이 맞으면 끌려요" }
+      ]
+    },
+    {
+      q: "하루를 기록한다면 더 쓰고 싶은 제목은?",
+      options: [
+        { text: "오늘 실제로 한 일과 기억나는 장면들", type: "S", micro: "장면 단위로 남겨요" },
+        { text: "오늘이 내게 남긴 느낌과 의미", type: "N", micro: "의미 단위로 남겨요" }
       ]
     }
   ],
@@ -854,6 +938,48 @@ export const QUESTIONS_EXTENDED = {
         { text: "내 생각을 분명하게 전달하는 것", type: "T", micro: "핵심을 또렷하게 말하고 싶어요 🧠" },
         { text: "분위기가 틀어지지 않게 조율하는 것", type: "F", micro: "관계가 먼저 보일 때가 있어요 🤝" }
       ]
+    },
+    {
+      q: "오늘 누군가 고민을 꺼냈을 때 내 첫 반응은?",
+      options: [
+        { text: "상황을 정리해서 어디부터 풀지 같이 보는 쪽", type: "T", micro: "정리하면 길이 보여요" },
+        { text: "그 마음이 어땠을지 먼저 받아주는 쪽", type: "F", micro: "마음의 자리를 먼저 봐요" }
+      ]
+    },
+    {
+      q: "친구가 내 조언을 구할 때 더 잘하는 건?",
+      options: [
+        { text: "선택지의 장단점을 차분히 비교해주는 것", type: "T", micro: "판단 기준을 세워줘요" },
+        { text: "친구가 덜 불안하게 느끼도록 곁을 잡아주는 것", type: "F", micro: "감정의 손잡이를 잡아요" }
+      ]
+    },
+    {
+      q: "일상에서 작은 불편을 발견했을 때 더 먼저 드는 생각은?",
+      options: [
+        { text: "원인이 뭔지 찾고 고칠 방법을 떠올림", type: "T", micro: "문제 구조가 보여요" },
+        { text: "이걸 겪는 사람이 얼마나 답답할지 떠올림", type: "F", micro: "사람의 불편이 보여요" }
+      ]
+    },
+    {
+      q: "갑자기 팀 분위기가 싸해졌다면 나는?",
+      options: [
+        { text: "무슨 말이나 결정이 문제였는지 확인함", type: "T", micro: "원인부터 확인해요" },
+        { text: "누가 마음 상했는지 분위기부터 살핌", type: "F", micro: "온도부터 살펴요" }
+      ]
+    },
+    {
+      q: "내가 듣고 더 신뢰하는 피드백은?",
+      options: [
+        { text: "무엇을 고치면 나아지는지 구체적으로 짚어주는 말", type: "T", micro: "개선점이 선명해야 해요" },
+        { text: "내 노력을 알아주면서 조심스럽게 건네는 말", type: "F", micro: "인정받아야 받아들여져요" }
+      ]
+    },
+    {
+      q: "급한 결정을 앞두고 마음이 갈릴 때 더 기대는 쪽은?",
+      options: [
+        { text: "기준표를 만들면 어느 쪽이 맞는지 보임", type: "T", micro: "기준이 중심을 잡아요" },
+        { text: "주변 사람들이 어떻게 느낄지 떠올리면 보임", type: "F", micro: "사람 마음이 기준이 돼요" }
+      ]
     }
   ],
 
@@ -1148,6 +1274,48 @@ export const QUESTIONS_EXTENDED = {
         { text: "생각한 걸 대부분 끝냈을 때", type: "J", micro: "정리된 하루가 만족스러워요 ✅" },
         { text: "예상 못한 재미나 여유가 생겼을 때", type: "P", micro: "뜻밖의 흐름이 더 기억나요 🎉" }
       ]
+    },
+    {
+      q: "오늘 해야 할 일이 갑자기 늘어났다면 나는?",
+      options: [
+        { text: "먼저 순서를 다시 짜야 마음이 놓임", type: "J", micro: "정리해야 움직여요" },
+        { text: "눈앞에서 가능한 것부터 해보며 흐름을 잡음", type: "P", micro: "움직이며 감을 잡아요" }
+      ]
+    },
+    {
+      q: "친구들과 만날 장소를 정할 때 더 편한 방식은?",
+      options: [
+        { text: "후보를 좁히고 시간과 동선을 먼저 맞추기", type: "J", micro: "틀이 잡히면 편해요" },
+        { text: "일단 만나서 분위기 따라 고르기", type: "P", micro: "현장에서 고르는 맛이 있어요" }
+      ]
+    },
+    {
+      q: "집에 돌아와 쉬기 전 더 먼저 하는 일은?",
+      options: [
+        { text: "가방이나 옷을 정리하고 쉬어야 마음이 편함", type: "J", micro: "마무리 후 휴식이에요" },
+        { text: "일단 눕고 나중에 필요할 때 정리해도 괜찮음", type: "P", micro: "쉼이 먼저 와도 돼요" }
+      ]
+    },
+    {
+      q: "예정에 없던 재미있는 제안이 들어오면?",
+      options: [
+        { text: "기존 일정과 무리가 없는지부터 확인함", type: "J", micro: "가능 범위를 먼저 봐요" },
+        { text: "끌리면 일단 마음이 먼저 그쪽으로 감", type: "P", micro: "흥미가 방향을 잡아요" }
+      ]
+    },
+    {
+      q: "하루를 시작할 때 더 힘이 나는 쪽은?",
+      options: [
+        { text: "오늘 할 일을 몇 개라도 적어두는 것", type: "J", micro: "목록이 하루를 열어요" },
+        { text: "오늘 기분이 어디로 가는지 열어두는 것", type: "P", micro: "여지가 하루를 살려요" }
+      ]
+    },
+    {
+      q: "선택지를 오래 열어두면 내 마음은?",
+      options: [
+        { text: "빨리 정해야 다음으로 넘어갈 수 있어 편함", type: "J", micro: "결론이 있어야 가벼워요" },
+        { text: "조금 더 열어둘수록 더 좋은 선택이 나올 것 같음", type: "P", micro: "가능성이 남아야 편해요" }
+      ]
     }
   ],
 
@@ -1191,7 +1359,13 @@ export const QUESTIONS_EXTENDED = {
       { id: "EI_053", familyId: "EI_SUN_MORNING", role: "parallel", weight: 1.0 },
       { id: "EI_054", familyId: "EI_STRANGER_INIT", role: "parallel", weight: 1.0 },
       { id: "EI_055", familyId: "EI_TODAY_MEET_INVITE", role: "state", weight: 0.8, allowMiddleCandidate: true },
-      { id: "EI_056", familyId: "EI_COOL_HEAD_WAY", role: "parallel", weight: 1.0, allowMiddleCandidate: true }
+      { id: "EI_056", familyId: "EI_COOL_HEAD_WAY", role: "parallel", weight: 1.0, allowMiddleCandidate: true },
+      { id: "EI_057", familyId: "EI_TODAY_CHAT_ROOM", role: "state", weight: 0.8, contextTag: "today", allowMiddleCandidate: true },
+      { id: "EI_058", familyId: "EI_RELATION_COFFEE_PING", role: "parallel", weight: 1.0, contextTag: "relationship" },
+      { id: "EI_059", familyId: "EI_DAILY_CLASS_STYLE", role: "discriminator", weight: 1.1, contextTag: "daily" },
+      { id: "EI_060", familyId: "EI_SITUATION_EMPTY_HOUR", role: "parallel", weight: 1.0, contextTag: "situation" },
+      { id: "EI_061", familyId: "EI_FC_RECOVERY_SCENE", role: "forced_choice", weight: 1.2, contextTag: "situation" },
+      { id: "EI_062", familyId: "EI_RELATION_WARMUP_SPEED", role: "discriminator", weight: 1.1, contextTag: "relationship" }
     ],
     SN: [
       { id: "SN_019", familyId: "SN_ALGO_POINT", role: "anchor", weight: 1.4 },
@@ -1231,7 +1405,13 @@ export const QUESTIONS_EXTENDED = {
       { id: "SN_053", familyId: "SN_GAME_STYLE", role: "parallel", weight: 1.0 },
       { id: "SN_054", familyId: "SN_MUSIC_POINT", role: "parallel", weight: 1.0 },
       { id: "SN_055", familyId: "SN_TODAY_PICK_POINT", role: "state", weight: 0.8, allowMiddleCandidate: true },
-      { id: "SN_056", familyId: "SN_NEW_PLACE_MEMORY", role: "parallel", weight: 1.0, allowMiddleCandidate: true }
+      { id: "SN_056", familyId: "SN_NEW_PLACE_MEMORY", role: "parallel", weight: 1.0, allowMiddleCandidate: true },
+      { id: "SN_057", familyId: "SN_TODAY_SHORT_VIDEO", role: "state", weight: 0.8, contextTag: "today", allowMiddleCandidate: true },
+      { id: "SN_058", familyId: "SN_RELATION_IDEA_QUESTION", role: "discriminator", weight: 1.1, contextTag: "relationship" },
+      { id: "SN_059", familyId: "SN_DAILY_NEIGHBORHOOD_FIND", role: "parallel", weight: 1.0, contextTag: "daily" },
+      { id: "SN_060", familyId: "SN_SITUATION_LACKING_BRIEF", role: "parallel", weight: 1.0, contextTag: "situation" },
+      { id: "SN_061", familyId: "SN_FC_RECOMMEND_TRUST", role: "forced_choice", weight: 1.2, contextTag: "situation" },
+      { id: "SN_062", familyId: "SN_DAILY_DAY_TITLE", role: "discriminator", weight: 1.1, contextTag: "daily" }
     ],
     TF: [
       { id: "TF_019", familyId: "TF_OH_MY_GOD", role: "anchor", weight: 1.4 },
@@ -1273,7 +1453,13 @@ export const QUESTIONS_EXTENDED = {
       { id: "TF_055", familyId: "TF_TODAY_FRIEND_WORRY", role: "state", weight: 0.8, allowMiddleCandidate: true },
       { id: "TF_056", familyId: "TF_MISTAKE_FIRST_POINT", role: "state", weight: 0.8, allowMiddleCandidate: true },
       { id: "TF_057", familyId: "TF_DECLINE_WORRY", role: "parallel", weight: 1.0, allowMiddleCandidate: true },
-      { id: "TF_058", familyId: "TF_DIFF_FIRST_POINT", role: "parallel", weight: 1.0, allowMiddleCandidate: true }
+      { id: "TF_058", familyId: "TF_DIFF_FIRST_POINT", role: "parallel", weight: 1.0, allowMiddleCandidate: true },
+      { id: "TF_059", familyId: "TF_TODAY_WORRY_FIRST", role: "state", weight: 0.8, contextTag: "today", allowMiddleCandidate: true },
+      { id: "TF_060", familyId: "TF_RELATION_ADVICE_ROLE", role: "discriminator", weight: 1.1, contextTag: "relationship" },
+      { id: "TF_061", familyId: "TF_DAILY_SMALL_FRICTION", role: "parallel", weight: 1.0, contextTag: "daily" },
+      { id: "TF_062", familyId: "TF_SITUATION_TEAM_AWKWARD", role: "parallel", weight: 1.0, contextTag: "situation" },
+      { id: "TF_063", familyId: "TF_FC_FEEDBACK_TRUST", role: "forced_choice", weight: 1.2, contextTag: "relationship" },
+      { id: "TF_064", familyId: "TF_SITUATION_QUICK_DECISION", role: "discriminator", weight: 1.1, contextTag: "situation" }
     ],
     JP: [
       { id: "JP_019", familyId: "JP_FIRST_DAY", role: "anchor", weight: 1.4 },
@@ -1315,7 +1501,13 @@ export const QUESTIONS_EXTENDED = {
       { id: "JP_055", familyId: "JP_TODAY_TASK_COMFORT", role: "state", weight: 0.8, allowMiddleCandidate: true },
       { id: "JP_056", familyId: "JP_BEFORE_APPOINTMENT", role: "state", weight: 0.8, allowMiddleCandidate: true },
       { id: "JP_057", familyId: "JP_FOCUS_WORK_STYLE", role: "parallel", weight: 1.0, allowMiddleCandidate: true },
-      { id: "JP_058", familyId: "JP_GOOD_DAY_RULE", role: "parallel", weight: 1.0, allowMiddleCandidate: true }
+      { id: "JP_058", familyId: "JP_GOOD_DAY_RULE", role: "parallel", weight: 1.0, allowMiddleCandidate: true },
+      { id: "JP_059", familyId: "JP_TODAY_TASKS_ADDED", role: "state", weight: 0.8, contextTag: "today", allowMiddleCandidate: true },
+      { id: "JP_060", familyId: "JP_RELATION_PLACE_PICK", role: "discriminator", weight: 1.1, contextTag: "relationship" },
+      { id: "JP_061", familyId: "JP_DAILY_HOME_RESET", role: "parallel", weight: 1.0, contextTag: "daily" },
+      { id: "JP_062", familyId: "JP_SITUATION_FUN_OFFER", role: "parallel", weight: 1.0, contextTag: "situation" },
+      { id: "JP_063", familyId: "JP_FC_DAY_START", role: "forced_choice", weight: 1.2, contextTag: "today" },
+      { id: "JP_064", familyId: "JP_SITUATION_OPEN_CHOICE", role: "discriminator", weight: 1.1, contextTag: "situation" }
     ]
   }
 };

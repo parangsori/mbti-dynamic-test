@@ -117,6 +117,30 @@ export const FOLLOWUP_QUESTIONS = {
         { text: '누군가에게 말해보며 반응을 보고 싶어짐', type: 'E', micro: '말하면서 생각이 살아나요' },
         { text: '혼자 더 다듬고 정리한 뒤 꺼내고 싶어짐', type: 'I', micro: '혼자 정리해야 또렷해져요' }
       ]
+    },
+    {
+      id: 'EI_FOLLOWUP_011',
+      familyId: 'EI_followup_connection_recovery',
+      role: 'followup',
+      weight: FOLLOWUP_WEIGHT,
+      contextTag: 'calibration',
+      q: '지친 날에도 남아 있는 힘을 확인하면?',
+      options: [
+        { text: '좋아하는 사람과 짧게라도 연결되면 조금 살아남', type: 'E', micro: '연결이 회복을 도와요' },
+        { text: '혼자 조용히 있어야 비로소 힘이 돌아옴', type: 'I', micro: '고요함이 회복을 도와요' }
+      ]
+    },
+    {
+      id: 'EI_FOLLOWUP_012',
+      familyId: 'EI_followup_warmup_room',
+      role: 'followup',
+      weight: FOLLOWUP_WEIGHT,
+      contextTag: 'calibration',
+      q: '어색한 방에 들어갔을 때 더 편한 방식은?',
+      options: [
+        { text: '가벼운 말을 먼저 꺼내며 공기를 풀어보기', type: 'E', micro: '말로 공간을 열어요' },
+        { text: '분위기를 살피며 내 자리를 천천히 찾기', type: 'I', micro: '관찰로 자리를 잡아요' }
+      ]
     }
   ],
   SN: [
@@ -228,6 +252,30 @@ export const FOLLOWUP_QUESTIONS = {
       options: [
         { text: '장면, 정보, 실제로 있었던 디테일', type: 'S', micro: '디테일이 오래 남아요' },
         { text: '그때 느낀 의미, 분위기, 연결감', type: 'N', micro: '느낌과 의미가 오래 남아요' }
+      ]
+    },
+    {
+      id: 'SN_FOLLOWUP_011',
+      familyId: 'SN_followup_brief_first_need',
+      role: 'followup',
+      weight: FOLLOWUP_WEIGHT,
+      contextTag: 'calibration',
+      q: '설명이 애매할 때 먼저 필요해지는 건?',
+      options: [
+        { text: '구체적인 예시와 실제 기준', type: 'S', micro: '손에 잡히는 기준이 필요해요' },
+        { text: '전체 방향과 숨은 의도', type: 'N', micro: '큰 그림이 필요해요' }
+      ]
+    },
+    {
+      id: 'SN_FOLLOWUP_012',
+      familyId: 'SN_followup_after_conversation',
+      role: 'followup',
+      weight: FOLLOWUP_WEIGHT,
+      contextTag: 'calibration',
+      q: '대화가 끝난 뒤 더 오래 곱씹는 건?',
+      options: [
+        { text: '상대가 실제로 한 말과 확인해야 할 내용', type: 'S', micro: '말의 내용이 남아요' },
+        { text: '그 말이 가진 뉘앙스와 이어질 가능성', type: 'N', micro: '말의 여운이 남아요' }
       ]
     }
   ],

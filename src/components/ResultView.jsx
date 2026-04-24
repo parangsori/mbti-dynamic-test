@@ -410,7 +410,8 @@ export default function ResultView({
   onOpenAxisGuide,
   trackEvent,
   neutralCount = 0,
-  usedFollowup = false
+  usedFollowup = false,
+  questionContextSummary = null
 }) {
   const resultRef = useRef(null);
   const shareCardRef = useRef(null);
@@ -456,6 +457,7 @@ export default function ResultView({
     shareCardCopy,
     shareVibeStamp,
     neutralReviewNote,
+    questionContextInsight,
     topChangeChip
   } = useMemo(() => buildResultViewModel({
     scores,
@@ -464,8 +466,9 @@ export default function ResultView({
     userName,
     defaultUserName,
     neutralCount,
-    usedFollowup
-  }), [defaultUserName, historyData, neutralCount, scores, usedFollowup, userName]);
+    usedFollowup,
+    questionContextSummary
+  }), [defaultUserName, historyData, neutralCount, questionContextSummary, scores, usedFollowup, userName]);
 
   const resolvedImageSrc = info.image ? IMAGE_BASE64[info.image] || info.image : '';
   const themeClasses = getThemeClasses(presentation.themeKey);
@@ -480,6 +483,7 @@ export default function ResultView({
       percent,
       variantKey: presentation.variantKey,
       themeKey: presentation.themeKey,
+      questionContextSummary,
       axes: spectrum.map(toHistoryAxisSnapshot)
     };
 
@@ -488,11 +492,11 @@ export default function ResultView({
     const updated = [newEntry, ...historyData].slice(0, 7);
     writeHistory(updated);
     setHistoryData(updated);
-  }, [historyData, mbti, percent, presentation.themeKey, presentation.variantKey, setHistoryData, spectrum]);
+  }, [historyData, mbti, percent, presentation.themeKey, presentation.variantKey, questionContextSummary, setHistoryData, spectrum]);
 
   useEffect(() => {
-    trackEvent('result_view', { mbti, percent });
-  }, [mbti, percent, trackEvent]);
+    trackEvent('result_view', { mbti, percent, questionContextTop: questionContextSummary?.topTag || '' });
+  }, [mbti, percent, questionContextSummary, trackEvent]);
 
   const handleCopyShare = async () => {
     const shareText = `${displayName}님의 오늘 결과\n${shareCardCopy.hook}\n${shareCardCopy.detail}\n싱크로율 ${percent}%`;
@@ -567,6 +571,7 @@ export default function ResultView({
           <p className="text-[12px] font-black tracking-[0.18em] text-slate-400 uppercase">결과 또렷함</p>
           <p className="mt-2 text-[13px] leading-relaxed text-slate-200 break-keep">{consistencyCopy}</p>
           {neutralReviewNote && <p className="mt-3 text-[12px] leading-relaxed text-cyan-100 break-keep">{neutralReviewNote}</p>}
+          {questionContextInsight && <p className="mt-3 text-[12px] leading-relaxed text-cyan-100 break-keep">{questionContextInsight}</p>}
         </div>
         <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-4">
           <p className="text-[12px] font-black tracking-[0.18em] text-slate-400 uppercase">핵심 포인트</p>

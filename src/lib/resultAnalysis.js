@@ -610,6 +610,28 @@ export const getRevisitInsight = ({ historyComparison, historyInsights, boundary
   return '다시 해보면 완전히 다른 결과보다, 오늘 더 강했던 축이 유지되는지부터 비교해보면 좋아요.';
 };
 
+const getQuestionContextInsight = ({ questionContextSummary, boundaryAxes, usedFollowup, neutralCount }) => {
+  if (!questionContextSummary?.topTag) return '';
+
+  if (usedFollowup || questionContextSummary.usedCalibration || neutralCount > 0) {
+    return '이번 답변 흐름에서는 경계에 걸린 축을 보정 문항까지 반영해 조금 더 조심스럽게 읽었어요.';
+  }
+
+  if (boundaryAxes.length > 0) {
+    return '이번 답변 흐름에서는 선명한 축과 흔들리는 축이 같이 보여서, 경계 축은 오늘 컨디션까지 함께 참고했어요.';
+  }
+
+  const label = questionContextSummary.topLabel || '일상 선택';
+  const contextMessages = {
+    relationship: '이번 답변 흐름에서는 관계 상황에서 성향이 더 또렷하게 잡혔어요.',
+    today: '이번 답변 흐름에서는 오늘 컨디션 문항에서도 같은 결이 이어졌어요.',
+    situation: '이번 답변 흐름에서는 예상 밖 상황을 다루는 방식이 결과를 더 선명하게 만들었어요.',
+    daily: '이번 답변 흐름에서는 일상 선택에서 자연스럽게 반복되는 성향이 잘 보였어요.'
+  };
+
+  return contextMessages[questionContextSummary.topTag] || `이번 답변 흐름에서는 ${label} 문항에서 성향이 조금 더 또렷하게 보였어요.`;
+};
+
 export const buildResultViewModel = ({
   scores,
   historyData,
@@ -617,7 +639,8 @@ export const buildResultViewModel = ({
   userName,
   defaultUserName,
   neutralCount = 0,
-  usedFollowup = false
+  usedFollowup = false,
+  questionContextSummary = null
 }) => {
   const { mbti, info, badges, percent, spectrum, boundaryAxes } = computeResult(scores);
   const axisNarratives = getAxisNarratives(spectrum);
@@ -647,6 +670,12 @@ export const buildResultViewModel = ({
       ? '애매했던 축은 추가 질문으로 다시 확인했어요.'
       : '애매했던 답변은 결과 해석에 참고했어요.'
     : '';
+  const questionContextInsight = getQuestionContextInsight({
+    questionContextSummary,
+    boundaryAxes,
+    usedFollowup,
+    neutralCount
+  });
 
   return {
     mbti,
@@ -676,6 +705,7 @@ export const buildResultViewModel = ({
     shareCardCopy,
     shareVibeStamp,
     neutralReviewNote,
+    questionContextInsight,
     topChangeChip: axisChanges[0]
       ? `${axisChanges[0].pair} ${axisChanges[0].before}→${axisChanges[0].after}`
       : trendAnalysis?.title || '오늘 흐름이 제일 강했던 축'

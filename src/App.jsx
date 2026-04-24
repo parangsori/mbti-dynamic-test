@@ -10,7 +10,8 @@ import {
   createEmptyScores,
   formatMicroCopy,
   getFollowupTempoMessage,
-  getQuestionTempoMessage
+  getQuestionTempoMessage,
+  summarizeQuestionContext
 } from './lib/questionFlow.js';
 import { summarizeActivityReport } from './lib/activityReport.js';
 import {
@@ -63,6 +64,7 @@ export default function App() {
   const [sessionQuestionIds, setSessionQuestionIds] = useState([]);
   const [neutralSignals, setNeutralSignals] = useState(createEmptyNeutralSignals());
   const [neutralQuestionIds, setNeutralQuestionIds] = useState([]);
+  const [questionContextSummary, setQuestionContextSummary] = useState(null);
 
   useEffect(() => {
     setHistoryData(readHistory());
@@ -90,6 +92,7 @@ export default function App() {
     setSessionQuestionIds([]);
     setNeutralSignals(createEmptyNeutralSignals());
     setNeutralQuestionIds([]);
+    setQuestionContextSummary(null);
     setStep('start');
   };
 
@@ -113,6 +116,7 @@ export default function App() {
     setSessionQuestionIds(thisSession);
     setNeutralSignals(createEmptyNeutralSignals());
     setNeutralQuestionIds([]);
+    setQuestionContextSummary(null);
     setStep('question');
 
     writeActiveSession({
@@ -143,6 +147,7 @@ export default function App() {
     setSessionQuestionIds(recoverableSession.sessionQuestionIds || []);
     setNeutralSignals(recoverableSession.neutralSignals || createEmptyNeutralSignals());
     setNeutralQuestionIds(recoverableSession.neutralQuestionIds || []);
+    setQuestionContextSummary(null);
     setShowRecoveryPrompt(false);
     setStep('question');
     trackEvent('session_resume');
@@ -182,11 +187,14 @@ export default function App() {
   };
 
   const finishSession = (finalScores, finalSessionIds = sessionQuestionIds) => {
+    const nextQuestionContextSummary = summarizeQuestionContext(questions, followupQuestions);
+    setQuestionContextSummary(nextQuestionContextSummary);
     writeRecentSessions([finalSessionIds, ...recentSessionsSnapshot].slice(0, 6));
     trackEvent('complete_test', {
       usedFollowup: questionPhase === 'followup' || followupQuestions.length > 0,
       followupCount: followupQuestions.length,
-      neutralCount: neutralQuestionIds.length
+      neutralCount: neutralQuestionIds.length,
+      questionContextTop: nextQuestionContextSummary.topTag
     });
     clearActiveSession();
     setScores(finalScores);
@@ -387,6 +395,7 @@ export default function App() {
                 trackEvent={trackEvent}
                 neutralCount={neutralQuestionIds.length}
                 usedFollowup={followupQuestions.length > 0}
+                questionContextSummary={questionContextSummary}
               />
             </Suspense>
           )}
