@@ -223,7 +223,7 @@ function AutoFitShareHook({ text }) {
   const activeStep = SHARE_HOOK_SIZE_STEPS[stepIndex];
 
   return (
-    <div className="mt-7 h-[148px] max-w-[540px] overflow-hidden">
+    <div className="mt-7 h-[164px] max-w-[540px] overflow-hidden pt-1 pb-4">
       <p
         ref={textRef}
         className="font-black tracking-[-0.045em] text-white break-keep"
@@ -324,7 +324,7 @@ function ShareCard({ context }) {
               <div className={`absolute inset-x-12 bottom-28 h-20 rounded-full ${themeClasses.haloBottom} blur-3xl`}></div>
               <div className="absolute inset-0 border border-white/5 rounded-[42px]"></div>
 
-              <div className="relative z-10 grid h-full grid-rows-[92px_1fr_182px] px-8 pb-8 pt-8">
+              <div className="relative z-10 grid h-full grid-rows-[72px_1fr_158px] px-8 pb-7 pt-7">
                 <div className="flex items-start justify-between gap-4">
                   <div className="inline-flex rounded-full border border-white/10 bg-white/[0.08] px-5 py-2 text-[15px] font-black tracking-[0.2em] text-slate-100 uppercase">
                     {mbti}
@@ -335,9 +335,9 @@ function ShareCard({ context }) {
                   </div>
                 </div>
 
-                <div className="flex items-center justify-center">
+                <div className="flex items-start justify-center pt-1">
                   {resolvedImageSrc && (
-                    <div className="flex h-[390px] w-[390px] items-center justify-center rounded-[34px] border border-white/70 bg-white p-7 shadow-[0_24px_48px_rgba(15,23,42,0.82)]">
+                    <div className="flex h-[390px] w-[390px] items-center justify-center rounded-[34px] border border-white/70 bg-white px-7 pb-6 pt-5 shadow-[0_24px_48px_rgba(15,23,42,0.82)]">
                       <img
                         src={resolvedImageSrc}
                         alt={mbti}
@@ -347,8 +347,8 @@ function ShareCard({ context }) {
                   )}
                 </div>
 
-                <div className="flex items-end">
-                  <div className="w-full rounded-[30px] border border-white/10 bg-black/35 px-6 py-6 backdrop-blur-sm">
+                <div className="flex items-end pt-2">
+                  <div className="w-full rounded-[30px] border border-white/10 bg-black/35 px-6 py-5 backdrop-blur-sm">
                     <p className="text-[14px] font-bold tracking-[0.22em] text-slate-500 uppercase">오늘의 무드</p>
                     <p className="mt-3 text-[28px] font-black leading-[1.25] text-white break-keep">{info.nickname}</p>
                     <p className="mt-2 text-[18px] font-semibold text-slate-200 break-keep">{shareCardCopy.boast}</p>
