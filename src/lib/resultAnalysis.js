@@ -498,3 +498,128 @@ export const getShareCardCopy = (mbti, spectrum, badges, info, percent, presenta
     shareCardCopy: presentationCopy
   };
 };
+
+export const toHistoryAxisSnapshot = (axis) => ({
+  pair: `${axis.left}/${axis.right}`,
+  left: axis.left,
+  right: axis.right,
+  dominantType: axis.dominantType,
+  intensity: axis.intensity,
+  leftScore: axis.leftScore,
+  rightScore: axis.rightScore
+});
+
+export const getRecentFlowSummary = (effectiveHistory, fallbackMbti = '') => {
+  const recent = effectiveHistory.slice(0, 5);
+  const flow = recent.map((item) => item.mbti).filter(Boolean);
+
+  if (!flow.length) {
+    return {
+      chips: fallbackMbti ? [fallbackMbti] : [],
+      note: '기록이 더 쌓이면 최근 흐름을 한눈에 읽기 쉬워져요.'
+    };
+  }
+
+  const uniqueCount = new Set(flow).size;
+  const note = uniqueCount === 1
+    ? `최근 ${flow.length}번은 ${flow[0]} 흐름이 이어졌어요. 같은 결과 안의 미세한 차이를 보기 좋은 상태예요.`
+    : `최근 ${flow.length}번 안에서 ${uniqueCount}가지 흐름이 보였어요. 지금은 작은 변화가 잘 드러나는 구간이에요.`;
+
+  return {
+    chips: flow,
+    note
+  };
+};
+
+export const getRevisitInsight = ({ historyComparison, historyInsights, boundaryAxes, presentation }) => {
+  if (historyComparison?.title?.includes('달라졌어요')) {
+    return '직전과 달라진 축이 이미 잡혔어요. 지금 다시 하면 오늘 변화가 일시적인지 더 분명하게 볼 수 있어요.';
+  }
+
+  if (historyInsights?.mostVolatile?.flips) {
+    return `${historyInsights.mostVolatile.pair} 축이 가장 자주 흔들렸어요. 다음 테스트에서는 이 축 변화부터 눈여겨보면 좋아요.`;
+  }
+
+  if (boundaryAxes.length > 0) {
+    const pairs = boundaryAxes.map((axis) => `${axis.left}/${axis.right}`).join(', ');
+    return `${pairs} 축은 오늘 컨디션 영향을 크게 받을 수 있어요. 같은 날 다시 하면 여기부터 달라질 가능성이 높아요.`;
+  }
+
+  if (presentation?.state === 'streak') {
+    return '결과는 이어지고 있지만 강한 축과 문구 분위기는 달라질 수 있어요. 같은 MBTI 안의 결 차이를 보기 좋은 타이밍이에요.';
+  }
+
+  return '다시 해보면 완전히 다른 결과보다, 오늘 더 강했던 축이 유지되는지부터 비교해보면 좋아요.';
+};
+
+export const buildResultViewModel = ({
+  scores,
+  historyData,
+  currentEntry,
+  userName,
+  defaultUserName,
+  neutralCount = 0,
+  usedFollowup = false
+}) => {
+  const { mbti, info, badges, percent, spectrum, boundaryAxes } = computeResult(scores);
+  const axisNarratives = getAxisNarratives(spectrum);
+  const strongestAxis = [...axisNarratives].sort((a, b) => b.intensity - a.intensity)[0];
+  const currentHistoryEntry = {
+    ...currentEntry,
+    mbti,
+    percent,
+    axes: spectrum.map(toHistoryAxisSnapshot)
+  };
+  const effectiveHistory = getEffectiveHistory(currentHistoryEntry, historyData);
+  const historyComparison = getHistoryComparison(mbti, effectiveHistory);
+  const axisChanges = getAxisChangeDetails(mbti, effectiveHistory[1]?.mbti);
+  const historyInsights = getHistoryInsights(effectiveHistory);
+  const trendAnalysis = getTrendAnalysis(spectrum, effectiveHistory[1]?.axes);
+  const presentation = getResultPresentation({
+    mbti,
+    spectrum,
+    percent,
+    historyInsights,
+    historyComparison,
+    createdAt: currentEntry?.createdAt
+  });
+  const { shareMoodLine, shareHeadline, shareCardCopy, shareVibeStamp } = getShareCardCopy(mbti, spectrum, badges, info, percent, presentation);
+  const neutralReviewNote = neutralCount > 0
+    ? usedFollowup
+      ? '애매했던 축은 추가 질문으로 다시 확인했어요.'
+      : '애매했던 답변은 결과 해석에 참고했어요.'
+    : '';
+
+  return {
+    mbti,
+    info,
+    badges,
+    percent,
+    spectrum,
+    boundaryAxes,
+    axisNarratives,
+    strongestAxis,
+    summaryCopy: getResultSummary(mbti, spectrum, percent),
+    consistencyCopy: getConsistencyCopy(percent, boundaryAxes),
+    boundaryCopy: getBoundaryCopy(boundaryAxes),
+    compCopy: getCompatibilityCopy(mbti),
+    effectiveHistory,
+    historyComparison,
+    axisChanges,
+    historyInsights,
+    trendAnalysis,
+    displayName: getDisplayName(userName, defaultUserName),
+    retestPrompt: getRetestPrompt(boundaryAxes, historyInsights),
+    recentFlowSummary: getRecentFlowSummary(effectiveHistory, mbti),
+    revisitInsight: getRevisitInsight({ historyComparison, historyInsights, boundaryAxes, presentation }),
+    presentation,
+    shareMoodLine,
+    shareHeadline,
+    shareCardCopy,
+    shareVibeStamp,
+    neutralReviewNote,
+    topChangeChip: axisChanges[0]
+      ? `${axisChanges[0].pair} ${axisChanges[0].before}→${axisChanges[0].after}`
+      : trendAnalysis?.title || '오늘 흐름이 제일 강했던 축'
+  };
+};

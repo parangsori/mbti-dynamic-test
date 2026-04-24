@@ -1,24 +1,12 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { IMAGE_BASE64 } from '../data/mbtiData.js';
 import {
-  computeResult,
-  getAxisNarratives,
-  getResultSummary,
-  getConsistencyCopy,
-  getBoundaryCopy,
-  getCompatibilityCopy,
-  getEffectiveHistory,
-  getHistoryComparison,
-  getAxisChangeDetails,
-  getHistoryInsights,
-  getTrendAnalysis,
-  getDisplayName,
-  getShareCardCopy,
-  getResultPresentation,
-  getRetestPrompt
+  buildResultViewModel,
+  toHistoryAxisSnapshot
 } from '../lib/resultAnalysis.js';
 import { writeHistory } from '../lib/storage.js';
+import { captureError } from '../lib/observability.js';
 import { getCanvasBlob, renderShareCardCanvas, shareOrSaveBlob } from '../lib/shareCard.js';
 
 const DETAIL_SECTIONS = [
@@ -106,21 +94,30 @@ const RESULT_THEME_CLASSES = {
 const getThemeClasses = (themeKey) => RESULT_THEME_CLASSES[themeKey] || RESULT_THEME_CLASSES.neon;
 
 const getShareHookClasses = (hook = '') => {
-  const length = hook.replace(/\s+/g, '').length;
+  const compactLength = hook.replace(/\s+/g, '').length;
+  const visualLength = hook.length;
 
-  if (length <= 18) {
+  if (compactLength <= 14 && visualLength <= 18) {
     return 'text-[68px] leading-[1.04]';
   }
 
-  if (length <= 24) {
+  if (compactLength <= 18 && visualLength <= 22) {
     return 'text-[62px] leading-[1.05]';
   }
 
-  if (length <= 30) {
+  if (compactLength <= 22 && visualLength <= 26) {
     return 'text-[56px] leading-[1.08]';
   }
 
-  return 'text-[50px] leading-[1.1]';
+  if (compactLength <= 26 && visualLength <= 30) {
+    return 'text-[50px] leading-[1.08]';
+  }
+
+  if (compactLength <= 30 && visualLength <= 34) {
+    return 'text-[46px] leading-[1.1]';
+  }
+
+  return 'text-[42px] leading-[1.12]';
 };
 
 const getDetailPreview = ({ section, summaryCopy, consistencyCopy, historyComparison, trendAnalysis, historyInsights }) => {
@@ -245,7 +242,9 @@ function ShareCard({ context }) {
                 <span className={`inline-block h-2.5 w-2.5 rounded-full ${themeClasses.dot}`}></span>
                 {shareVibeStamp}
               </div>
-              <p className={`mt-7 font-black tracking-[-0.045em] text-white break-keep ${shareHookClasses}`}>{shareCardCopy.hook}</p>
+              <div className="mt-7 min-h-[148px] max-w-[540px]">
+                <p className={`font-black tracking-[-0.045em] text-white break-keep ${shareHookClasses}`}>{shareCardCopy.hook}</p>
+              </div>
               <p className="mt-6 text-[29px] font-semibold leading-[1.38] text-slate-100 break-keep">{shareCardCopy.detail}</p>
               <p className="mt-4 text-[21px] leading-[1.55] text-slate-300 break-keep">{shareHeadline}</p>
             </div>
@@ -334,9 +333,6 @@ export default function ResultView({
   const [saveImageState, setSaveImageState] = useState('idle');
   const [detailOpen, setDetailOpen] = useState({ why: false, axes: false, history: false });
 
-  const { mbti, info, badges, percent, spectrum, boundaryAxes } = computeResult(scores);
-  const resolvedImageSrc = info.image ? IMAGE_BASE64[info.image] || info.image : '';
-
   if (!currentEntryRef.current) {
     const now = new Date();
     currentEntryRef.current = {
@@ -346,48 +342,47 @@ export default function ResultView({
     };
   }
 
-  const compCopy = getCompatibilityCopy(mbti);
-  const axisNarratives = getAxisNarratives(spectrum);
-  const summaryCopy = getResultSummary(mbti, spectrum, percent);
-  const consistencyCopy = getConsistencyCopy(percent, boundaryAxes);
-  const boundaryCopy = getBoundaryCopy(boundaryAxes);
-  const effectiveHistory = getEffectiveHistory({
-    ...currentEntryRef.current,
+  const {
     mbti,
+    info,
+    badges,
     percent,
-    axes: spectrum.map((axis) => ({
-      pair: `${axis.left}/${axis.right}`,
-      left: axis.left,
-      right: axis.right,
-      dominantType: axis.dominantType,
-      intensity: axis.intensity,
-      leftScore: axis.leftScore,
-      rightScore: axis.rightScore
-    }))
-  }, historyData);
-  const historyComparison = getHistoryComparison(mbti, effectiveHistory);
-  const axisChanges = getAxisChangeDetails(mbti, effectiveHistory[1]?.mbti);
-  const historyInsights = getHistoryInsights(effectiveHistory);
-  const trendAnalysis = getTrendAnalysis(spectrum, effectiveHistory[1]?.axes);
-  const displayName = getDisplayName(userName, defaultUserName);
-  const retestPrompt = getRetestPrompt(boundaryAxes, historyInsights);
-  const presentation = getResultPresentation({
-    mbti,
     spectrum,
-    percent,
-    historyInsights,
+    boundaryAxes,
+    axisNarratives,
+    strongestAxis,
+    summaryCopy,
+    consistencyCopy,
+    boundaryCopy,
+    compCopy,
+    effectiveHistory,
     historyComparison,
-    createdAt: currentEntryRef.current.createdAt
-  });
+    axisChanges,
+    historyInsights,
+    trendAnalysis,
+    displayName,
+    retestPrompt,
+    recentFlowSummary,
+    revisitInsight,
+    presentation,
+    shareMoodLine,
+    shareHeadline,
+    shareCardCopy,
+    shareVibeStamp,
+    neutralReviewNote,
+    topChangeChip
+  } = useMemo(() => buildResultViewModel({
+    scores,
+    historyData,
+    currentEntry: currentEntryRef.current,
+    userName,
+    defaultUserName,
+    neutralCount,
+    usedFollowup
+  }), [defaultUserName, historyData, neutralCount, scores, usedFollowup, userName]);
+
+  const resolvedImageSrc = info.image ? IMAGE_BASE64[info.image] || info.image : '';
   const themeClasses = getThemeClasses(presentation.themeKey);
-  const { shareMoodLine, shareHeadline, shareCardCopy, shareVibeStamp } = getShareCardCopy(mbti, spectrum, badges, info, percent, presentation);
-  const neutralReviewNote = neutralCount > 0
-    ? usedFollowup
-      ? '애매했던 축은 추가 질문으로 다시 확인했어요.'
-      : '애매했던 답변은 결과 해석에 참고했어요.'
-    : '';
-  const strongestAxis = [...axisNarratives].sort((a, b) => b.intensity - a.intensity)[0];
-  const topChangeChip = axisChanges[0] ? `${axisChanges[0].pair} ${axisChanges[0].before}→${axisChanges[0].after}` : trendAnalysis?.title || '오늘 흐름이 제일 강했던 축';
   const precisionBadge = getPrecisionBadge({ percent, neutralReviewNote, boundaryAxes });
   const todayLabel = getTodayLabel();
   const timeLabel = getTimeLabel();
@@ -399,15 +394,7 @@ export default function ResultView({
       percent,
       variantKey: presentation.variantKey,
       themeKey: presentation.themeKey,
-      axes: spectrum.map((axis) => ({
-        pair: `${axis.left}/${axis.right}`,
-        left: axis.left,
-        right: axis.right,
-        dominantType: axis.dominantType,
-        intensity: axis.intensity,
-        leftScore: axis.leftScore,
-        rightScore: axis.rightScore
-      }))
+      axes: spectrum.map(toHistoryAxisSnapshot)
     };
 
     if (historyData[0]?.createdAt === newEntry.createdAt) return;
@@ -428,7 +415,12 @@ export default function ResultView({
       setShareCopied(true);
       trackEvent('share_copy', { mbti });
       setTimeout(() => setShareCopied(false), 1800);
-    } catch {
+    } catch (error) {
+      captureError(error, {
+        key: 'share_copy_error',
+        stage: 'share_copy',
+        mbti
+      });
       setShareCopied(false);
     }
   };
@@ -449,8 +441,14 @@ export default function ResultView({
       setSaveImageState(mode === 'shared' ? 'shared' : 'saved');
       trackEvent(mode === 'shared' ? 'result_image_share' : 'result_image_save', { mbti, mode });
     } catch (error) {
-      if (error?.name === 'AbortError') setSaveImageState('idle');
-      else setSaveImageState('idle');
+      if (error?.name !== 'AbortError') {
+        captureError(error, {
+          key: 'share_card_save_error',
+          stage: 'share_card_save',
+          mbti
+        });
+      }
+      setSaveImageState('idle');
     } finally {
       setTimeout(() => setSaveImageState('idle'), 1800);
     }
@@ -701,6 +699,40 @@ export default function ResultView({
       </div>
 
       <div className="mt-6 flex w-full max-w-sm flex-col gap-4">
+        <div className="rounded-[1.8rem] border border-white/10 bg-slate-900/85 p-5 shadow-[0_22px_60px_rgba(2,6,23,0.28)]">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-[11px] font-black tracking-[0.2em] text-slate-400 uppercase">반복 사용 포인트</p>
+              <p className="mt-2 text-[18px] font-black text-white break-keep">최근 흐름에서 뭐가 달라졌는지 바로 보이게</p>
+            </div>
+            <span className={`shrink-0 rounded-full border px-3 py-1 text-[10px] font-black ${themeClasses.chip}`}>
+              {recentFlowSummary.chips.length}회 흐름
+            </span>
+          </div>
+
+          <div className="mt-4 flex flex-wrap gap-2">
+            {recentFlowSummary.chips.map((type, idx) => (
+              <span
+                key={`${type}-${idx}`}
+                className={`rounded-full border px-3 py-1.5 text-[11px] font-black ${idx === 0 ? themeClasses.chip : 'border-white/10 bg-white/[0.05] text-slate-200'}`}
+              >
+                {idx === 0 ? `이번 ${type}` : `${idx + 1}전 ${type}`}
+              </span>
+            ))}
+          </div>
+
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            <div className="rounded-[1.4rem] border border-white/10 bg-white/[0.04] px-4 py-4">
+              <p className="text-[10px] font-black tracking-[0.18em] text-slate-400 uppercase">최근 흐름 메모</p>
+              <p className="mt-2 text-[13px] leading-relaxed text-slate-100 break-keep">{recentFlowSummary.note}</p>
+            </div>
+            <div className="rounded-[1.4rem] border border-cyan-300/20 bg-cyan-300/[0.08] px-4 py-4">
+              <p className="text-[10px] font-black tracking-[0.18em] text-cyan-100 uppercase">다음 테스트에서 보기 좋은 포인트</p>
+              <p className="mt-2 text-[13px] leading-relaxed text-white break-keep">{revisitInsight}</p>
+            </div>
+          </div>
+        </div>
+
         {DETAIL_SECTIONS.map((section) => (
           <DetailSection
             key={section.key}

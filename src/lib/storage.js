@@ -1,9 +1,12 @@
+import { emitAnalyticsEvent } from './observability.js';
+
 export const STORAGE_KEYS = {
   history: 'mbti_history',
   activeSession: 'mbti_active_session',
   username: 'mbti_username',
   eventStats: 'mbti_event_stats',
-  recentIds: 'mbti_recent_ids'
+  recentIds: 'mbti_recent_ids',
+  errorStats: 'mbti_error_stats'
 };
 
 export const readJson = (key, fallback) => {
@@ -51,4 +54,10 @@ export const trackEvent = (name, payload = {}) => {
   const counts = { ...raw.counts, [name]: (raw.counts?.[name] || 0) + 1 };
   const recent = [{ name, at: new Date().toISOString(), payload }, ...(raw.recent || [])].slice(0, 40);
   writeJson(STORAGE_KEYS.eventStats, { counts, recent });
+
+  try {
+    emitAnalyticsEvent(name, payload);
+  } catch {
+    // client analytics should never block the core flow
+  }
 };

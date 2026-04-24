@@ -25,6 +25,7 @@ import {
   writeRecentSessions,
   writeUserName
 } from './lib/storage.js';
+import { installGlobalErrorHandlers } from './lib/observability.js';
 import { getHistoryComparison, getHistoryEntryNote, getHistoryInsights } from './lib/resultAnalysis.js';
 
 const ResultView = lazy(() => import('./components/ResultView.jsx'));
@@ -70,6 +71,10 @@ export default function App() {
       setRecoverableSession(savedSession);
       setShowRecoveryPrompt(true);
     }
+  }, []);
+
+  useEffect(() => {
+    installGlobalErrorHandlers();
   }, []);
 
   const openHistoryModal = () => {
@@ -226,6 +231,10 @@ export default function App() {
 
           if (nextFollowupQuestions.length > 0) {
             const nextSessionIds = [...sessionQuestionIds, ...nextFollowupQuestions.map((item) => item.id)];
+            trackEvent('followup_start', {
+              count: nextFollowupQuestions.length,
+              neutralCount: nextNeutralQuestionIds.length
+            });
             setFollowupQuestions(nextFollowupQuestions);
             setQuestionPhase('followup');
             setCurrIdx(0);
@@ -248,6 +257,8 @@ export default function App() {
         } else {
           const nextIdx = currIdx + 1;
           if (nextIdx === 3) trackEvent('question_reach_3');
+          if (nextIdx === 6) trackEvent('question_reach_6');
+          if (nextIdx === 9) trackEvent('question_reach_9');
           setCurrIdx(nextIdx);
           writeActiveSession({
             userName,
