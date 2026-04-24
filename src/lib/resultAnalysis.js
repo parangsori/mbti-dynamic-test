@@ -238,6 +238,24 @@ const PRESENTATION_THEMES = [
     label: '소프트 시프트',
     shortLabel: '시프트',
     stampSuffix: '살짝 달라진 오늘'
+  },
+  {
+    key: 'citrus',
+    label: '시트러스 무드',
+    shortLabel: '시트러스',
+    stampSuffix: '상큼하게 살아난 오늘'
+  },
+  {
+    key: 'afterglow',
+    label: '애프터글로우',
+    shortLabel: '글로우',
+    stampSuffix: '은근히 달아오른 오늘'
+  },
+  {
+    key: 'studio',
+    label: '스튜디오 무드',
+    shortLabel: '스튜디오',
+    stampSuffix: '또렷하게 기록된 오늘'
   }
 ];
 
@@ -258,6 +276,14 @@ const PRESENTATION_VARIANTS = {
       detail: '큰 방향은 비슷하지만 오늘은 특정 축의 힘이 다르게 들어왔어요.',
       boast: '같은 결과 안에서도 미묘한 변화를 잘 남기는 타입',
       tags: ['#같지만다름', '#미묘한변화', '#축포인트']
+    },
+    {
+      key: 'streak-signature',
+      stateLabel: '연속 결과',
+      hook: (mbti) => `${mbti} 시그니처가 다시 나온 날`,
+      detail: '반복되는 결과 안에서도 오늘 유난히 강하게 잡힌 결이 따로 보여요.',
+      boast: '자주 나올수록 내 성향의 서명이 또렷해지는 타입',
+      tags: ['#시그니처무드', '#반복의미', '#내패턴']
     }
   ],
   shift: [
@@ -276,6 +302,14 @@ const PRESENTATION_VARIANTS = {
       detail: '평소 흐름과 다른 선택이 섞이면서 오늘만의 성향 신호가 잡혔어요.',
       boast: '변화가 생길 때 자기 상태가 더 잘 드러나는 타입',
       tags: ['#새신호', '#컨디션반영', '#변화감지']
+    },
+    {
+      key: 'shift-scene',
+      stateLabel: '변화 감지',
+      hook: (mbti) => `오늘 장면은 ${mbti} 쪽으로 바뀐 날`,
+      detail: '주변 상황과 기분이 달라지면서 반응 방식도 새 방향으로 움직였어요.',
+      boast: '장면이 바뀌면 새로운 매력이 먼저 튀어나오는 타입',
+      tags: ['#오늘장면', '#반전무드', '#새로운결']
     }
   ],
   boundary: [
@@ -294,6 +328,14 @@ const PRESENTATION_VARIANTS = {
       detail: '결과는 나왔지만 몇몇 판단은 오늘 컨디션을 많이 따라갔어요.',
       boast: '같은 유형 안에서도 감도와 리듬이 살아 있는 타입',
       tags: ['#작은파동', '#오늘감도', '#흔들리는축']
+    },
+    {
+      key: 'boundary-mix',
+      stateLabel: '경계 축',
+      hook: (mbti) => `${mbti}인데 다른 결도 같이 보인 날`,
+      detail: '한 가지 타입으로 딱 닫히기보다 오늘의 선택들이 여러 방향을 살짝 열어뒀어요.',
+      boast: '단정하기 어려운 순간에도 자기 색을 잃지 않는 타입',
+      tags: ['#섞인무드', '#열린결과', '#오늘의변수']
     }
   ],
   clear: [
@@ -312,6 +354,14 @@ const PRESENTATION_VARIANTS = {
       detail: '강한 축이 결과를 끌고 가면서 오늘의 반응 방식이 뚜렷했어요.',
       boast: '에너지 방향이 정해지면 존재감이 확 살아나는 타입',
       tags: ['#힘실림', '#존재감', '#성향선명']
+    },
+    {
+      key: 'clear-spotlight',
+      stateLabel: '선명한 결과',
+      hook: (mbti) => `오늘은 ${mbti}가 앞에 선 날`,
+      detail: '답변마다 비슷한 선택 기준이 반복되면서 오늘의 성향이 앞으로 나왔어요.',
+      boast: '망설임보다 자기 결이 먼저 보이는 선명한 타입',
+      tags: ['#앞에선무드', '#확실한결', '#오늘선명']
     }
   ],
   default: [
@@ -330,6 +380,14 @@ const PRESENTATION_VARIANTS = {
       detail: '기본 성향 위로 지금의 상황, 사람, 컨디션이 자연스럽게 섞였어요.',
       boast: '고정된 타입보다 오늘의 장면까지 같이 보여주는 타입',
       tags: ['#오늘분위기', '#성향레이어', '#지금이느낌']
+    },
+    {
+      key: 'daily-capture',
+      stateLabel: '오늘 스냅샷',
+      hook: (mbti) => `지금 이 순간은 ${mbti}로 찍힌 날`,
+      detail: '늘 같은 내가 아니라, 오늘의 선택과 기분이 한 장의 결과로 남았어요.',
+      boast: '순간의 컨디션까지 결과에 담기는 스냅샷 타입',
+      tags: ['#순간캡처', '#오늘기록', '#지금의나']
     }
   ]
 };

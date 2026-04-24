@@ -88,6 +88,42 @@ const RESULT_THEME_CLASSES = {
     chip: 'border-pink-300/20 bg-pink-300/[0.12] text-pink-100',
     dot: 'bg-pink-300 shadow-[0_0_12px_rgba(249,168,212,0.9)]',
     letterGradient: 'bg-gradient-to-r from-pink-200 via-indigo-200 to-sky-200'
+  },
+  citrus: {
+    shell: 'bg-[radial-gradient(circle_at_top,_rgba(190,242,100,0.15),_transparent_31%),radial-gradient(circle_at_bottom_left,_rgba(45,212,191,0.16),_transparent_30%),linear-gradient(180deg,rgba(15,23,42,0.08),rgba(15,23,42,0))]',
+    shareShell: 'bg-[radial-gradient(circle_at_top_left,_rgba(190,242,100,0.24),_transparent_28%),radial-gradient(circle_at_bottom_right,_rgba(20,184,166,0.2),_transparent_32%),linear-gradient(145deg,#07150f_0%,#10261f_52%,#0f172a_100%)]',
+    haloTop: 'bg-lime-300/[0.18]',
+    haloBottom: 'bg-teal-300/[0.16]',
+    imageFrame: 'border-lime-300/20 bg-[radial-gradient(circle_at_top,_rgba(190,242,100,0.18),_transparent_44%),linear-gradient(180deg,rgba(15,23,42,0.98),rgba(2,6,23,0.92))]',
+    panel: 'border-lime-300/20 bg-lime-300/[0.08]',
+    label: 'text-lime-100',
+    chip: 'border-lime-300/20 bg-lime-300/[0.12] text-lime-100',
+    dot: 'bg-lime-300 shadow-[0_0_12px_rgba(190,242,100,0.9)]',
+    letterGradient: 'bg-gradient-to-r from-lime-200 via-emerald-100 to-cyan-200'
+  },
+  afterglow: {
+    shell: 'bg-[radial-gradient(circle_at_top,_rgba(251,113,133,0.15),_transparent_32%),radial-gradient(circle_at_bottom_left,_rgba(250,204,21,0.13),_transparent_29%),linear-gradient(180deg,rgba(15,23,42,0.08),rgba(15,23,42,0))]',
+    shareShell: 'bg-[radial-gradient(circle_at_top,_rgba(251,113,133,0.23),_transparent_29%),radial-gradient(circle_at_bottom_left,_rgba(250,204,21,0.18),_transparent_30%),linear-gradient(145deg,#1f1022_0%,#29172a_50%,#101827_100%)]',
+    haloTop: 'bg-rose-300/[0.18]',
+    haloBottom: 'bg-yellow-300/[0.14]',
+    imageFrame: 'border-rose-300/20 bg-[radial-gradient(circle_at_top,_rgba(251,113,133,0.18),_transparent_44%),linear-gradient(180deg,rgba(15,23,42,0.98),rgba(2,6,23,0.92))]',
+    panel: 'border-rose-300/20 bg-rose-300/[0.08]',
+    label: 'text-rose-100',
+    chip: 'border-rose-300/20 bg-rose-300/[0.12] text-rose-100',
+    dot: 'bg-rose-300 shadow-[0_0_12px_rgba(253,164,175,0.9)]',
+    letterGradient: 'bg-gradient-to-r from-rose-200 via-yellow-100 to-sky-200'
+  },
+  studio: {
+    shell: 'bg-[radial-gradient(circle_at_top,_rgba(226,232,240,0.12),_transparent_32%),radial-gradient(circle_at_bottom_left,_rgba(56,189,248,0.15),_transparent_30%),linear-gradient(180deg,rgba(15,23,42,0.08),rgba(15,23,42,0))]',
+    shareShell: 'bg-[radial-gradient(circle_at_top_right,_rgba(226,232,240,0.16),_transparent_30%),radial-gradient(circle_at_bottom_left,_rgba(56,189,248,0.18),_transparent_31%),linear-gradient(145deg,#05080f_0%,#111827_52%,#07111f_100%)]',
+    haloTop: 'bg-slate-200/[0.14]',
+    haloBottom: 'bg-sky-300/[0.16]',
+    imageFrame: 'border-slate-200/20 bg-[radial-gradient(circle_at_top,_rgba(226,232,240,0.14),_transparent_44%),linear-gradient(180deg,rgba(15,23,42,0.98),rgba(2,6,23,0.92))]',
+    panel: 'border-slate-200/20 bg-slate-200/[0.07]',
+    label: 'text-slate-100',
+    chip: 'border-slate-200/20 bg-slate-200/[0.1] text-slate-100',
+    dot: 'bg-slate-100 shadow-[0_0_12px_rgba(226,232,240,0.85)]',
+    letterGradient: 'bg-gradient-to-r from-white via-sky-100 to-slate-300'
   }
 };
 
