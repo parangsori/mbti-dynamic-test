@@ -1,5 +1,17 @@
 import { motion } from 'framer-motion';
 
+function ActivityMetricCard({ title, value, description }) {
+  return (
+    <div className="flex min-h-[10rem] flex-col rounded-2xl border border-white/10 bg-white/5 px-4 py-4">
+      <div className="flex min-h-[2.4rem] items-start">
+        <p className="text-[11px] font-bold leading-snug tracking-[0.12em] text-slate-400 uppercase break-keep">{title}</p>
+      </div>
+      <p className="mt-1 text-2xl font-black leading-none text-white">{value}</p>
+      <p className="mt-3 text-[11px] leading-relaxed text-slate-300 break-keep">{description}</p>
+    </div>
+  );
+}
+
 export default function HistoryModal({
   activitySummary,
   latestHistoryComparison,
@@ -54,21 +66,9 @@ export default function HistoryModal({
           </div>
 
           <div className="grid grid-cols-3 gap-3 mb-4">
-            <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-4">
-              <p className="text-[11px] text-slate-400 font-bold tracking-[0.15em] uppercase">테스트 횟수</p>
-              <p className="mt-2 text-2xl font-black text-white">{activitySummary.starts}</p>
-              <p className="mt-1 text-[11px] text-slate-300 break-keep">지금까지 이 브라우저에서 해본 횟수</p>
-            </div>
-            <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-4">
-              <p className="text-[11px] text-slate-400 font-bold tracking-[0.15em] uppercase">다시 해본 횟수</p>
-              <p className="mt-2 text-2xl font-black text-white">{activitySummary.restarts}</p>
-              <p className="mt-1 text-[11px] text-slate-300 break-keep">결과를 보고 다시 시작한 횟수</p>
-            </div>
-            <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-4">
-              <p className="text-[11px] text-slate-400 font-bold tracking-[0.15em] uppercase">저장·공유</p>
-              <p className="mt-2 text-2xl font-black text-white">{activitySummary.saveOrShare}</p>
-              <p className="mt-1 text-[11px] text-slate-300 break-keep">결과 카드를 남긴 횟수</p>
-            </div>
+            <ActivityMetricCard title="테스트 횟수" value={activitySummary.starts} description="지금까지 이 브라우저에서 해본 횟수" />
+            <ActivityMetricCard title="다시 해본 횟수" value={activitySummary.restarts} description="결과를 보고 다시 시작한 횟수" />
+            <ActivityMetricCard title="저장·공유" value={activitySummary.saveOrShare} description="결과 카드를 남긴 횟수" />
           </div>
 
           <div className="grid grid-cols-2 gap-3 mb-4">

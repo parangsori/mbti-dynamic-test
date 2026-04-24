@@ -29,7 +29,19 @@ import {
 import { installGlobalErrorHandlers } from './lib/observability.js';
 import { getHistoryComparison, getHistoryEntryNote, getHistoryInsights } from './lib/resultAnalysis.js';
 
-const ResultView = lazy(() => import('./components/ResultView.jsx'));
+const retryImport = (loader, retries = 1) =>
+  loader().catch((error) => {
+    if (retries <= 0) throw error;
+    return new Promise((resolve, reject) => {
+      setTimeout(() => {
+        retryImport(loader, retries - 1).then(resolve).catch(reject);
+      }, 450);
+    });
+  });
+
+const lazyWithRetry = (loader, retries = 1) => lazy(() => retryImport(loader, retries));
+
+const ResultView = lazyWithRetry(() => import('./components/ResultView.jsx'));
 const RecoveryPrompt = lazy(() => import('./components/RecoveryPrompt.jsx'));
 const HistoryModal = lazy(() => import('./components/HistoryModal.jsx'));
 const VersionModal = lazy(() => import('./components/VersionModal.jsx'));

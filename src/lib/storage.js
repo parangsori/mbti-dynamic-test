@@ -19,11 +19,21 @@ export const readJson = (key, fallback) => {
 };
 
 export const writeJson = (key, value) => {
-  localStorage.setItem(key, JSON.stringify(value));
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+    return true;
+  } catch {
+    return false;
+  }
 };
 
 export const removeItem = (key) => {
-  localStorage.removeItem(key);
+  try {
+    localStorage.removeItem(key);
+    return true;
+  } catch {
+    return false;
+  }
 };
 
 export const clearAllLocalData = () => {
@@ -40,20 +50,35 @@ export const writeActiveSession = (payload) => writeJson(STORAGE_KEYS.activeSess
 });
 export const clearActiveSession = () => removeItem(STORAGE_KEYS.activeSession);
 
-export const readUserName = () => localStorage.getItem(STORAGE_KEYS.username) || '';
+export const readUserName = () => {
+  try {
+    return localStorage.getItem(STORAGE_KEYS.username) || '';
+  } catch {
+    return '';
+  }
+};
 export const writeUserName = (name) => {
-  if (name) localStorage.setItem(STORAGE_KEYS.username, name);
-  else removeItem(STORAGE_KEYS.username);
+  try {
+    if (name) localStorage.setItem(STORAGE_KEYS.username, name);
+    else removeItem(STORAGE_KEYS.username);
+    return true;
+  } catch {
+    return false;
+  }
 };
 
 export const readRecentSessions = () => readJson(STORAGE_KEYS.recentIds, []);
 export const writeRecentSessions = (sessions) => writeJson(STORAGE_KEYS.recentIds, sessions);
 
 export const trackEvent = (name, payload = {}) => {
-  const raw = readJson(STORAGE_KEYS.eventStats, { counts: {}, recent: [] });
-  const counts = { ...raw.counts, [name]: (raw.counts?.[name] || 0) + 1 };
-  const recent = [{ name, at: new Date().toISOString(), payload }, ...(raw.recent || [])].slice(0, 40);
-  writeJson(STORAGE_KEYS.eventStats, { counts, recent });
+  try {
+    const raw = readJson(STORAGE_KEYS.eventStats, { counts: {}, recent: [] });
+    const counts = { ...raw.counts, [name]: (raw.counts?.[name] || 0) + 1 };
+    const recent = [{ name, at: new Date().toISOString(), payload }, ...(raw.recent || [])].slice(0, 40);
+    writeJson(STORAGE_KEYS.eventStats, { counts, recent });
+  } catch {
+    // local activity logging should never block the core flow
+  }
 
   try {
     emitAnalyticsEvent(name, payload);

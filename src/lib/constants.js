@@ -19,6 +19,21 @@ export const COMPATIBILITY = {
 
 export const CHANGELOG = [
   {
+    version: 'v1.4.7',
+    date: '2026.04.24',
+    updates: [
+      '나의 기록 & 활동 화면의 통계 카드 정렬을 다듬어 모바일에서도 더 안정적으로 보이도록 개선'
+    ]
+  },
+  {
+    version: 'v1.4.6',
+    date: '2026.04.24',
+    updates: [
+      '모바일에서 결과 화면 진입이 저장소 상태나 순간적인 로딩 실패에 막히지 않도록 안정성 보강',
+      '활동 기록 저장이 실패해도 결과 화면은 우선 정상적으로 보여지도록 흐름 개선'
+    ]
+  },
+  {
     version: 'v1.4.5',
     date: '2026.04.24',
     updates: [
