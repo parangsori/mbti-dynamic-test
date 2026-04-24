@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { IMAGE_BASE64 } from '../data/mbtiData.js';
 import {
@@ -93,32 +93,16 @@ const RESULT_THEME_CLASSES = {
 
 const getThemeClasses = (themeKey) => RESULT_THEME_CLASSES[themeKey] || RESULT_THEME_CLASSES.neon;
 
-const getShareHookClasses = (hook = '') => {
-  const compactLength = hook.replace(/\s+/g, '').length;
-  const visualLength = hook.length;
-
-  if (compactLength <= 14 && visualLength <= 18) {
-    return 'text-[68px] leading-[1.04]';
-  }
-
-  if (compactLength <= 18 && visualLength <= 22) {
-    return 'text-[62px] leading-[1.05]';
-  }
-
-  if (compactLength <= 22 && visualLength <= 26) {
-    return 'text-[56px] leading-[1.08]';
-  }
-
-  if (compactLength <= 26 && visualLength <= 30) {
-    return 'text-[50px] leading-[1.08]';
-  }
-
-  if (compactLength <= 30 && visualLength <= 34) {
-    return 'text-[46px] leading-[1.1]';
-  }
-
-  return 'text-[42px] leading-[1.12]';
-};
+const SHARE_HOOK_SIZE_STEPS = [
+  { fontSize: 68, lineHeight: 1.04 },
+  { fontSize: 62, lineHeight: 1.05 },
+  { fontSize: 56, lineHeight: 1.08 },
+  { fontSize: 50, lineHeight: 1.08 },
+  { fontSize: 46, lineHeight: 1.1 },
+  { fontSize: 42, lineHeight: 1.12 },
+  { fontSize: 38, lineHeight: 1.14 },
+  { fontSize: 34, lineHeight: 1.16 }
+];
 
 const getDetailPreview = ({ section, summaryCopy, consistencyCopy, historyComparison, trendAnalysis, historyInsights }) => {
   if (section === 'why') return consistencyCopy || summaryCopy;
@@ -184,6 +168,76 @@ function MoodPointCard({ presentation, themeClasses }) {
   );
 }
 
+function AutoFitShareHook({ text }) {
+  const textRef = useRef(null);
+  const [stepIndex, setStepIndex] = useState(0);
+
+  useLayoutEffect(() => {
+    const element = textRef.current;
+    if (!element) return undefined;
+
+    let frameId = 0;
+    let cancelled = false;
+
+    const fitText = async () => {
+      if (typeof document !== 'undefined' && document.fonts?.ready) {
+        try {
+          await document.fonts.ready;
+        } catch {
+          // ignore font readiness errors and continue with current layout
+        }
+      }
+
+      if (cancelled) return;
+
+      let nextStepIndex = 0;
+
+      for (let i = 0; i < SHARE_HOOK_SIZE_STEPS.length; i += 1) {
+        const step = SHARE_HOOK_SIZE_STEPS[i];
+        element.style.fontSize = `${step.fontSize}px`;
+        element.style.lineHeight = `${step.lineHeight}`;
+
+        const computedStyle = window.getComputedStyle(element);
+        const lineHeight = parseFloat(computedStyle.lineHeight);
+        const lineCount = lineHeight > 0 ? Math.round(element.scrollHeight / lineHeight) : 0;
+
+        nextStepIndex = i;
+        if (lineCount <= 2) break;
+      }
+
+      if (!cancelled) {
+        setStepIndex(nextStepIndex);
+      }
+    };
+
+    frameId = window.requestAnimationFrame(() => {
+      fitText();
+    });
+
+    return () => {
+      cancelled = true;
+      window.cancelAnimationFrame(frameId);
+    };
+  }, [text]);
+
+  const activeStep = SHARE_HOOK_SIZE_STEPS[stepIndex];
+
+  return (
+    <div className="mt-7 h-[148px] max-w-[540px] overflow-hidden">
+      <p
+        ref={textRef}
+        className="font-black tracking-[-0.045em] text-white break-keep"
+        style={{
+          fontSize: `${activeStep.fontSize}px`,
+          lineHeight: activeStep.lineHeight
+        }}
+      >
+        {text}
+      </p>
+    </div>
+  );
+}
+
 function ShareCard({ context }) {
   const {
     displayName,
@@ -200,8 +254,6 @@ function ShareCard({ context }) {
     presentation
   } = context;
   const themeClasses = getThemeClasses(presentation?.themeKey);
-  const shareHookClasses = getShareHookClasses(shareCardCopy.hook);
-
   return (
     <div className={`relative h-[1080px] w-[1080px] overflow-hidden rounded-[64px] border border-white/10 ${themeClasses.shareShell} text-white shadow-[0_40px_120px_rgba(2,6,23,0.7)]`}>
       <div className={`absolute -right-20 top-[-90px] h-80 w-80 rounded-full ${themeClasses.haloBottom} blur-3xl`}></div>
@@ -242,9 +294,7 @@ function ShareCard({ context }) {
                 <span className={`inline-block h-2.5 w-2.5 rounded-full ${themeClasses.dot}`}></span>
                 {shareVibeStamp}
               </div>
-              <div className="mt-7 min-h-[148px] max-w-[540px]">
-                <p className={`font-black tracking-[-0.045em] text-white break-keep ${shareHookClasses}`}>{shareCardCopy.hook}</p>
-              </div>
+              <AutoFitShareHook text={shareCardCopy.hook} />
               <p className="mt-6 text-[29px] font-semibold leading-[1.38] text-slate-100 break-keep">{shareCardCopy.detail}</p>
               <p className="mt-4 text-[21px] leading-[1.55] text-slate-300 break-keep">{shareHeadline}</p>
             </div>
