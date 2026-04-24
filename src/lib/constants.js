@@ -19,6 +19,14 @@ export const COMPATIBILITY = {
 
 export const CHANGELOG = [
   {
+    version: 'v1.4.5',
+    date: '2026.04.24',
+    updates: [
+      '새롭게 보강한 문항이 더 자연스럽게 자주 등장하도록 출제 흐름 개선',
+      '기존 12문항 진행과 결과 계산 방식은 유지하면서 반복 테스트의 체감 변화를 빠르게 개선'
+    ]
+  },
+  {
     version: 'v1.4.4',
     date: '2026.04.24',
     updates: [

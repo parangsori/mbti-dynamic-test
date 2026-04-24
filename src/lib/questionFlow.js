@@ -10,6 +10,7 @@ export const createEmptyScores = () => ({ E: 0, I: 0, S: 0, N: 0, T: 0, F: 0, J:
 export const createEmptyNeutralSignals = () => ({ EI: 0, SN: 0, TF: 0, JP: 0 });
 
 const DEFAULT_CONTEXT_TAG = 'daily';
+const FRESH_CONTEXT_WEIGHT_BOOST = 4;
 
 const CONTEXT_LABELS = {
   today: '오늘 컨디션',
@@ -84,7 +85,8 @@ const pickRandomSubset = (items, count) => shuffle(items).slice(0, count);
 const getSelectionWeight = (question) => {
   const roleBoost = question.role === 'state' || question.role === 'parallel' ? 1.18 : 1;
   const middleBoost = question.allowMiddleCandidate ? 1.25 : 1;
-  return (question.weight || 1) * roleBoost * middleBoost;
+  const freshnessBoost = question.contextTag ? FRESH_CONTEXT_WEIGHT_BOOST : 1;
+  return (question.weight || 1) * roleBoost * middleBoost * freshnessBoost;
 };
 
 const pickWeightedQuestion = (pool, { recentIds, usedIds, usedFamilyIds }) => {
