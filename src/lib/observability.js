@@ -1,3 +1,5 @@
+import { capturePostHogEvent } from './posthog.js';
+
 const LOCAL_ERROR_KEY = 'mbti_error_stats';
 const MAX_RECENT_ITEMS = 30;
 
@@ -58,6 +60,8 @@ const getPayloadMeta = (payload = {}) => ({
 export const emitAnalyticsEvent = (name, payload = {}) => {
   const meta = getPayloadMeta(payload);
   const endpoint = import.meta.env.VITE_ANALYTICS_ENDPOINT;
+
+  capturePostHogEvent(name, meta);
 
   if (canUseWindow()) {
     try {
