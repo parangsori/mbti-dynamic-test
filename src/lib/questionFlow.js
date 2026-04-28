@@ -1,4 +1,4 @@
-import { QUESTIONS_DB } from '../data/mbtiData.js';
+import { QUESTIONS_DB } from '../../data.js';
 import {
   FOLLOWUP_QUESTIONS,
   QUESTIONS_META,

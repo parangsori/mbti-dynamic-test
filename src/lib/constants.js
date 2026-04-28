@@ -19,6 +19,14 @@ export const COMPATIBILITY = {
 
 export const CHANGELOG = [
   {
+    version: 'v1.4.8',
+    date: '2026.04.28',
+    updates: [
+      '반복 테스트에서도 같은 결과 안의 오늘 차이가 더 잘 느껴지도록 결과·공유 문구 변주를 보강',
+      '연속 테스트에서 문항 중복과 결과 변주 분포를 확인할 수 있는 신선도 검증 흐름 추가'
+    ]
+  },
+  {
     version: 'v1.4.7',
     date: '2026.04.24',
     updates: [

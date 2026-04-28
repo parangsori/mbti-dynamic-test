@@ -284,6 +284,22 @@ const PRESENTATION_VARIANTS = {
       detail: '반복되는 결과 안에서도 오늘 유난히 강하게 잡힌 결이 따로 보여요.',
       boast: '자주 나올수록 내 성향의 서명이 또렷해지는 타입',
       tags: ['#시그니처무드', '#반복의미', '#내패턴']
+    },
+    {
+      key: 'streak-texture',
+      stateLabel: '연속 결과',
+      hook: (mbti) => `같은 ${mbti}, 오늘은 질감이 다른 날`,
+      detail: '유형은 이어졌지만 답변 속 강도와 장면이 달라져 오늘만의 결이 남았어요.',
+      boast: '같은 결과 안에서도 오늘의 온도를 새로 읽어내는 타입',
+      tags: ['#같은유형다른결', '#오늘질감', '#반복재발견']
+    },
+    {
+      key: 'streak-depth',
+      stateLabel: '연속 결과',
+      hook: (mbti) => `${mbti}가 반복될수록 더 입체적인 날`,
+      detail: '익숙한 결과 위에 오늘 강했던 축이 더해져 한 번 더 볼 이유가 생겼어요.',
+      boast: '반복할수록 자기 패턴의 디테일이 살아나는 타입',
+      tags: ['#입체패턴', '#디테일발견', '#오늘축']
     }
   ],
   shift: [
@@ -310,6 +326,22 @@ const PRESENTATION_VARIANTS = {
       detail: '주변 상황과 기분이 달라지면서 반응 방식도 새 방향으로 움직였어요.',
       boast: '장면이 바뀌면 새로운 매력이 먼저 튀어나오는 타입',
       tags: ['#오늘장면', '#반전무드', '#새로운결']
+    },
+    {
+      key: 'shift-reframe',
+      stateLabel: '변화 감지',
+      hook: (mbti) => `${mbti}로 다시 해석된 날`,
+      detail: '익숙한 선택 사이에 다른 기준이 끼어들며 오늘 결과의 프레임이 바뀌었어요.',
+      boast: '상황이 바뀌면 자기 해석도 빠르게 업데이트되는 타입',
+      tags: ['#새해석', '#프레임전환', '#업데이트무드']
+    },
+    {
+      key: 'shift-spark',
+      stateLabel: '변화 감지',
+      hook: (mbti) => `오늘은 ${mbti} 스파크가 튄 날`,
+      detail: '평소와 다른 반응이 몇 번 겹치면서 결과가 새로운 쪽으로 불이 붙었어요.',
+      boast: '작은 계기에도 새로운 면이 선명하게 살아나는 타입',
+      tags: ['#스파크', '#새면모', '#변화포착']
     }
   ],
   boundary: [
@@ -336,6 +368,22 @@ const PRESENTATION_VARIANTS = {
       detail: '한 가지 타입으로 딱 닫히기보다 오늘의 선택들이 여러 방향을 살짝 열어뒀어요.',
       boast: '단정하기 어려운 순간에도 자기 색을 잃지 않는 타입',
       tags: ['#섞인무드', '#열린결과', '#오늘의변수']
+    },
+    {
+      key: 'boundary-tilt',
+      stateLabel: '경계 축',
+      hook: (mbti) => `${mbti} 쪽으로 기울었지만 여지가 있는 날`,
+      detail: '결과는 잡혔지만 몇몇 축은 컨디션과 상황에 따라 다시 움직일 수 있어요.',
+      boast: '흔들리는 지점까지 자기 이해로 바꾸는 타입',
+      tags: ['#기울어진결', '#다시볼축', '#상황변수']
+    },
+    {
+      key: 'boundary-softline',
+      stateLabel: '경계 축',
+      hook: (mbti) => `${mbti}와 다른 결 사이 선이 부드러운 날`,
+      detail: '우세한 방향은 보이지만 반대쪽 성향도 오늘 답변 안에 자연스럽게 남았어요.',
+      boast: '한쪽으로 닫히지 않아 더 유연하게 읽히는 타입',
+      tags: ['#부드러운경계', '#양쪽결', '#유연한해석']
     }
   ],
   clear: [
@@ -362,6 +410,22 @@ const PRESENTATION_VARIANTS = {
       detail: '답변마다 비슷한 선택 기준이 반복되면서 오늘의 성향이 앞으로 나왔어요.',
       boast: '망설임보다 자기 결이 먼저 보이는 선명한 타입',
       tags: ['#앞에선무드', '#확실한결', '#오늘선명']
+    },
+    {
+      key: 'clear-line',
+      stateLabel: '선명한 결과',
+      hook: (mbti) => `${mbti} 라인이 깔끔하게 잡힌 날`,
+      detail: '여러 축에서 같은 방향의 선택이 이어져 결과의 윤곽이 또렷했어요.',
+      boast: '선택 기준이 분명해질수록 매력이 더 잘 보이는 타입',
+      tags: ['#깔끔한윤곽', '#기준선명', '#결이또렷']
+    },
+    {
+      key: 'clear-signal',
+      stateLabel: '선명한 결과',
+      hook: (mbti) => `${mbti} 신호가 강하게 잡힌 날`,
+      detail: '오늘 답변은 흔들림보다 반복되는 기준이 더 강하게 남았어요.',
+      boast: '자기 방향이 잡히면 결과까지 빠르게 선명해지는 타입',
+      tags: ['#강한신호', '#방향확실', '#오늘확도']
     }
   ],
   default: [
@@ -388,6 +452,22 @@ const PRESENTATION_VARIANTS = {
       detail: '늘 같은 내가 아니라, 오늘의 선택과 기분이 한 장의 결과로 남았어요.',
       boast: '순간의 컨디션까지 결과에 담기는 스냅샷 타입',
       tags: ['#순간캡처', '#오늘기록', '#지금의나']
+    },
+    {
+      key: 'daily-shade',
+      stateLabel: '오늘 스냅샷',
+      hook: (mbti) => `${mbti}에 오늘의 색이 살짝 묻은 날`,
+      detail: '기본 성향은 유지되지만 지금의 기분과 장면이 결과 톤을 조금 바꿨어요.',
+      boast: '매번 같은 듯해도 오늘의 색을 다르게 남기는 타입',
+      tags: ['#오늘색감', '#살짝다름', '#무드기록']
+    },
+    {
+      key: 'daily-note',
+      stateLabel: '오늘 스냅샷',
+      hook: (mbti) => `오늘 메모에는 ${mbti}라고 적힌 날`,
+      detail: '짧은 선택들이 모여 지금의 반응 방식과 에너지 방향을 가볍게 적어냈어요.',
+      boast: '하루의 작은 선택까지 성향 기록으로 남기는 타입',
+      tags: ['#오늘메모', '#성향기록', '#가벼운체크']
     }
   ]
 };
@@ -604,10 +684,10 @@ export const getRevisitInsight = ({ historyComparison, historyInsights, boundary
   }
 
   if (presentation?.state === 'streak') {
-    return '결과는 이어지고 있지만 강한 축과 문구 분위기는 달라질 수 있어요. 같은 MBTI 안의 결 차이를 보기 좋은 타이밍이에요.';
+    return '결과는 이어지고 있지만 오늘 강했던 축과 문구 분위기는 달라질 수 있어요. 다시 하면 같은 MBTI 안의 결 차이를 더 또렷하게 볼 수 있어요.';
   }
 
-  return '다시 해보면 완전히 다른 결과보다, 오늘 더 강했던 축이 유지되는지부터 비교해보면 좋아요.';
+  return '다시 해보면 완전히 다른 결과보다 오늘 더 강했던 축이 유지되는지, 어떤 장면 문항에서 달라지는지부터 비교해보면 좋아요.';
 };
 
 const getQuestionContextInsight = ({ questionContextSummary, boundaryAxes, usedFollowup, neutralCount }) => {
