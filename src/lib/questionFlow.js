@@ -22,12 +22,22 @@ const CONTEXT_LABELS = {
 
 const CONTEXT_PRIORITY = ['relationship', 'today', 'situation', 'calibration', 'daily'];
 
-const getQuestionContextTag = (question = {}) => {
+export const getQuestionContextTag = (question = {}) => {
   if (question.contextTag) return question.contextTag;
   if (question.role === 'followup') return 'calibration';
   if (question.role === 'state') return 'today';
   if (['forced_choice', 'parallel'].includes(question.role)) return 'situation';
   return DEFAULT_CONTEXT_TAG;
+};
+
+export const getQuestionContextVisual = (question = {}) => {
+  const key = getQuestionContextTag(question);
+  const label = CONTEXT_LABELS[key] || CONTEXT_LABELS[DEFAULT_CONTEXT_TAG];
+  return {
+    key: CONTEXT_LABELS[key] ? key : DEFAULT_CONTEXT_TAG,
+    label,
+    alt: `${label} 질문 분위기`
+  };
 };
 
 export const summarizeQuestionContext = (baseQuestions = [], followupQuestions = []) => {

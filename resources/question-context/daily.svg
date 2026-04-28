@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360" role="img" aria-label="Daily choice mood illustration">
+  <defs>
+    <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#111827"/>
+      <stop offset="0.52" stop-color="#1d4ed8"/>
+      <stop offset="1" stop-color="#22c55e"/>
+    </linearGradient>
+  </defs>
+  <rect width="640" height="360" rx="42" fill="url(#bg)"/>
+  <rect x="150" y="88" width="340" height="196" rx="34" fill="#ffffff" opacity="0.13"/>
+  <path d="M204 150 H436" stroke="#ffffff" stroke-opacity="0.56" stroke-width="14" stroke-linecap="round"/>
+  <path d="M204 202 H348" stroke="#bbf7d0" stroke-opacity="0.72" stroke-width="14" stroke-linecap="round"/>
+  <circle cx="456" cy="210" r="28" fill="#86efac" opacity="0.8"/>
+  <circle cx="184" cy="112" r="18" fill="#93c5fd" opacity="0.72"/>
+  <path d="M110 282 C204 236 286 320 374 268 S514 230 570 282" fill="none" stroke="#ffffff" stroke-opacity="0.28" stroke-width="12" stroke-linecap="round"/>
+</svg>

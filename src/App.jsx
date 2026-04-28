@@ -1,4 +1,4 @@
-import { Suspense, lazy, useEffect, useState } from 'react';
+import { Suspense, lazy, useEffect, useRef, useState } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import StartView from './components/StartView.jsx';
 import QuestionView from './components/QuestionView.jsx';
@@ -10,6 +10,7 @@ import {
   createEmptyScores,
   formatMicroCopy,
   getFollowupTempoMessage,
+  getQuestionContextVisual,
   getQuestionTempoMessage,
   summarizeQuestionContext
 } from './lib/questionFlow.js';
@@ -77,6 +78,8 @@ export default function App() {
   const [neutralSignals, setNeutralSignals] = useState(createEmptyNeutralSignals());
   const [neutralQuestionIds, setNeutralQuestionIds] = useState([]);
   const [questionContextSummary, setQuestionContextSummary] = useState(null);
+  const [lastAnswerSnapshot, setLastAnswerSnapshot] = useState(null);
+  const transitionLockRef = useRef(false);
 
   useEffect(() => {
     setHistoryData(readHistory());
@@ -105,6 +108,8 @@ export default function App() {
     setNeutralSignals(createEmptyNeutralSignals());
     setNeutralQuestionIds([]);
     setQuestionContextSummary(null);
+    setLastAnswerSnapshot(null);
+    transitionLockRef.current = false;
     setStep('start');
   };
 
@@ -129,6 +134,8 @@ export default function App() {
     setNeutralSignals(createEmptyNeutralSignals());
     setNeutralQuestionIds([]);
     setQuestionContextSummary(null);
+    setLastAnswerSnapshot(null);
+    transitionLockRef.current = false;
     setStep('question');
 
     writeActiveSession({
@@ -160,6 +167,8 @@ export default function App() {
     setNeutralSignals(recoverableSession.neutralSignals || createEmptyNeutralSignals());
     setNeutralQuestionIds(recoverableSession.neutralQuestionIds || []);
     setQuestionContextSummary(null);
+    setLastAnswerSnapshot(null);
+    transitionLockRef.current = false;
     setShowRecoveryPrompt(false);
     setStep('question');
     trackEvent('session_resume');
@@ -169,6 +178,8 @@ export default function App() {
     clearActiveSession();
     setRecoverableSession(null);
     setShowRecoveryPrompt(false);
+    setLastAnswerSnapshot(null);
+    transitionLockRef.current = false;
     trackEvent('session_discard');
   };
 
@@ -196,6 +207,8 @@ export default function App() {
     setRecoverableSession(null);
     setShowRecoveryPrompt(false);
     setShowHistory(false);
+    setLastAnswerSnapshot(null);
+    transitionLockRef.current = false;
   };
 
   const finishSession = (finalScores, finalSessionIds = sessionQuestionIds) => {
@@ -210,11 +223,14 @@ export default function App() {
     });
     clearActiveSession();
     setScores(finalScores);
+    setLastAnswerSnapshot(null);
+    transitionLockRef.current = false;
     setStep('result');
   };
 
   const activeQuestions = questionPhase === 'followup' ? followupQuestions : questions;
   const activeQuestion = activeQuestions[currIdx];
+  const activeQuestionContextVisual = activeQuestion ? getQuestionContextVisual(activeQuestion) : null;
   const followupHasNeutralReview = questionPhase === 'followup' && followupQuestions.some((item) => (item.trigger?.neutralCount || 0) > 0);
   const questionPhaseHint =
     questionPhase === 'followup'
@@ -225,17 +241,59 @@ export default function App() {
         ? '둘 중 하나가 딱 안 잡히면 보조 버튼으로 넘어갈 수 있어요'
         : '';
 
+  const createQuestionSnapshot = () => ({
+    userName,
+    questions,
+    followupQuestions,
+    currIdx,
+    scores,
+    questionPhase,
+    recentSessions: recentSessionsSnapshot,
+    sessionQuestionIds,
+    neutralSignals,
+    neutralQuestionIds,
+    questionContextSummary
+  });
+
+  const writeSessionFromSnapshot = (snapshot) => {
+    writeActiveSession({
+      userName: snapshot.userName || '',
+      questions: snapshot.questions || [],
+      followupQuestions: snapshot.followupQuestions || [],
+      currIdx: snapshot.currIdx || 0,
+      scores: snapshot.scores || createEmptyScores(),
+      questionPhase: snapshot.questionPhase || 'base',
+      recentSessions: snapshot.recentSessions || [],
+      sessionQuestionIds: snapshot.sessionQuestionIds || [],
+      neutralSignals: snapshot.neutralSignals || createEmptyNeutralSignals(),
+      neutralQuestionIds: snapshot.neutralQuestionIds || []
+    });
+  };
+
+  const getAnswerDirection = (method) => (method?.includes('left') ? -1 : 1);
+
+  const trackQuestionAnswer = (method) => {
+    trackEvent('question_answer', {
+      method,
+      phase: questionPhase,
+      questionId: activeQuestion?.id || '',
+      axis: activeQuestion?._axis || '',
+      index: currIdx + 1
+    });
+  };
+
   const advanceWithResponse = ({
     nextScores,
     nextNeutralSignals = neutralSignals,
     nextNeutralQuestionIds = neutralQuestionIds,
-    microText = ''
+    microText = '',
+    direction = 1
   }) => {
     setScores(nextScores);
     setNeutralSignals(nextNeutralSignals);
     setNeutralQuestionIds(nextNeutralQuestionIds);
     setMicroCopy(formatMicroCopy(microText));
-    setQuestionDirection(1);
+    setQuestionDirection(direction);
 
     setTimeout(() => {
       setMicroCopy('');
@@ -312,8 +370,82 @@ export default function App() {
         });
       }
 
+      transitionLockRef.current = false;
       setIsTransitioning(false);
     }, 800);
+  };
+
+  const handleQuestionAnswer = (option, method = 'tap') => {
+    if (isTransitioning || transitionLockRef.current) return;
+    transitionLockRef.current = true;
+    setLastAnswerSnapshot(createQuestionSnapshot());
+    setIsTransitioning(true);
+    trackQuestionAnswer(method);
+
+    const weight = activeQuestion?.weight || 1;
+    const nextScores = { ...scores, [option.type]: (scores[option.type] || 0) + weight };
+    advanceWithResponse({
+      nextScores,
+      microText: option.micro,
+      direction: getAnswerDirection(method)
+    });
+  };
+
+  const handleMiddleAnswer = (method = 'middle') => {
+    if (isTransitioning || transitionLockRef.current) return;
+    transitionLockRef.current = true;
+    setLastAnswerSnapshot(createQuestionSnapshot());
+    setIsTransitioning(true);
+    trackQuestionAnswer(method);
+
+    const axisCode = activeQuestion?._axis;
+    const nextNeutralSignals = axisCode
+      ? { ...neutralSignals, [axisCode]: (neutralSignals[axisCode] || 0) + 1 }
+      : neutralSignals;
+    const nextNeutralQuestionIds = activeQuestion?.id
+      ? [...neutralQuestionIds, activeQuestion.id]
+      : neutralQuestionIds;
+
+    advanceWithResponse({
+      nextScores: scores,
+      nextNeutralSignals,
+      nextNeutralQuestionIds,
+      microText: '이 축은 한 번 더 볼게요'
+    });
+  };
+
+  const handleQuestionBack = () => {
+    if (!lastAnswerSnapshot || isTransitioning || transitionLockRef.current) return;
+
+    const snapshot = lastAnswerSnapshot;
+    transitionLockRef.current = false;
+    setUserName(snapshot.userName || '');
+    setQuestions(snapshot.questions || []);
+    setFollowupQuestions(snapshot.followupQuestions || []);
+    setCurrIdx(snapshot.currIdx || 0);
+    setScores(snapshot.scores || createEmptyScores());
+    setQuestionPhase(snapshot.questionPhase || 'base');
+    setRecentSessionsSnapshot(snapshot.recentSessions || []);
+    setSessionQuestionIds(snapshot.sessionQuestionIds || []);
+    setNeutralSignals(snapshot.neutralSignals || createEmptyNeutralSignals());
+    setNeutralQuestionIds(snapshot.neutralQuestionIds || []);
+    setQuestionContextSummary(snapshot.questionContextSummary || null);
+    setMicroCopy('');
+    setQuestionDirection(-1);
+    setStep('question');
+    setLastAnswerSnapshot(null);
+    writeSessionFromSnapshot(snapshot);
+
+    const restoredQuestions = snapshot.questionPhase === 'followup'
+      ? snapshot.followupQuestions || []
+      : snapshot.questions || [];
+    const restoredQuestion = restoredQuestions[snapshot.currIdx || 0];
+    trackEvent('question_back', {
+      phase: snapshot.questionPhase || 'base',
+      questionId: restoredQuestion?.id || '',
+      axis: restoredQuestion?._axis || '',
+      index: (snapshot.currIdx || 0) + 1
+    });
   };
 
   return (
@@ -362,33 +494,11 @@ export default function App() {
               }
               showMiddleOption={questionPhase === 'base' && Boolean(activeQuestion.allowMiddle)}
               middleLabel="둘 다 비슷해요"
-              onAnswer={(option) => {
-                if (isTransitioning) return;
-                setIsTransitioning(true);
-
-                const weight = activeQuestion?.weight || 1;
-                const nextScores = { ...scores, [option.type]: (scores[option.type] || 0) + weight };
-                advanceWithResponse({ nextScores, microText: option.micro });
-              }}
-              onMiddleAnswer={() => {
-                if (isTransitioning) return;
-                setIsTransitioning(true);
-
-                const axisCode = activeQuestion?._axis;
-                const nextNeutralSignals = axisCode
-                  ? { ...neutralSignals, [axisCode]: (neutralSignals[axisCode] || 0) + 1 }
-                  : neutralSignals;
-                const nextNeutralQuestionIds = activeQuestion?.id
-                  ? [...neutralQuestionIds, activeQuestion.id]
-                  : neutralQuestionIds;
-
-                advanceWithResponse({
-                  nextScores: scores,
-                  nextNeutralSignals,
-                  nextNeutralQuestionIds,
-                  microText: '이 축은 한 번 더 볼게요'
-                });
-              }}
+              contextVisual={activeQuestionContextVisual}
+              canGoBack={Boolean(lastAnswerSnapshot)}
+              onAnswer={handleQuestionAnswer}
+              onMiddleAnswer={handleMiddleAnswer}
+              onBack={handleQuestionBack}
             />
           )}
 
@@ -453,14 +563,16 @@ export default function App() {
           )}
         </AnimatePresence>
 
-        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-20">
-          <button
-            onClick={openVersionModal}
-            className="text-[11px] font-bold text-slate-600 hover:text-slate-400 transition-colors bg-black/20 px-3 py-1 rounded-full border border-white/5 backdrop-blur-sm"
-          >
-            Version {CHANGELOG[0].version}
-          </button>
-        </div>
+        {step !== 'question' && (
+          <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-20">
+            <button
+              onClick={openVersionModal}
+              className="text-[11px] font-bold text-slate-600 hover:text-slate-400 transition-colors bg-black/20 px-3 py-1 rounded-full border border-white/5 backdrop-blur-sm"
+            >
+              Version {CHANGELOG[0].version}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

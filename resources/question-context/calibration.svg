@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360" role="img" aria-label="Calibration mood illustration">
+  <defs>
+    <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#020617"/>
+      <stop offset="0.5" stop-color="#334155"/>
+      <stop offset="1" stop-color="#0891b2"/>
+    </linearGradient>
+  </defs>
+  <rect width="640" height="360" rx="42" fill="url(#bg)"/>
+  <circle cx="320" cy="180" r="96" fill="none" stroke="#cffafe" stroke-opacity="0.6" stroke-width="12"/>
+  <circle cx="320" cy="180" r="44" fill="#cffafe" opacity="0.22"/>
+  <path d="M320 84 V276" stroke="#ffffff" stroke-opacity="0.28" stroke-width="10" stroke-linecap="round"/>
+  <path d="M224 180 H416" stroke="#ffffff" stroke-opacity="0.28" stroke-width="10" stroke-linecap="round"/>
+  <circle cx="246" cy="112" r="20" fill="#a5f3fc" opacity="0.55"/>
+  <circle cx="404" cy="248" r="20" fill="#ddd6fe" opacity="0.55"/>
+  <path d="M106 276 C188 232 256 304 320 268 S452 230 534 276" fill="none" stroke="#67e8f9" stroke-opacity="0.34" stroke-width="12" stroke-linecap="round"/>
+</svg>
