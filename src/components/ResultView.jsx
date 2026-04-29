@@ -516,6 +516,7 @@ export default function ResultView({
   };
 
   const handleSaveImage = async () => {
+    if (saveImageState === 'saving') return;
     if (!shareCardRef.current) return;
     setSaveImageState('saving');
     try {
@@ -764,7 +765,13 @@ export default function ResultView({
           </div>
 
           <div className="mt-5 flex w-full flex-col gap-3">
-            <button onClick={handleSaveImage} className="w-full rounded-[1.6rem] border border-cyan-300/20 bg-cyan-300/[0.1] py-4 text-[15px] font-black text-cyan-50 transition hover:bg-cyan-300/[0.14]">
+            <button
+              onClick={handleSaveImage}
+              disabled={saveImageState === 'saving'}
+              className={`w-full rounded-[1.6rem] border border-cyan-300/20 bg-cyan-300/[0.1] py-4 text-[15px] font-black text-cyan-50 transition hover:bg-cyan-300/[0.14] ${
+                saveImageState === 'saving' ? 'cursor-wait opacity-70' : ''
+              }`}
+            >
               {saveImageState === 'saving'
                 ? '이미지 준비 중...'
                 : saveImageState === 'shared'

@@ -40,7 +40,12 @@ export const clearAllLocalData = () => {
   Object.values(STORAGE_KEYS).forEach((key) => removeItem(key));
 };
 
-export const readHistory = () => readJson(STORAGE_KEYS.history, []);
+const readArrayJson = (key) => {
+  const value = readJson(key, []);
+  return Array.isArray(value) ? value : [];
+};
+
+export const readHistory = () => readArrayJson(STORAGE_KEYS.history);
 export const writeHistory = (history) => writeJson(STORAGE_KEYS.history, history);
 
 export const readActiveSession = () => readJson(STORAGE_KEYS.activeSession, null);
@@ -67,7 +72,7 @@ export const writeUserName = (name) => {
   }
 };
 
-export const readRecentSessions = () => readJson(STORAGE_KEYS.recentIds, []);
+export const readRecentSessions = () => readArrayJson(STORAGE_KEYS.recentIds);
 export const writeRecentSessions = (sessions) => writeJson(STORAGE_KEYS.recentIds, sessions);
 
 export const trackEvent = (name, payload = {}) => {
