@@ -45,8 +45,20 @@ export default function QuestionView({
 }) {
   const [activeDragSide, setActiveDragSide] = useState(null);
   const [swipeFeedbackSide, setSwipeFeedbackSide] = useState(null);
+  const [flyOutSide, setFlyOutSide] = useState(null);
+  const [showWiggle, setShowWiggle] = useState(false);
   const draggedCardRef = useRef(false);
   const swipeFeedbackTimerRef = useRef(null);
+
+  useEffect(() => {
+    if (currIdx === 0 && !isTransitioning) {
+      const timer = setTimeout(() => {
+        setShowWiggle(true);
+        setTimeout(() => setShowWiggle(false), 800);
+      }, 600);
+      return () => clearTimeout(timer);
+    }
+  }, [currIdx, isTransitioning]);
   const firstOption = question.options[0];
   const secondOption = question.options[1];
   const contextKey = contextVisual?.key || 'daily';
@@ -57,10 +69,12 @@ export default function QuestionView({
       if (isTransitioning || isTextInputTarget(event.target)) return;
       if (event.key === 'ArrowLeft' && firstOption) {
         event.preventDefault();
+        setFlyOutSide('left');
         onAnswer(firstOption, 'keyboard_left');
       }
       if (event.key === 'ArrowRight' && secondOption) {
         event.preventDefault();
+        setFlyOutSide('right');
         onAnswer(secondOption, 'keyboard_right');
       }
     };
@@ -97,7 +111,7 @@ export default function QuestionView({
 
     const x = info.offset.x;
     const y = info.offset.y;
-    const isHorizontalIntent = Math.abs(x) > Math.abs(y) * 1.1;
+    const isHorizontalIntent = Math.abs(x) > Math.abs(y) * 0.8;
     const hasSwipeDistance = Math.abs(x) >= SWIPE_DISTANCE;
     const hasSwipeVelocity = Math.abs(info.velocity.x) >= SWIPE_VELOCITY;
     const isValidDirection = side === 'left' ? x < 0 : x > 0;
@@ -107,6 +121,7 @@ export default function QuestionView({
     if (!isHorizontalIntent || !isValidDirection || (!hasSwipeDistance && !hasSwipeVelocity)) return;
 
     triggerSwipeFeedback(side);
+    setFlyOutSide(side);
     onAnswer(option, side === 'left' ? 'swipe_left' : 'swipe_right');
   };
 
@@ -114,7 +129,7 @@ export default function QuestionView({
     const x = info.offset.x;
     const y = info.offset.y;
     const isValidDirection = side === 'left' ? x < 0 : x > 0;
-    const isHorizontalIntent = Math.abs(x) > Math.abs(y) * 1.1;
+    const isHorizontalIntent = Math.abs(x) > Math.abs(y) * 0.8;
 
     if (Math.abs(x) > 8 || Math.abs(y) > 8) {
       draggedCardRef.current = true;
@@ -133,6 +148,8 @@ export default function QuestionView({
       draggedCardRef.current = false;
       return;
     }
+    const side = option === firstOption ? 'left' : 'right';
+    setFlyOutSide(side);
     onAnswer(option, 'tap');
   };
 
@@ -220,6 +237,9 @@ export default function QuestionView({
               const isActive = activeDragSide === side;
               const hasSwipeFeedback = swipeFeedbackSide === side;
               const isMuted = activeDragSide && !isActive;
+              const isFlyingOut = flyOutSide === side;
+              const isOtherFlyingOut = flyOutSide && flyOutSide !== side;
+
               return (
                 <motion.button
                   key={index}
@@ -235,12 +255,13 @@ export default function QuestionView({
                   onClick={() => handleCardClick(option)}
                   disabled={isTransitioning}
                   animate={{
-                    rotate: hasSwipeFeedback ? (side === 'left' ? -5 : 5) : isActive ? (side === 'left' ? -3.6 : 3.6) : 0,
-                    scale: hasSwipeFeedback ? 1.065 : isActive ? 1.04 : 1,
-                    x: hasSwipeFeedback ? (side === 'left' ? -22 : 22) : 0
+                    rotate: isFlyingOut ? (side === 'left' ? -12 : 12) : hasSwipeFeedback ? (side === 'left' ? -5 : 5) : isActive ? (side === 'left' ? -3.6 : 3.6) : 0,
+                    scale: isFlyingOut ? 0.9 : isOtherFlyingOut ? 0.95 : hasSwipeFeedback ? 1.065 : isActive ? 1.04 : isTransitioning ? 0.95 : 1,
+                    x: isFlyingOut ? (side === 'left' ? -350 : 350) : hasSwipeFeedback ? (side === 'left' ? -22 : 22) : (showWiggle && !activeDragSide) ? (side === 'left' ? [-5, 5, -5, 0] : [5, -5, 5, 0]) : 0,
+                    opacity: isFlyingOut ? 0 : isOtherFlyingOut ? 0.3 : isTransitioning ? 0.4 : isMuted ? 0.7 : 1
                   }}
                   transition={{ type: 'spring', stiffness: 650, damping: 20 }}
-                  className={`relative flex h-[7.25rem] w-[80%] flex-col justify-between overflow-hidden rounded-2xl border px-4 py-3.5 text-center shadow-lg transition-all active:scale-[0.98] ${
+                  className={`relative flex h-[7.25rem] w-[80%] flex-col justify-between overflow-hidden rounded-2xl border px-4 py-3.5 text-center shadow-lg transition-colors active:scale-[0.98] ${
                     side === 'left' ? 'self-start' : 'self-end'
                   } ${
                     isActive || hasSwipeFeedback
@@ -248,7 +269,7 @@ export default function QuestionView({
                         ? 'border-cyan-100/90 bg-cyan-300/24 text-white shadow-[0_20px_52px_rgba(34,211,238,0.28)]'
                         : 'border-fuchsia-100/90 bg-fuchsia-300/24 text-white shadow-[0_20px_52px_rgba(217,70,239,0.28)]'
                       : 'border-white/10 bg-slate-900/60 text-white hover:bg-white/10'
-                  } ${isTransitioning ? 'opacity-40 scale-95' : isMuted ? 'opacity-70' : 'opacity-100'}`}
+                  }`}
                 >
                   <span className={`pointer-events-none absolute inset-y-3 ${side === 'left' ? 'left-0 bg-cyan-300/45' : 'right-0 bg-fuchsia-300/45'} w-1 rounded-full`} />
                   <div className={`flex items-center ${side === 'left' ? 'justify-start' : 'justify-end'}`}>
@@ -306,7 +327,7 @@ export default function QuestionView({
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, scale: 0.8 }}
               transition={{ type: 'spring', damping: 12, stiffness: 200 }}
-              className="absolute -bottom-16 left-0 w-full text-center z-50 pointer-events-none"
+              className="absolute top-[45%] left-0 w-full text-center z-[100] pointer-events-none -translate-y-1/2"
             >
               <span className="inline-block px-5 py-3 bg-gradient-to-r from-pink-500 to-brand rounded-full text-white text-[15px] font-bold shadow-xl shadow-brand/40 whitespace-nowrap">
                 {microCopy}

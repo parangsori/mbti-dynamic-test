@@ -725,7 +725,7 @@ export const QUESTIONS_EXTENDED = {
       q: "논쟁에서 이겼을 때 내가 느끼는 기분은?",
       options: [
         { text: "내 논리가 맞았다는 짜릿한 승리감", type: "T", micro: "승자의 희열 🔎" },
-        { text: "상제방의 기분이 나쁘진 않을까 걱정됨", type: "F", micro: "배려의 우려 👂" }
+        { text: "상대방의 기분이 나쁘진 않을까 걱정됨", type: "F", micro: "배려의 우려 👂" }
       ]
     },
     {

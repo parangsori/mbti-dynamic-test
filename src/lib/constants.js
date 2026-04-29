@@ -19,6 +19,13 @@ export const COMPATIBILITY = {
 
 export const CHANGELOG = [
   {
+    version: 'v1.4.16',
+    date: '2026.04.29',
+    updates: [
+      '모바일 스와이프 경험 보완 (온보딩 흔들림 넛지, 드래그 판정 관용도 패치, 확정 시 날아가는 모션 추가)'
+    ]
+  },
+  {
     version: 'v1.4.15',
     date: '2026.04.28',
     updates: [
