@@ -3,7 +3,8 @@ import { motion } from 'framer-motion';
 import { IMAGE_BASE64 } from '../data/mbtiData.js';
 import {
   buildResultViewModel,
-  toHistoryAxisSnapshot
+  toHistoryAxisSnapshot,
+  PRESENTATION_THEMES
 } from '../lib/resultAnalysis.js';
 import { writeHistory } from '../lib/storage.js';
 import { captureError } from '../lib/observability.js';
@@ -130,14 +131,13 @@ const RESULT_THEME_CLASSES = {
 const getThemeClasses = (themeKey) => RESULT_THEME_CLASSES[themeKey] || RESULT_THEME_CLASSES.neon;
 
 const SHARE_HOOK_SIZE_STEPS = [
-  { fontSize: 68, lineHeight: 1.04 },
-  { fontSize: 62, lineHeight: 1.05 },
-  { fontSize: 56, lineHeight: 1.08 },
-  { fontSize: 50, lineHeight: 1.08 },
-  { fontSize: 46, lineHeight: 1.1 },
-  { fontSize: 42, lineHeight: 1.12 },
-  { fontSize: 38, lineHeight: 1.14 },
-  { fontSize: 34, lineHeight: 1.16 }
+  { fontSize: 60, lineHeight: 1.25 },
+  { fontSize: 56, lineHeight: 1.25 },
+  { fontSize: 50, lineHeight: 1.28 },
+  { fontSize: 46, lineHeight: 1.3 },
+  { fontSize: 42, lineHeight: 1.3 },
+  { fontSize: 38, lineHeight: 1.35 },
+  { fontSize: 34, lineHeight: 1.35 }
 ];
 
 const getDetailPreview = ({ section, summaryCopy, consistencyCopy, historyComparison, trendAnalysis, historyInsights }) => {
@@ -259,7 +259,7 @@ function AutoFitShareHook({ text }) {
   const activeStep = SHARE_HOOK_SIZE_STEPS[stepIndex];
 
   return (
-    <div className="mt-7 h-[164px] max-w-[540px] overflow-hidden pt-1 pb-4">
+    <div className="mt-4 flex min-h-[164px] max-w-[540px] flex-col justify-center pt-1 pb-2">
       <p
         ref={textRef}
         className="font-black tracking-[-0.045em] text-white break-keep"
@@ -287,7 +287,8 @@ function ShareCard({ context }) {
     todayLabel,
     timeLabel,
     precisionBadge,
-    presentation
+    presentation,
+    recentFlowSummary
   } = context;
   const themeClasses = getThemeClasses(presentation?.themeKey);
   return (
@@ -298,7 +299,7 @@ function ShareCard({ context }) {
       <div className="absolute right-[88px] top-[208px] h-[430px] w-[430px] rounded-[46px] border border-white/10 bg-white/[0.04] rotate-[-6deg]"></div>
       <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.05),transparent_24%,transparent_72%,rgba(255,255,255,0.03))]"></div>
 
-      <div className="relative z-10 flex h-full flex-col px-20 py-20">
+      <div className="relative z-10 flex h-full flex-col px-20 pb-16 pt-16">
         <div className="flex items-start justify-between gap-8">
           <div className="max-w-[560px]">
             <p className="text-[24px] font-medium tracking-[-0.02em] text-slate-300">
@@ -323,19 +324,19 @@ function ShareCard({ context }) {
           </div>
         </div>
 
-        <div className="mt-9 grid flex-1 grid-cols-[1.02fr_0.98fr] items-start gap-8">
-          <div className="flex flex-col justify-between">
+        <div className="mt-8 grid flex-1 grid-cols-[1.02fr_0.98fr] gap-8">
+          <div className="flex h-full flex-col justify-between">
             <div>
               <div className={`inline-flex items-center gap-3 rounded-full border px-5 py-2.5 text-[17px] font-bold ${themeClasses.chip}`}>
                 <span className={`inline-block h-2.5 w-2.5 rounded-full ${themeClasses.dot}`}></span>
                 {shareVibeStamp}
               </div>
               <AutoFitShareHook text={shareCardCopy.hook} />
-              <p className="mt-6 text-[29px] font-semibold leading-[1.38] text-slate-100 break-keep">{shareCardCopy.detail}</p>
-              <p className="mt-4 text-[21px] leading-[1.55] text-slate-300 break-keep">{shareHeadline}</p>
+              <p className="mt-4 text-[29px] font-semibold leading-[1.38] text-slate-100 break-keep">{shareCardCopy.detail}</p>
+              <p className="mt-3 text-[21px] leading-[1.55] text-slate-300 break-keep">{shareHeadline}</p>
             </div>
 
-            <div className="mt-6 flex flex-wrap gap-3">
+            <div className="mt-4 flex flex-wrap gap-3">
               {shareCardCopy.tags.slice(0, 3).map((tag, idx) => (
                 <span key={`${tag}-${idx}`} className="rounded-full border border-white/10 bg-white/[0.06] px-5 py-2.5 text-[18px] font-bold text-white shadow-[0_14px_30px_rgba(2,6,23,0.28)]">
                   {tag}
@@ -343,14 +344,31 @@ function ShareCard({ context }) {
               ))}
             </div>
 
-            <div className="mt-7 rounded-[34px] border border-white/10 bg-black/25 px-7 py-6 shadow-[0_24px_60px_rgba(2,6,23,0.34)]">
+            <div className="mt-5 rounded-[34px] border border-white/10 bg-black/25 px-7 py-6 shadow-[0_24px_60px_rgba(2,6,23,0.34)]">
               <p className="text-[14px] font-bold tracking-[0.2em] text-slate-500 uppercase">오늘의 한 줄</p>
               <p className="mt-3 text-[23px] font-semibold leading-[1.45] text-slate-100 break-keep">{shareCardCopy.boast}</p>
             </div>
 
             <div className="mt-auto flex items-center justify-between rounded-[28px] border border-white/10 bg-white/[0.03] px-7 py-5">
-              <p className="text-[15px] font-semibold text-slate-300">{precisionBadge}</p>
-              <p className="text-[15px] font-black tracking-[0.14em] text-white">오늘 무드 카드</p>
+              <div className="flex flex-col gap-2">
+                <p className="text-[15px] font-semibold text-slate-300">{precisionBadge}</p>
+                {recentFlowSummary?.timeline && recentFlowSummary.timeline.length > 0 && (
+                  <div className="flex items-center gap-2">
+                    <span className="mr-1 text-[12px] font-bold tracking-widest text-slate-500 uppercase">
+                      나의 흐름 <span className="text-[10px] font-medium text-slate-400">({presentation.themeLabel})</span>
+                    </span>
+                    {recentFlowSummary.timeline.map((item, idx) => (
+                      <span
+                        key={idx}
+                        className={`inline-block h-3.5 w-3.5 rounded-full shadow-sm ${
+                          getThemeClasses(item.themeKey).dot
+                        } ${idx === recentFlowSummary.timeline.length - 1 ? 'scale-125 ring-2 ring-white/50' : 'opacity-70'}`}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+              <p className="ml-4 whitespace-nowrap text-[15px] font-black tracking-[0.14em] text-white">오늘 무드 카드</p>
             </div>
           </div>
 
@@ -365,9 +383,16 @@ function ShareCard({ context }) {
                   <div className="inline-flex rounded-full border border-white/10 bg-white/[0.08] px-5 py-2 text-[15px] font-black tracking-[0.2em] text-slate-100 uppercase">
                     {mbti}
                   </div>
-                  <div className={`flex items-center gap-2 rounded-full border px-5 py-2.5 text-[16px] font-black shadow-[0_12px_24px_rgba(15,23,42,0.28)] ${themeClasses.chip}`}>
-                    <span className={`inline-block h-2.5 w-2.5 rounded-full ${themeClasses.dot}`}></span>
-                    {presentation?.themeLabel || '오늘 무드'}
+                  <div className="flex items-center gap-2">
+                    {presentation?.stateLabel && (
+                      <span className="rounded-full border border-white/15 bg-white/10 px-4 py-2 text-[14px] font-bold text-white shadow-sm backdrop-blur-sm">
+                        {presentation.stateLabel}
+                      </span>
+                    )}
+                    <div className={`flex items-center gap-2 rounded-full border px-5 py-2.5 text-[16px] font-black shadow-[0_12px_24px_rgba(15,23,42,0.28)] ${themeClasses.chip}`}>
+                      <span className={`inline-block h-2.5 w-2.5 rounded-full ${themeClasses.dot}`}></span>
+                      {presentation?.themeLabel || '오늘 무드'}
+                    </div>
                   </div>
                 </div>
 
@@ -419,6 +444,7 @@ export default function ResultView({
   const [shareCopied, setShareCopied] = useState(false);
   const [saveImageState, setSaveImageState] = useState('idle');
   const [detailOpen, setDetailOpen] = useState({ why: false, axes: false, history: false });
+  const [showMoodLegend, setShowMoodLegend] = useState(false);
 
   if (!currentEntryRef.current) {
     const now = new Date();
@@ -558,7 +584,8 @@ export default function ResultView({
     todayLabel,
     timeLabel,
     precisionBadge,
-    presentation
+    presentation,
+    recentFlowSummary
   };
 
   const detailSections = {
@@ -730,6 +757,29 @@ export default function ResultView({
               {neutralReviewNote && <span className="rounded-full border border-cyan-300/20 bg-cyan-300/[0.1] px-3 py-1.5 text-[11px] font-bold text-cyan-100">보정 질문 반영</span>}
             </div>
 
+            {recentFlowSummary?.timeline && recentFlowSummary.timeline.length > 0 && (
+              <div className="mt-5 w-full rounded-[1.45rem] border border-white/10 bg-black/20 px-4 py-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <p className="text-[11px] font-black tracking-[0.15em] text-slate-400 uppercase">최근 나의 성향 흐름</p>
+                    <button onClick={() => setShowMoodLegend(true)} className="flex h-5 w-5 items-center justify-center rounded-full border border-white/10 bg-white/5 text-[10px] text-slate-400 transition hover:bg-white/10 hover:text-white">
+                      ?
+                    </button>
+                  </div>
+                  <button onClick={() => setShowMoodLegend(true)} className="flex items-center gap-2 rounded-full px-2 py-1 transition hover:bg-white/5">
+                    {recentFlowSummary.timeline.map((item, idx) => (
+                      <span
+                        key={idx}
+                        className={`inline-block h-2.5 w-2.5 rounded-full ${
+                          getThemeClasses(item.themeKey).dot
+                        } ${idx === recentFlowSummary.timeline.length - 1 ? 'scale-125 ring-[1.5px] ring-white/60' : 'opacity-60'}`}
+                      />
+                    ))}
+                  </button>
+                </div>
+              </div>
+            )}
+
             <MoodPointCard presentation={presentation} themeClasses={themeClasses} />
           </div>
 
@@ -850,6 +900,34 @@ export default function ResultView({
           </DetailSection>
         ))}
       </div>
+
+      {showMoodLegend && (
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}>
+          <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm" onClick={() => setShowMoodLegend(false)} />
+          <div className="relative z-10 w-full max-w-sm overflow-hidden rounded-[2rem] border border-white/10 bg-slate-900 p-6 shadow-2xl">
+            <h3 className="text-center text-[18px] font-black text-white">무드 테마 범례</h3>
+            <p className="mt-2 text-center text-[13px] leading-relaxed text-slate-300 break-keep">
+              결과에 표시되는 색상 점은 그날의 <strong>성향 축 강도와 흐름</strong>에 따라 부여받은 고유한 테마를 의미합니다. 같은 MBTI라도 날마다 다른 무드가 나타날 수 있습니다.
+            </p>
+            <div className="mt-6 grid grid-cols-2 gap-3">
+              {PRESENTATION_THEMES.map((theme) => {
+                const tClasses = getThemeClasses(theme.key);
+                return (
+                  <div key={theme.key} className={`flex items-center gap-3 rounded-2xl border px-3 py-3 ${tClasses.panel}`}>
+                    <span className={`inline-block h-3 w-3 shrink-0 rounded-full ${tClasses.dot}`}></span>
+                    <div className="min-w-0 flex-1">
+                      <p className={`text-[12px] font-black tracking-wide ${tClasses.label}`}>{theme.label}</p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <button onClick={() => setShowMoodLegend(false)} className="mt-6 w-full rounded-2xl bg-white/10 py-3 text-[14px] font-bold text-white transition hover:bg-white/15">
+              닫기
+            </button>
+          </div>
+        </div>
+      )}
     </motion.div>
   );
 }

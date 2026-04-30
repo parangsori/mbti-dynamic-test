@@ -208,7 +208,7 @@ export const getRetestPrompt = (boundaryAxes, historyInsights) => {
   return '같은 날 다시 해보면 예상보다 작은 축 하나가 먼저 달라질 수 있어요.';
 };
 
-const PRESENTATION_THEMES = [
+export const PRESENTATION_THEMES = [
   {
     key: 'spark',
     label: '불꽃 무드',
@@ -647,13 +647,20 @@ export const toHistoryAxisSnapshot = (axis) => ({
   rightScore: axis.rightScore
 });
 
-export const getRecentFlowSummary = (effectiveHistory, fallbackMbti = '') => {
+export const getRecentFlowSummary = (effectiveHistory, fallbackMbti = '', currentThemeKey = '') => {
   const recent = effectiveHistory.slice(0, 5);
   const flow = recent.map((item) => item.mbti).filter(Boolean);
+
+  const timeline = recent.map((item) => ({
+    mbti: item.mbti,
+    themeKey: item.themeKey || currentThemeKey,
+    percent: item.percent || 100
+  })).reverse();
 
   if (!flow.length) {
     return {
       chips: fallbackMbti ? [fallbackMbti] : [],
+      timeline: fallbackMbti ? [{ mbti: fallbackMbti, themeKey: currentThemeKey, percent: 100 }] : [],
       note: '기록이 더 쌓이면 최근 흐름을 한눈에 읽기 쉬워져요.'
     };
   }
@@ -665,6 +672,7 @@ export const getRecentFlowSummary = (effectiveHistory, fallbackMbti = '') => {
 
   return {
     chips: flow,
+    timeline,
     note
   };
 };
@@ -777,7 +785,7 @@ export const buildResultViewModel = ({
     trendAnalysis,
     displayName: getDisplayName(userName, defaultUserName),
     retestPrompt: getRetestPrompt(boundaryAxes, historyInsights),
-    recentFlowSummary: getRecentFlowSummary(effectiveHistory, mbti),
+    recentFlowSummary: getRecentFlowSummary(effectiveHistory, mbti, presentation.themeKey),
     revisitInsight: getRevisitInsight({ historyComparison, historyInsights, boundaryAxes, presentation }),
     presentation,
     shareMoodLine,

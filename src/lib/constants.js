@@ -19,6 +19,15 @@ export const COMPATIBILITY = {
 
 export const CHANGELOG = [
   {
+    version: 'v1.4.17',
+    date: '2026.04.30',
+    updates: [
+      '결과 화면 및 공유 카드에 최근 흐름을 시각적으로 엮어주는 미니 타임라인(Dot) 및 다이내믹 상태 배지 추가',
+      '점의 색상이 의미하는 바를 알 수 있도록 무드 테마 범례 팝업 기능 지원',
+      '공유 카드 내 긴 텍스트 입력 시 레이아웃 붕괴를 방어(AutoFit)하고, 전반적인 상하 여백 밸런스 완전 최적화'
+    ]
+  },
+  {
     version: 'v1.4.16',
     date: '2026.04.29',
     updates: [

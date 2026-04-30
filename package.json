@@ -1,7 +1,7 @@
 {
   "name": "mbti-dynamic-test",
   "private": true,
-  "version": "1.4.15",
+  "version": "1.4.17",
   "type": "module",
   "scripts": {
     "dev": "vite",
