@@ -1,4 +1,4 @@
-# DAY4 Working Entry
+# moodtype-lab Working Entry
 
 이 저장소에서 새 채팅을 시작하면, 다른 분석보다 먼저 아래 순서로 진행합니다.
 
