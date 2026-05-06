@@ -4,7 +4,9 @@ export default function StartView({
   userName,
   onChangeUserName,
   onStart,
-  onOpenHistory
+  onOpenHistory,
+  onOpenVersion,
+  versionLabel
 }) {
   return (
     <motion.div
@@ -47,6 +49,14 @@ export default function StartView({
 
       <button onClick={onOpenHistory} className="mt-6 text-sm text-slate-400 underline underline-offset-4 hover:text-white transition-colors">
         🕒 나의 기록 & 활동 보기
+      </button>
+
+      <button
+        type="button"
+        onClick={onOpenVersion}
+        className="mt-5 rounded-full border border-white/5 bg-black/20 px-3 py-1 text-[11px] font-bold text-slate-600 transition-colors hover:text-slate-400"
+      >
+        Version {versionLabel}
       </button>
     </motion.div>
   );

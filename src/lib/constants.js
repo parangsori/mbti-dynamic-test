@@ -19,6 +19,14 @@ export const COMPATIBILITY = {
 
 export const CHANGELOG = [
   {
+    version: 'v1.4.18',
+    date: '2026.05.06',
+    updates: [
+      'Telegram·KakaoTalk 등 인앱 브라우저에서 결과 화면 우측이 잘리지 않도록 모바일 레이아웃 안정성 보강',
+      '답변 카드 스와이프가 인앱 브라우저의 화면 이탈 제스처와 충돌하지 않도록 터치 방어 개선'
+    ]
+  },
+  {
     version: 'v1.4.17',
     date: '2026.04.30',
     updates: [

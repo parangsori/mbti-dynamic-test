@@ -17,6 +17,7 @@ const CONTEXT_IMAGES = {
 const SWIPE_DISTANCE = 52;
 const SWIPE_VELOCITY = 380;
 const SWIPE_VIBRATION_PATTERN = [12, 24, 12];
+const TOUCH_GUARD_INTENT_PX = 10;
 
 const isTextInputTarget = (target) => {
   if (!target) return false;
@@ -47,8 +48,10 @@ export default function QuestionView({
   const [swipeFeedbackSide, setSwipeFeedbackSide] = useState(null);
   const [flyOutSide, setFlyOutSide] = useState(null);
   const [showWiggle, setShowWiggle] = useState(false);
+  const answerStageRef = useRef(null);
   const draggedCardRef = useRef(false);
   const swipeFeedbackTimerRef = useRef(null);
+  const touchStartRef = useRef(null);
 
   useEffect(() => {
     if (currIdx === 0 && !isTransitioning) {
@@ -88,6 +91,50 @@ export default function QuestionView({
       if (swipeFeedbackTimerRef.current) {
         window.clearTimeout(swipeFeedbackTimerRef.current);
       }
+    };
+  }, []);
+
+  useEffect(() => {
+    const answerStage = answerStageRef.current;
+    if (!answerStage) return undefined;
+
+    const handleTouchStart = (event) => {
+      const touch = event.touches?.[0];
+      if (!touch) return;
+      touchStartRef.current = {
+        x: touch.clientX,
+        y: touch.clientY
+      };
+    };
+
+    const handleTouchMove = (event) => {
+      const start = touchStartRef.current;
+      const touch = event.touches?.[0];
+      if (!start || !touch) return;
+
+      const dx = touch.clientX - start.x;
+      const dy = touch.clientY - start.y;
+      const isHorizontalIntent = Math.abs(dx) > TOUCH_GUARD_INTENT_PX && Math.abs(dx) > Math.abs(dy) * 1.1;
+
+      if (isHorizontalIntent && event.cancelable) {
+        event.preventDefault();
+      }
+    };
+
+    const handleTouchEnd = () => {
+      touchStartRef.current = null;
+    };
+
+    answerStage.addEventListener('touchstart', handleTouchStart, { passive: true });
+    answerStage.addEventListener('touchmove', handleTouchMove, { passive: false });
+    answerStage.addEventListener('touchend', handleTouchEnd);
+    answerStage.addEventListener('touchcancel', handleTouchEnd);
+
+    return () => {
+      answerStage.removeEventListener('touchstart', handleTouchStart);
+      answerStage.removeEventListener('touchmove', handleTouchMove);
+      answerStage.removeEventListener('touchend', handleTouchEnd);
+      answerStage.removeEventListener('touchcancel', handleTouchEnd);
     };
   }, []);
 
@@ -209,6 +256,7 @@ export default function QuestionView({
 
       <div className="mt-8 flex flex-col gap-3 relative w-full">
         <div
+          ref={answerStageRef}
           className={`relative overflow-hidden rounded-[2rem] border px-3 py-4 shadow-[0_24px_70px_rgba(2,6,23,0.30)] backdrop-blur-xl touch-pan-y transition-colors ${
             activeDragSide === 'left'
               ? 'border-cyan-300/30 bg-cyan-300/[0.07]'
@@ -261,7 +309,7 @@ export default function QuestionView({
                     opacity: isFlyingOut ? 0 : isOtherFlyingOut ? 0.3 : isTransitioning ? 0.4 : isMuted ? 0.7 : 1
                   }}
                   transition={{ type: 'spring', stiffness: 650, damping: 20 }}
-                  className={`relative flex h-[7.25rem] w-[80%] flex-col justify-between overflow-hidden rounded-2xl border px-4 py-3.5 text-center shadow-lg transition-colors active:scale-[0.98] ${
+                  className={`relative flex h-[7.25rem] w-[78%] flex-col justify-between overflow-hidden rounded-2xl border px-4 py-3.5 text-center shadow-lg transition-colors active:scale-[0.98] ${
                     side === 'left' ? 'self-start' : 'self-end'
                   } ${
                     isActive || hasSwipeFeedback

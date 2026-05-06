@@ -713,40 +713,41 @@ export default function ResultView({
   };
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex min-h-[100dvh] w-full flex-col items-center px-6 pb-20 pt-6 text-white">
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex min-h-[100dvh] w-full max-w-full flex-col items-center overflow-x-hidden px-4 pb-20 pt-2 text-white sm:px-6 sm:pt-4">
       <div aria-hidden="true" className="fixed left-[-99999px] top-0 pointer-events-none select-none">
         <div ref={shareCardRef}>
           <ShareCard context={shareContext} />
         </div>
       </div>
 
-      <div ref={resultRef} className="relative mt-4 w-full max-w-sm overflow-hidden rounded-[2rem] border border-white/10 bg-slate-900/95 p-6 shadow-[0_30px_90px_rgba(2,6,23,0.55)]">
+      <div ref={resultRef} className="relative mt-2 w-full max-w-[26.25rem] overflow-hidden rounded-[2rem] border border-white/10 bg-slate-900/95 p-4 shadow-[0_30px_90px_rgba(2,6,23,0.55)] sm:p-6">
         <div className={`absolute inset-0 ${themeClasses.shell}`} />
         <div className="relative z-10 flex flex-col items-center">
-          <div className="w-full rounded-[1.8rem] border border-white/10 bg-[linear-gradient(145deg,rgba(15,23,42,0.96),rgba(17,24,39,0.88))] p-5 shadow-[0_26px_80px_rgba(2,6,23,0.44)]">
-            <div className="flex items-start justify-between gap-4">
-              <div>
+          <div className="w-full min-w-0 rounded-[1.8rem] border border-white/10 bg-[linear-gradient(145deg,rgba(15,23,42,0.96),rgba(17,24,39,0.88))] p-4 shadow-[0_26px_80px_rgba(2,6,23,0.44)] sm:p-5">
+            <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-start gap-2 min-[390px]:gap-3">
+              <div className="min-w-0">
                 <p className="text-[15px] font-medium text-slate-300"><span className="font-black text-white">{displayName}</span>님의 오늘 성향 스냅샷</p>
-                <div className="mt-4 flex items-end gap-1">
+                <div className="mt-4 flex max-w-full items-end gap-1 overflow-hidden">
                   {mbti.split('').map((letter, idx) => (
                     <button
                       key={`${letter}-${idx}`}
                       type="button"
                       onClick={() => onOpenAxisGuide(letter)}
-                      className={`${themeClasses.letterGradient} bg-clip-text text-[70px] font-black leading-none tracking-[0.14em] text-transparent drop-shadow-[0_14px_30px_rgba(99,102,241,0.22)]`}
+                      style={{ fontSize: 'clamp(31px, calc((100vw - 9rem) / 5.7), 60px)' }}
+                      className={`${themeClasses.letterGradient} min-w-0 bg-clip-text font-black leading-none tracking-[0.04em] text-transparent drop-shadow-[0_14px_30px_rgba(99,102,241,0.22)] min-[390px]:tracking-[0.08em]`}
                     >
                       {letter}
                     </button>
                   ))}
                 </div>
-                <p className="mt-3 inline-flex rounded-full border border-white/10 bg-white/[0.05] px-4 py-2 text-[14px] font-bold text-slate-100">{info.nickname}</p>
+                <p className="mt-3 inline-flex max-w-full rounded-full border border-white/10 bg-white/[0.05] px-3 py-2 text-[13px] font-bold text-slate-100 min-[390px]:px-4 min-[390px]:text-[14px]">{info.nickname}</p>
               </div>
-              <div className="flex flex-col items-end gap-2">
-                <div className={`rounded-[1.3rem] border px-4 py-3 text-right shadow-[0_14px_28px_rgba(15,23,42,0.22)] ${themeClasses.chip}`}>
+              <div className="flex w-[5.4rem] shrink-0 flex-col items-end gap-2 min-[390px]:w-[6rem]">
+                <div className={`w-full rounded-[1.15rem] border px-2.5 py-2 text-right shadow-[0_14px_28px_rgba(15,23,42,0.22)] min-[390px]:rounded-[1.3rem] min-[390px]:px-3 min-[390px]:py-2.5 ${themeClasses.chip}`}>
                   <p className="text-[10px] font-black tracking-[0.2em] text-purple-100 uppercase">싱크로율</p>
-                  <p className="mt-1 text-[28px] font-black text-white">{percent}%</p>
+                  <p className="mt-1 text-[24px] font-black text-white min-[390px]:text-[28px]">{percent}%</p>
                 </div>
-                <span className="rounded-full border border-cyan-300/20 bg-cyan-300/[0.1] px-3 py-1.5 text-[10px] font-black text-cyan-100">{precisionBadge}</span>
+                <span className="w-full rounded-full border border-cyan-300/20 bg-cyan-300/[0.1] px-2 py-1.5 text-center text-[9px] font-black leading-snug text-cyan-100 break-keep min-[390px]:text-[10px]">{precisionBadge}</span>
               </div>
             </div>
 
