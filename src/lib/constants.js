@@ -19,6 +19,13 @@ export const COMPATIBILITY = {
 
 export const CHANGELOG = [
   {
+    version: 'v1.5.1',
+    date: '2026.05.07',
+    updates: [
+      'iPhone과 Android 홈화면 바로가기, 브라우저 탭에서 서비스 아이콘과 표시 이름이 안정적으로 보이도록 개선'
+    ]
+  },
+  {
     version: 'v1.5.0',
     date: '2026.05.07',
     updates: [
