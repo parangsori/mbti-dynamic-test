@@ -59,9 +59,8 @@ export const shareOrSaveBlob = async ({ blob, filename, title, text }) => {
     ? new File([blob], filename, { type: 'image/png' })
     : null;
 
-  // text에는 boast만 포함 (URL은 이미지와 함께 OG 카드로 표시됨)
-  // 카카오톡은 text 안의 URL을 OG 카드로 변환 후 텍스트 영역에 빈 줄을 남기므로 URL 미포함
-  const shareText = text ? text.trim() : '';
+  // text에 boast + URL 포함, 후행 공백/개행 완전 제거
+  const shareText = (text ? `${text.trim()}\n${SERVICE_URL}` : SERVICE_URL).replace(/[\s\n]+$/, '');
 
   // 텔레그램 환경 감지
   const isTelegram = isTelegramWebView();
