@@ -8,7 +8,9 @@ import {
 } from '../lib/resultAnalysis.js';
 import { writeHistory } from '../lib/storage.js';
 import { captureError } from '../lib/observability.js';
-import { getCanvasBlob, renderShareCardCanvas, shareOrSaveBlob } from '../lib/shareCard.js';
+import { getCanvasBlob, renderShareCardCanvas, shareOrSaveBlob, buildShareText, SERVICE_URL } from '../lib/shareCard.js';
+import ShareCardWatermark from './ShareCardWatermark.jsx';
+import { getPersonalizedResultContext } from '../lib/personalization.js';
 
 const DETAIL_SECTIONS = [
   { key: 'why', title: '왜 이런 결과가 나왔을까' },
@@ -291,15 +293,19 @@ function ShareCard({ context }) {
     recentFlowSummary
   } = context;
   const themeClasses = getThemeClasses(presentation?.themeKey);
+  const shareOneLine = info.description || shareCardCopy.boast;
+  const shareOneLineClass = shareOneLine.length > 62
+    ? 'text-[19px] leading-[1.42]'
+    : 'text-[21px] leading-[1.45]';
   return (
-    <div className={`relative h-[1080px] w-[1080px] overflow-hidden rounded-[64px] border border-white/10 ${themeClasses.shareShell} text-white shadow-[0_40px_120px_rgba(2,6,23,0.7)]`}>
+    <div className={`relative min-h-[1080px] w-[1080px] overflow-hidden rounded-[64px] border border-white/10 ${themeClasses.shareShell} text-white shadow-[0_40px_120px_rgba(2,6,23,0.7)]`}>
       <div className={`absolute -right-20 top-[-90px] h-80 w-80 rounded-full ${themeClasses.haloBottom} blur-3xl`}></div>
       <div className={`absolute bottom-[-80px] left-[-40px] h-72 w-72 rounded-full ${themeClasses.haloTop} blur-3xl`}></div>
       <div className="absolute left-[70px] top-[132px] h-[460px] w-[460px] rounded-full border border-white/5 bg-white/[0.04]"></div>
       <div className="absolute right-[88px] top-[208px] h-[430px] w-[430px] rounded-[46px] border border-white/10 bg-white/[0.04] rotate-[-6deg]"></div>
       <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.05),transparent_24%,transparent_72%,rgba(255,255,255,0.03))]"></div>
 
-      <div className="relative z-10 flex h-full flex-col px-20 pb-16 pt-16">
+      <div className="relative z-10 flex h-full flex-col px-20 pb-20 pt-16">
         <div className="flex items-start justify-between gap-8">
           <div className="max-w-[560px]">
             <p className="text-[24px] font-medium tracking-[-0.02em] text-slate-300">
@@ -344,9 +350,9 @@ function ShareCard({ context }) {
               ))}
             </div>
 
-            <div className="mt-5 rounded-[34px] border border-white/10 bg-black/25 px-7 py-6 shadow-[0_24px_60px_rgba(2,6,23,0.34)]">
+            <div className="mt-5 rounded-[34px] border border-white/10 bg-black/25 px-6 py-5 shadow-[0_24px_60px_rgba(2,6,23,0.34)]">
               <p className="text-[14px] font-bold tracking-[0.2em] text-slate-500 uppercase">오늘의 한 줄</p>
-              <p className="mt-3 text-[23px] font-semibold leading-[1.45] text-slate-100 break-keep">{shareCardCopy.boast}</p>
+              <p className={`mt-3 font-semibold text-slate-100 break-keep ${shareOneLineClass}`}>{shareOneLine}</p>
             </div>
 
             <div className="mt-auto flex items-center justify-between rounded-[28px] border border-white/10 bg-white/[0.03] px-7 py-5">
@@ -370,6 +376,9 @@ function ShareCard({ context }) {
               </div>
               <p className="ml-4 whitespace-nowrap text-[15px] font-black tracking-[0.14em] text-white">오늘 무드 카드</p>
             </div>
+
+            {/* M2: Brand watermark + QR code */}
+            <ShareCardWatermark size="large" />
           </div>
 
           <div className="flex flex-col">
@@ -436,13 +445,16 @@ export default function ResultView({
   trackEvent,
   neutralCount = 0,
   usedFollowup = false,
-  questionContextSummary = null
+  questionContextSummary = null,
+  ageGroup = '',
+  gender = ''
 }) {
   const resultRef = useRef(null);
   const shareCardRef = useRef(null);
   const currentEntryRef = useRef(null);
   const [shareCopied, setShareCopied] = useState(false);
   const [saveImageState, setSaveImageState] = useState('idle');
+  const [shareToast, setShareToast] = useState('');  // 안내 토스트 메시지
   const [detailOpen, setDetailOpen] = useState({ why: false, axes: false, history: false });
   const [showMoodLegend, setShowMoodLegend] = useState(false);
 
@@ -525,9 +537,10 @@ export default function ResultView({
   }, [mbti, percent, questionContextSummary, trackEvent]);
 
   const handleCopyShare = async () => {
-    const shareText = `${displayName}님의 오늘 결과\n${shareCardCopy.hook}\n${shareCardCopy.detail}\n싱크로율 ${percent}%`;
+    const shareText = buildShareText({ displayName, hook: shareCardCopy.hook, detail: shareCardCopy.detail, percent });
+    const copyText = `${shareText}\n${SERVICE_URL}`;
     try {
-      await navigator.clipboard.writeText(shareText);
+      await navigator.clipboard.writeText(copyText);
       setShareCopied(true);
       trackEvent('share_copy', { mbti });
       setTimeout(() => setShareCopied(false), 1800);
@@ -555,8 +568,17 @@ export default function ResultView({
         title: `${displayName}님의 오늘 MBTI 카드`,
         text: shareCardCopy.boast
       });
-      setSaveImageState(mode === 'shared' ? 'shared' : 'saved');
+      if (mode === 'cancelled') {
+        setSaveImageState('idle');
+        return;
+      }
+      setSaveImageState(mode === 'shared' || mode === 'no_image' ? 'shared' : 'saved');
       trackEvent(mode === 'shared' ? 'result_image_share' : 'result_image_save', { mbti, mode });
+      // 이미지 없이 텍스트만 공유된 경우 (텔레그램 등) 안내 토스트 표시
+      if (mode === 'no_image') {
+        setShareToast('이미지는 직접 저장 후 첨부해 주세요 (아래 이미지 저장 버튼 사용)');
+        setTimeout(() => setShareToast(''), 5000);
+      }
     } catch (error) {
       if (error?.name !== 'AbortError') {
         captureError(error, {
@@ -588,9 +610,18 @@ export default function ResultView({
     recentFlowSummary
   };
 
+  const personalizedContext = ageGroup ? getPersonalizedResultContext(ageGroup, gender, mbti, percent) : null;
+
   const detailSections = {
     why: (
       <div className="space-y-4">
+        {personalizedContext && (
+          <div className="rounded-2xl border border-brand/20 bg-brand/[0.08] px-4 py-4">
+            <p className="text-[12px] font-black tracking-[0.18em] text-purple-100 uppercase">맞춤형 해석</p>
+            <p className="mt-2 text-[14px] leading-relaxed text-white break-keep">{personalizedContext.intro}</p>
+            <p className="mt-2 text-[13px] leading-relaxed text-slate-200 break-keep">{personalizedContext.advice}</p>
+          </div>
+        )}
         <div className="rounded-2xl border border-cyan-300/20 bg-cyan-300/[0.08] px-4 py-4">
           <p className="text-[12px] font-black tracking-[0.18em] text-cyan-100 uppercase">오늘 핵심 해석</p>
           <p className="mt-2 text-[14px] leading-relaxed text-white break-keep">{summaryCopy}</p>
@@ -814,6 +845,14 @@ export default function ResultView({
               </div>
             </div>
           </div>
+
+          {/* 공유 안내 토스트 (텔레그램 등 이미지 공유 불가 환경) */}
+          {shareToast && (
+            <div className="mt-3 flex items-start gap-2 rounded-2xl border border-amber-400/30 bg-amber-400/[0.08] px-4 py-3">
+              <span className="mt-0.5 text-[16px]">📎</span>
+              <p className="text-[13px] font-bold leading-relaxed text-amber-200 break-keep">{shareToast}</p>
+            </div>
+          )}
 
           <div className="mt-5 flex w-full flex-col gap-3">
             <button

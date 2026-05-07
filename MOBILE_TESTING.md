@@ -2,6 +2,20 @@
 
 This project supports mobile pre-push QA through a local HTTPS tunnel.
 
+## Dev branch preview
+
+For the `dev` branch, use the Vercel preview URL first because it works well on both desktop and mobile:
+
+```text
+https://mbti-dynamic-test-git-dev-parangsoris-projects.vercel.app
+```
+
+If share copy, QR, or saved card links should point to the dev preview while testing, set this Vercel preview environment variable for the `dev` branch:
+
+```text
+VITE_PUBLIC_SERVICE_URL=https://mbti-dynamic-test-git-dev-parangsoris-projects.vercel.app
+```
+
 ## Why this setup
 
 - Mobile browsers often require `https` for share, clipboard, and file APIs.

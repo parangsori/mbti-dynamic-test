@@ -1,4 +1,4 @@
-import { Suspense, lazy, useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import StartView from './components/StartView.jsx';
 import QuestionView from './components/QuestionView.jsx';
@@ -18,17 +18,35 @@ import { summarizeActivityReport } from './lib/activityReport.js';
 import {
   clearAllLocalData,
   clearActiveSession,
+  clearProfile,
   readActiveSession,
   readHistory,
+  readProfile,
   readRecentSessions,
   readUserName,
   trackEvent,
   writeActiveSession,
+  writeProfile,
   writeRecentSessions,
   writeUserName
 } from './lib/storage.js';
 import { installGlobalErrorHandlers } from './lib/observability.js';
 import { getHistoryComparison, getHistoryEntryNote, getHistoryInsights } from './lib/resultAnalysis.js';
+// Accessibility helpers are loaded inline to avoid dual-import warning
+const loadAccessibilitySettings = () => {
+  try {
+    const fontScale = parseFloat(localStorage.getItem('mbti_font_scale')) || 1;
+    const highContrast = localStorage.getItem('mbti_high_contrast') === 'true';
+    return { fontScale, highContrast };
+  } catch {
+    return { fontScale: 1, highContrast: false };
+  }
+};
+const applyAccessibilitySettings = ({ fontScale, highContrast }) => {
+  document.documentElement.style.setProperty('--app-font-scale', fontScale);
+  document.documentElement.classList.toggle('high-contrast', highContrast);
+};
+import { getPersonalizedTempoMessage, getAgeGroupFromBirthDate } from './lib/personalization.js';
 
 const retryImport = (loader, retries = 1) =>
   loader().catch((error) => {
@@ -47,6 +65,7 @@ const RecoveryPrompt = lazy(() => import('./components/RecoveryPrompt.jsx'));
 const HistoryModal = lazy(() => import('./components/HistoryModal.jsx'));
 const VersionModal = lazy(() => import('./components/VersionModal.jsx'));
 const AxisGuideModal = lazy(() => import('./components/AxisGuideModal.jsx'));
+const AccessibilitySettings = lazy(() => import('./components/AccessibilitySettings.jsx'));
 
 const ScreenFallback = (
   <div className="w-full max-w-sm px-6 py-10">
@@ -81,6 +100,14 @@ export default function App() {
   const [lastAnswerSnapshot, setLastAnswerSnapshot] = useState(null);
   const transitionLockRef = useRef(false);
 
+  // M3: Profile state (birthDate-based)
+  const [birthDate, setBirthDate] = useState(() => readProfile().birthDate || null);
+  const [gender, setGender] = useState(() => readProfile().gender || '');
+  const ageGroup = getAgeGroupFromBirthDate(birthDate);
+
+  // M1: Accessibility state
+  const [showAccessibility, setShowAccessibility] = useState(false);
+
   useEffect(() => {
     setHistoryData(readHistory());
     const savedSession = readActiveSession();
@@ -93,6 +120,28 @@ export default function App() {
   useEffect(() => {
     installGlobalErrorHandlers();
   }, []);
+
+  // Apply accessibility settings on mount
+  useEffect(() => {
+    const settings = loadAccessibilitySettings();
+    applyAccessibilitySettings(settings);
+  }, []);
+
+  // Profile is stored locally only; analytics below never receives raw birthDate.
+  useEffect(() => {
+    if (birthDate || gender) {
+      writeProfile({ birthDate, ageGroup, gender });
+      return;
+    }
+    clearProfile();
+  }, [birthDate, ageGroup, gender]);
+
+  const handleClearProfile = () => {
+    setBirthDate(null);
+    setGender('');
+    clearProfile();
+    trackEvent('profile_clear');
+  };
 
   const openHistoryModal = () => {
     trackEvent('history_open', { step });
@@ -116,7 +165,12 @@ export default function App() {
   const handleStart = () => {
     const trimmedName = userName.trim();
     writeUserName(trimmedName);
-    trackEvent('start_click', { hasName: Boolean(trimmedName) });
+    trackEvent('start_click', {
+      hasName: Boolean(trimmedName),
+      hasProfile: Boolean(ageGroup || gender),
+      ageGroup: ageGroup || '',
+      hasGender: Boolean(gender)
+    });
 
     const recentSessions = readRecentSessions();
     const sessionQuestions = buildQuestionSession(recentSessions);
@@ -198,11 +252,13 @@ export default function App() {
   };
 
   const handleClearLocalData = () => {
-    const ok = window.confirm('이 브라우저에 저장된 이름, 기록, 활동 리포트를 모두 지울까요?');
+    const ok = window.confirm('이 브라우저에 저장된 이름, 프로필, 기록, 활동 리포트를 모두 지울까요?');
     if (!ok) return;
 
     clearAllLocalData();
     setUserName('');
+    setBirthDate(null);
+    setGender('');
     setHistoryData([]);
     setRecoverableSession(null);
     setShowRecoveryPrompt(false);
@@ -448,6 +504,18 @@ export default function App() {
     });
   };
 
+  // M3: Get personalized tempo message
+  const getTempoForCurrentQuestion = () => {
+    if (questionPhase === 'followup') {
+      return getFollowupTempoMessage(currIdx, followupQuestions.length);
+    }
+    const defaultMsg = getQuestionTempoMessage(currIdx, '지금의 결대로 가볍게 골라보세요', QUESTION_TEMPO_COPY);
+    if (ageGroup) {
+      return getPersonalizedTempoMessage(ageGroup, currIdx, defaultMsg);
+    }
+    return defaultMsg;
+  };
+
   return (
     <div className={`relative w-full min-h-[100dvh] flex flex-col items-center ${step !== 'result' ? 'justify-center' : 'pt-10'}`}>
       <div className="fixed top-[-10%] left-[-10%] w-96 h-96 bg-purple-900 rounded-full mix-blend-screen filter blur-[128px] opacity-40 animate-blob pointer-events-none"></div>
@@ -468,6 +536,12 @@ export default function App() {
               onStart={handleStart}
               hasHistory={hasActivityReport}
               onOpenHistory={openHistoryModal}
+              birthDate={birthDate}
+              gender={gender}
+              onChangeBirthDate={setBirthDate}
+              onChangeGender={setGender}
+              onClearProfile={handleClearProfile}
+              onOpenAccessibility={() => setShowAccessibility(true)}
               onOpenVersion={openVersionModal}
               versionLabel={CHANGELOG[0].version}
             />
@@ -482,11 +556,7 @@ export default function App() {
               microCopy={microCopy}
               isTransitioning={isTransitioning}
               questionDirection={questionDirection}
-              tempoMessage={
-                questionPhase === 'followup'
-                  ? getFollowupTempoMessage(currIdx, followupQuestions.length)
-                  : getQuestionTempoMessage(currIdx, '지금의 결대로 가볍게 골라보세요', QUESTION_TEMPO_COPY)
-              }
+              tempoMessage={getTempoForCurrentQuestion()}
               phaseHint={questionPhaseHint}
               questionLabel={questionPhase === 'followup' ? `보정 ${currIdx + 1}` : undefined}
               counterText={
@@ -520,6 +590,8 @@ export default function App() {
                 neutralCount={neutralQuestionIds.length}
                 usedFollowup={followupQuestions.length > 0}
                 questionContextSummary={questionContextSummary}
+                ageGroup={ageGroup}
+                gender={gender}
               />
             </Suspense>
           )}
@@ -565,6 +637,13 @@ export default function App() {
           )}
         </AnimatePresence>
 
+        <AnimatePresence>
+          {showAccessibility && (
+            <Suspense fallback={null}>
+              <AccessibilitySettings isOpen={showAccessibility} onClose={() => setShowAccessibility(false)} />
+            </Suspense>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   );

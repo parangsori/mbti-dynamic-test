@@ -6,7 +6,8 @@ export const STORAGE_KEYS = {
   username: 'mbti_username',
   eventStats: 'mbti_event_stats',
   recentIds: 'mbti_recent_ids',
-  errorStats: 'mbti_error_stats'
+  errorStats: 'mbti_error_stats',
+  profile: 'mbti_user_profile'
 };
 
 export const readJson = (key, fallback) => {
@@ -71,6 +72,34 @@ export const writeUserName = (name) => {
     return false;
   }
 };
+
+const DEFAULT_PROFILE = { birthDate: null, ageGroup: '', gender: '' };
+
+const normalizeBirthDate = (birthDate) => {
+  if (!birthDate || typeof birthDate !== 'object') return null;
+  const year = Number(birthDate.year);
+  const month = birthDate.month === '' ? '' : Number(birthDate.month);
+  const day = birthDate.day === '' ? '' : Number(birthDate.day);
+  if (!Number.isInteger(year)) return null;
+  return {
+    year,
+    month: Number.isInteger(month) ? month : '',
+    day: Number.isInteger(day) ? day : ''
+  };
+};
+
+const normalizeProfile = (profile) => {
+  if (!profile || typeof profile !== 'object' || Array.isArray(profile)) return DEFAULT_PROFILE;
+  return {
+    birthDate: normalizeBirthDate(profile.birthDate),
+    ageGroup: typeof profile.ageGroup === 'string' ? profile.ageGroup : '',
+    gender: typeof profile.gender === 'string' ? profile.gender : ''
+  };
+};
+
+export const readProfile = () => normalizeProfile(readJson(STORAGE_KEYS.profile, DEFAULT_PROFILE));
+export const writeProfile = (profile) => writeJson(STORAGE_KEYS.profile, normalizeProfile(profile));
+export const clearProfile = () => removeItem(STORAGE_KEYS.profile);
 
 export const readRecentSessions = () => readArrayJson(STORAGE_KEYS.recentIds);
 export const writeRecentSessions = (sessions) => writeJson(STORAGE_KEYS.recentIds, sessions);

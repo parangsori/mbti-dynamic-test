@@ -48,6 +48,7 @@ export default function QuestionView({
   const [swipeFeedbackSide, setSwipeFeedbackSide] = useState(null);
   const [flyOutSide, setFlyOutSide] = useState(null);
   const [showWiggle, setShowWiggle] = useState(false);
+  const [answerFlash, setAnswerFlash] = useState(null);
   const answerStageRef = useRef(null);
   const draggedCardRef = useRef(false);
   const swipeFeedbackTimerRef = useRef(null);
@@ -140,12 +141,14 @@ export default function QuestionView({
 
   const triggerSwipeFeedback = (side) => {
     setSwipeFeedbackSide(side);
+    setAnswerFlash(side);
 
     if (swipeFeedbackTimerRef.current) {
       window.clearTimeout(swipeFeedbackTimerRef.current);
     }
     swipeFeedbackTimerRef.current = window.setTimeout(() => {
       setSwipeFeedbackSide(null);
+      setAnswerFlash(null);
     }, 260);
 
     if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
@@ -196,9 +199,14 @@ export default function QuestionView({
       return;
     }
     const side = option === firstOption ? 'left' : 'right';
+    triggerSwipeFeedback(side);
     setFlyOutSide(side);
     onAnswer(option, 'tap');
   };
+
+  // Progress calculation
+  const progress = ((currIdx + 1) / totalQuestions) * 100;
+  const progressPrev = (currIdx / totalQuestions) * 100;
 
   return (
     <motion.div
@@ -208,19 +216,44 @@ export default function QuestionView({
       exit={{ opacity: 0, x: -50 }}
       className="w-full min-h-[100dvh] flex flex-col max-w-sm pt-8 pb-8 px-5"
     >
+      {/* Enhanced Progress Bar */}
       <div className="w-full mb-3">
         <div className="flex justify-between items-end mb-2.5 text-slate-300 font-bold">
           <span className="text-2xl bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-brand tracking-widest italic">{questionLabel || `Q${currIdx + 1}`}</span>
           <span className="text-sm font-medium bg-white/10 px-3 py-1 rounded-full">{counterText || `${currIdx + 1} / ${totalQuestions}`}</span>
         </div>
-        <div className="h-2.5 w-full bg-slate-800 rounded-full overflow-hidden border border-white/5">
-          <motion.div
-            className="h-full bg-gradient-to-r from-cyan-400 to-brand delay-100 ease-out"
-            initial={{ width: `${(currIdx / totalQuestions) * 100}%` }}
-            animate={{ width: `${((currIdx + 1) / totalQuestions) * 100}%` }}
-            transition={{ duration: 0.5, type: 'spring' }}
-          />
+
+        {/* Dynamic Progress Bar with step indicators */}
+        <div className="relative">
+          <div className="h-3 w-full bg-slate-800 rounded-full overflow-hidden border border-white/5 progress-glow">
+            <motion.div
+              className="h-full bg-gradient-to-r from-cyan-400 via-brand to-pink-400 relative"
+              initial={{ width: `${progressPrev}%` }}
+              animate={{ width: `${progress}%` }}
+              transition={{ duration: 0.6, type: 'spring', stiffness: 100 }}
+            >
+              {/* Shimmer effect */}
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-[shimmer_2s_infinite] bg-[length:200%_100%]" />
+            </motion.div>
+          </div>
+
+          {/* Step dots */}
+          <div className="flex justify-between mt-1.5 px-0.5">
+            {Array.from({ length: totalQuestions }, (_, i) => (
+              <div
+                key={i}
+                className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${
+                  i < currIdx + 1
+                    ? 'bg-cyan-400 shadow-[0_0_4px_rgba(34,211,238,0.6)]'
+                    : i === currIdx + 1
+                      ? 'bg-slate-500'
+                      : 'bg-slate-700'
+                } ${i === currIdx ? 'dot-pop scale-150' : ''}`}
+              />
+            ))}
+          </div>
         </div>
+
         <p className="mt-2.5 text-[12px] text-center font-semibold text-cyan-200/90 break-keep">{tempoMessage}</p>
         {phaseHint && <p className="mt-2 text-[11px] text-center text-slate-400 break-keep">{phaseHint}</p>}
       </div>
@@ -287,6 +320,7 @@ export default function QuestionView({
               const isMuted = activeDragSide && !isActive;
               const isFlyingOut = flyOutSide === side;
               const isOtherFlyingOut = flyOutSide && flyOutSide !== side;
+              const hasFlash = answerFlash === side;
 
               return (
                 <motion.button
@@ -314,11 +348,20 @@ export default function QuestionView({
                   } ${
                     isActive || hasSwipeFeedback
                       ? side === 'left'
-                        ? 'border-cyan-100/90 bg-cyan-300/24 text-white shadow-[0_20px_52px_rgba(34,211,238,0.28)]'
-                        : 'border-fuchsia-100/90 bg-fuchsia-300/24 text-white shadow-[0_20px_52px_rgba(217,70,239,0.28)]'
+                        ? 'border-cyan-100/90 bg-cyan-300/[0.14] text-cyan-50 shadow-[0_0_24px_rgba(34,211,238,0.2)]'
+                        : 'border-fuchsia-100/90 bg-fuchsia-300/[0.14] text-fuchsia-50 shadow-[0_0_24px_rgba(232,121,249,0.2)]'
                       : 'border-white/10 bg-slate-900/60 text-white hover:bg-white/10'
-                  }`}
+                  } ${hasFlash ? 'answer-selected' : ''}`}
                 >
+                  {/* Haptic feedback ripple */}
+                  {hasFlash && (
+                    <motion.div
+                      initial={{ scale: 0, opacity: 0.6 }}
+                      animate={{ scale: 2.5, opacity: 0 }}
+                      transition={{ duration: 0.4 }}
+                      className={`absolute inset-0 rounded-2xl ${side === 'left' ? 'bg-cyan-400/20' : 'bg-fuchsia-400/20'}`}
+                    />
+                  )}
                   <span className={`pointer-events-none absolute inset-y-3 ${side === 'left' ? 'left-0 bg-cyan-300/45' : 'right-0 bg-fuchsia-300/45'} w-1 rounded-full`} />
                   <div className={`flex items-center ${side === 'left' ? 'justify-start' : 'justify-end'}`}>
                     <span className={`rounded-full px-2.5 py-1 text-[10px] font-black tracking-[0.14em] ${
