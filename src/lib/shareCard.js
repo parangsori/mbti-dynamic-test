@@ -54,23 +54,36 @@ export const shareOrSaveBlob = async ({ blob, filename, title, text }) => {
     try {
       await navigator.share({
         title,
-        text,
+        text: text.trim(),
         url: SERVICE_URL,
         files: [file]
       });
       return 'shared';
     } catch (err) {
       if (err.name === 'AbortError') return 'cancelled';
-      // files 공유 실패 시 아래 fallback으로
+      // files 공유 실패 시 텍스트+URL fallback (텔레그램 등)
+      // 'files_fallback' 반환으로 호출부에서 안내 토스트 표시 가능
+      if (navigator.share) {
+        try {
+          await navigator.share({
+            title,
+            text: text.trim(),
+            url: SERVICE_URL
+          });
+          return 'files_fallback';
+        } catch (err2) {
+          if (err2.name === 'AbortError') return 'cancelled';
+        }
+      }
     }
   }
 
-  // 2차 시도: files 없이 텍스트+URL만 공유 (텔레그램 등)
+  // 2차 시도: files 없이 텍스트+URL만 공유 (files 자체 미지원 환경)
   if (navigator.share) {
     try {
       await navigator.share({
         title,
-        text,
+        text: text.trim(),
         url: SERVICE_URL
       });
       return 'shared';
@@ -102,7 +115,9 @@ export const shareOrSaveBlob = async ({ blob, filename, title, text }) => {
 
 /**
  * 공유 텍스트 생성 (URL은 포함하지 않음 - url 파라미터로 별도 전달)
+ * 끝의 빈 줄/개행 문자를 trim()으로 제거
  */
 export const buildShareText = ({ displayName, hook, detail, percent }) => {
-  return `${displayName}님의 오늘 결과\n${hook}\n${detail}\n싱크로율 ${percent}%\n\n${SERVICE_NAME}`;
+  const raw = `${displayName}님의 오늘 결과\n${hook}\n${detail}\n싱크로율 ${percent}%\n\n${SERVICE_NAME}`;
+  return raw.trim();
 };

@@ -450,6 +450,7 @@ export default function ResultView({
   const currentEntryRef = useRef(null);
   const [shareCopied, setShareCopied] = useState(false);
   const [saveImageState, setSaveImageState] = useState('idle');
+  const [shareToast, setShareToast] = useState('');  // 안내 토스트 메시지
   const [detailOpen, setDetailOpen] = useState({ why: false, axes: false, history: false });
   const [showMoodLegend, setShowMoodLegend] = useState(false);
 
@@ -563,8 +564,13 @@ export default function ResultView({
         title: `${displayName}님의 오늘 MBTI 카드`,
         text: shareCardCopy.boast
       });
-      setSaveImageState(mode === 'shared' ? 'shared' : 'saved');
+      setSaveImageState(mode === 'shared' || mode === 'files_fallback' ? 'shared' : 'saved');
       trackEvent(mode === 'shared' ? 'result_image_share' : 'result_image_save', { mbti, mode });
+      // files 공유 실패(텔레그램 등) 시 이미지 첨부 안내 토스트 표시
+      if (mode === 'files_fallback') {
+        setShareToast('이미지는 직접 저장 후 첨부해 주세요 (이미지 저장 버튼 사용)');
+        setTimeout(() => setShareToast(''), 4000);
+      }
     } catch (error) {
       if (error?.name !== 'AbortError') {
         captureError(error, {
@@ -831,6 +837,14 @@ export default function ResultView({
               </div>
             </div>
           </div>
+
+          {/* 공유 안내 토스트 (텔레그램 등 이미지 공유 불가 환경) */}
+          {shareToast && (
+            <div className="mt-3 flex items-start gap-2 rounded-2xl border border-amber-400/30 bg-amber-400/[0.08] px-4 py-3">
+              <span className="mt-0.5 text-[16px]">📎</span>
+              <p className="text-[13px] font-bold leading-relaxed text-amber-200 break-keep">{shareToast}</p>
+            </div>
+          )}
 
           <div className="mt-5 flex w-full flex-col gap-3">
             <button
