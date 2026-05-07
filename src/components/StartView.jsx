@@ -10,7 +10,9 @@ export default function StartView({
   gender,
   onChangeAgeGroup,
   onChangeGender,
-  onOpenAccessibility
+  onOpenAccessibility,
+  onOpenVersion,
+  versionLabel
 }) {
   return (
     <motion.div
@@ -29,7 +31,6 @@ export default function StartView({
         <br />
         가볍고 재밌게 확인해보세요
       </p>
-
       <div className="w-full bg-white/5 p-2 rounded-3xl mb-4 backdrop-blur-xl border border-white/10 relative shadow-inner">
         <input
           value={userName}
@@ -57,12 +58,11 @@ export default function StartView({
       >
         바로 시작하기
       </button>
-
       <p className="mt-4 text-[12px] text-slate-400 text-center break-keep">이름과 프로필 없이도 바로 시작할 수 있어요</p>
 
       <div className="mt-6 flex items-center gap-4">
         <button onClick={onOpenHistory} className="text-sm text-slate-400 underline underline-offset-4 hover:text-white transition-colors">
-          나의 기록 & 활동 보기
+          🕒 나의 기록 &amp; 활동 보기
         </button>
         <button
           onClick={onOpenAccessibility}
@@ -72,6 +72,16 @@ export default function StartView({
           Aa
         </button>
       </div>
+
+      {versionLabel && (
+        <button
+          type="button"
+          onClick={onOpenVersion}
+          className="mt-5 rounded-full border border-white/5 bg-black/20 px-3 py-1 text-[11px] font-bold text-slate-600 transition-colors hover:text-slate-400"
+        >
+          Version {versionLabel}
+        </button>
+      )}
     </motion.div>
   );
 }

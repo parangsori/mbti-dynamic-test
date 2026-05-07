@@ -504,7 +504,7 @@ export default function App() {
 
       <div
         className={`relative z-10 w-full max-w-md min-h-[100dvh] mx-auto flex flex-col items-center ${
-          step === 'result' ? 'pt-4' : 'justify-center'
+          step === 'result' ? '' : 'justify-center'
         }`}
       >
         <AnimatePresence mode="wait">
@@ -521,6 +521,8 @@ export default function App() {
               onChangeAgeGroup={setAgeGroup}
               onChangeGender={setGender}
               onOpenAccessibility={() => setShowAccessibility(true)}
+              onOpenVersion={openVersionModal}
+              versionLabel={CHANGELOG[0].version}
             />
           )}
 
@@ -621,17 +623,6 @@ export default function App() {
             </Suspense>
           )}
         </AnimatePresence>
-
-        {step !== 'question' && (
-          <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-20">
-            <button
-              onClick={openVersionModal}
-              className="text-[11px] font-bold text-slate-600 hover:text-slate-400 transition-colors bg-black/20 px-3 py-1 rounded-full border border-white/5 backdrop-blur-sm"
-            >
-              Version {CHANGELOG[0].version}
-            </button>
-          </div>
-        )}
       </div>
     </div>
   );
