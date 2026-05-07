@@ -293,6 +293,10 @@ function ShareCard({ context }) {
     recentFlowSummary
   } = context;
   const themeClasses = getThemeClasses(presentation?.themeKey);
+  const shareOneLine = info.description || shareCardCopy.boast;
+  const shareOneLineClass = shareOneLine.length > 62
+    ? 'text-[19px] leading-[1.42]'
+    : 'text-[21px] leading-[1.45]';
   return (
     <div className={`relative min-h-[1080px] w-[1080px] overflow-hidden rounded-[64px] border border-white/10 ${themeClasses.shareShell} text-white shadow-[0_40px_120px_rgba(2,6,23,0.7)]`}>
       <div className={`absolute -right-20 top-[-90px] h-80 w-80 rounded-full ${themeClasses.haloBottom} blur-3xl`}></div>
@@ -346,9 +350,9 @@ function ShareCard({ context }) {
               ))}
             </div>
 
-            <div className="mt-5 rounded-[34px] border border-white/10 bg-black/25 px-7 py-6 shadow-[0_24px_60px_rgba(2,6,23,0.34)]">
+            <div className="mt-5 rounded-[34px] border border-white/10 bg-black/25 px-6 py-5 shadow-[0_24px_60px_rgba(2,6,23,0.34)]">
               <p className="text-[14px] font-bold tracking-[0.2em] text-slate-500 uppercase">오늘의 한 줄</p>
-              <p className="mt-3 text-[23px] font-semibold leading-[1.45] text-slate-100 break-keep">{shareCardCopy.boast}</p>
+              <p className={`mt-3 font-semibold text-slate-100 break-keep ${shareOneLineClass}`}>{shareOneLine}</p>
             </div>
 
             <div className="mt-auto flex items-center justify-between rounded-[28px] border border-white/10 bg-white/[0.03] px-7 py-5">
