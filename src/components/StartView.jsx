@@ -10,6 +10,7 @@ export default function StartView({
   gender,
   onChangeBirthDate,
   onChangeGender,
+  onClearProfile,
   onOpenAccessibility,
   onOpenVersion,
   versionLabel
@@ -50,6 +51,7 @@ export default function StartView({
         gender={gender}
         onChangeBirthDate={onChangeBirthDate}
         onChangeGender={onChangeGender}
+        onClearProfile={onClearProfile}
       />
 
       <button

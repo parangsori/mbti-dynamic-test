@@ -16,7 +16,7 @@ function getDaysInMonth(year, month) {
   return new Date(year, month, 0).getDate();
 }
 
-export default function ProfileInput({ birthDate, gender, onChangeBirthDate, onChangeGender }) {
+export default function ProfileInput({ birthDate, gender, onChangeBirthDate, onChangeGender, onClearProfile }) {
   const [year, setYear] = useState(birthDate?.year || '');
   const [month, setMonth] = useState(birthDate?.month || '');
   const [day, setDay] = useState(birthDate?.day || '');
@@ -57,6 +57,17 @@ export default function ProfileInput({ birthDate, gender, onChangeBirthDate, onC
     }
   };
 
+  const hasProfile = Boolean(year || month || day || gender);
+
+  const handleClearProfile = () => {
+    setYear('');
+    setMonth('');
+    setDay('');
+    onChangeBirthDate(null);
+    onChangeGender('');
+    onClearProfile?.();
+  };
+
   const selectBaseClass = "w-full appearance-none rounded-xl border bg-slate-800/60 px-3 py-2.5 text-[13px] font-bold text-white outline-none transition-all focus:ring-2 focus:ring-cyan-400/30";
   const selectActiveClass = "border-cyan-300/30 bg-cyan-900/20";
   const selectIdleClass = "border-white/10 hover:border-white/20";
@@ -69,8 +80,11 @@ export default function ProfileInput({ birthDate, gender, onChangeBirthDate, onC
       className="w-full mt-4"
     >
       <div className="rounded-3xl border border-white/10 bg-white/[0.04] backdrop-blur-xl p-5">
-        <p className="text-[13px] font-bold text-slate-300 mb-3 text-center">
-          더 맞춤형 결과를 위해 알려주세요 <span className="text-slate-500">(선택)</span>
+        <p className="text-[13px] font-bold text-slate-300 mb-2 text-center">
+          입력하시면 오늘 흐름에 더 섬세하게 반영됩니다 <span className="text-slate-500">(선택)</span>
+        </p>
+        <p className="mb-4 text-center text-[11px] font-medium leading-relaxed text-slate-500 break-keep">
+          문항 진행 피드백과 결과 문구에만 반영되며, 입력하지 않아도 바로 시작할 수 있어요.
         </p>
 
         <div className="mb-4">
@@ -135,6 +149,16 @@ export default function ProfileInput({ birthDate, gender, onChangeBirthDate, onC
             ))}
           </div>
         </div>
+
+        {hasProfile && (
+          <button
+            type="button"
+            onClick={handleClearProfile}
+            className="mt-4 w-full rounded-2xl border border-white/10 bg-white/[0.03] px-3 py-2.5 text-[12px] font-bold text-slate-400 transition-colors hover:bg-white/[0.06] hover:text-white"
+          >
+            프로필 정보 비우기
+          </button>
+        )}
       </div>
     </motion.div>
   );

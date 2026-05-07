@@ -1,7 +1,5 @@
 import { QRCodeSVG } from 'qrcode.react';
-
-const SERVICE_URL = 'https://mbti-dynamic-test.vercel.app';
-const SERVICE_NAME = '다이나믹 MBTI';
+import { SERVICE_NAME, SERVICE_URL } from '../lib/shareCard.js';
 
 /**
  * 공유 카드 하단에 삽입되는 브랜드 워터마크 + QR 코드

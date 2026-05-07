@@ -1,5 +1,5 @@
-export const SERVICE_URL = 'https://mbti-dynamic-test.vercel.app';
 export const SERVICE_NAME = '다이나믹 MBTI';
+export const SERVICE_URL = (import.meta.env.VITE_PUBLIC_SERVICE_URL || 'https://mbti-dynamic-test.vercel.app').replace(/\/+$/, '');
 
 /**
  * 텔레그램 인앱 브라우저 감지
@@ -117,7 +117,8 @@ export const shareOrSaveBlob = async ({ blob, filename, title, text }) => {
       await writable.write(blob);
       await writable.close();
       return 'saved';
-    } catch {
+    } catch (err) {
+      if (err?.name === 'AbortError') return 'cancelled';
       // fallback to download
     }
   }

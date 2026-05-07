@@ -8,7 +8,7 @@ import {
 } from '../lib/resultAnalysis.js';
 import { writeHistory } from '../lib/storage.js';
 import { captureError } from '../lib/observability.js';
-import { getCanvasBlob, renderShareCardCanvas, shareOrSaveBlob, buildShareText, SERVICE_URL, SERVICE_NAME } from '../lib/shareCard.js';
+import { getCanvasBlob, renderShareCardCanvas, shareOrSaveBlob, buildShareText, SERVICE_URL } from '../lib/shareCard.js';
 import ShareCardWatermark from './ShareCardWatermark.jsx';
 import { getPersonalizedResultContext } from '../lib/personalization.js';
 
@@ -564,6 +564,10 @@ export default function ResultView({
         title: `${displayName}님의 오늘 MBTI 카드`,
         text: shareCardCopy.boast
       });
+      if (mode === 'cancelled') {
+        setSaveImageState('idle');
+        return;
+      }
       setSaveImageState(mode === 'shared' || mode === 'no_image' ? 'shared' : 'saved');
       trackEvent(mode === 'shared' ? 'result_image_share' : 'result_image_save', { mbti, mode });
       // 이미지 없이 텍스트만 공유된 경우 (텔레그램 등) 안내 토스트 표시

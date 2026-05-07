@@ -6,25 +6,6 @@
  * - 결과 해석 맥락 반영
  */
 
-const STORAGE_KEY_PROFILE = 'mbti_user_profile';
-
-export const readProfile = () => {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY_PROFILE);
-    return raw ? JSON.parse(raw) : { birthDate: null, gender: '' };
-  } catch {
-    return { birthDate: null, gender: '' };
-  }
-};
-
-export const writeProfile = (profile) => {
-  try {
-    localStorage.setItem(STORAGE_KEY_PROFILE, JSON.stringify(profile));
-  } catch {
-    // ignore
-  }
-};
-
 /**
  * 생년월일에서 나이 계산
  */

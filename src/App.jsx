@@ -18,6 +18,7 @@ import { summarizeActivityReport } from './lib/activityReport.js';
 import {
   clearAllLocalData,
   clearActiveSession,
+  clearProfile,
   readActiveSession,
   readHistory,
   readProfile,
@@ -126,10 +127,21 @@ export default function App() {
     applyAccessibilitySettings(settings);
   }, []);
 
-  // Save profile when changed
+  // Profile is stored locally only; analytics below never receives raw birthDate.
   useEffect(() => {
-    writeProfile({ birthDate, ageGroup, gender });
+    if (birthDate || gender) {
+      writeProfile({ birthDate, ageGroup, gender });
+      return;
+    }
+    clearProfile();
   }, [birthDate, ageGroup, gender]);
+
+  const handleClearProfile = () => {
+    setBirthDate(null);
+    setGender('');
+    clearProfile();
+    trackEvent('profile_clear');
+  };
 
   const openHistoryModal = () => {
     trackEvent('history_open', { step });
@@ -153,7 +165,12 @@ export default function App() {
   const handleStart = () => {
     const trimmedName = userName.trim();
     writeUserName(trimmedName);
-    trackEvent('start_click', { hasName: Boolean(trimmedName), ageGroup, gender });
+    trackEvent('start_click', {
+      hasName: Boolean(trimmedName),
+      hasProfile: Boolean(ageGroup || gender),
+      ageGroup: ageGroup || '',
+      hasGender: Boolean(gender)
+    });
 
     const recentSessions = readRecentSessions();
     const sessionQuestions = buildQuestionSession(recentSessions);
@@ -235,11 +252,13 @@ export default function App() {
   };
 
   const handleClearLocalData = () => {
-    const ok = window.confirm('이 브라우저에 저장된 이름, 기록, 활동 리포트를 모두 지울까요?');
+    const ok = window.confirm('이 브라우저에 저장된 이름, 프로필, 기록, 활동 리포트를 모두 지울까요?');
     if (!ok) return;
 
     clearAllLocalData();
     setUserName('');
+    setBirthDate(null);
+    setGender('');
     setHistoryData([]);
     setRecoverableSession(null);
     setShowRecoveryPrompt(false);
@@ -521,6 +540,7 @@ export default function App() {
               gender={gender}
               onChangeBirthDate={setBirthDate}
               onChangeGender={setGender}
+              onClearProfile={handleClearProfile}
               onOpenAccessibility={() => setShowAccessibility(true)}
               onOpenVersion={openVersionModal}
               versionLabel={CHANGELOG[0].version}
