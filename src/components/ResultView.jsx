@@ -564,12 +564,12 @@ export default function ResultView({
         title: `${displayName}님의 오늘 MBTI 카드`,
         text: shareCardCopy.boast
       });
-      setSaveImageState(mode === 'shared' || mode === 'files_fallback' ? 'shared' : 'saved');
+      setSaveImageState(mode === 'shared' || mode === 'no_image' ? 'shared' : 'saved');
       trackEvent(mode === 'shared' ? 'result_image_share' : 'result_image_save', { mbti, mode });
-      // files 공유 실패(텔레그램 등) 시 이미지 첨부 안내 토스트 표시
-      if (mode === 'files_fallback') {
-        setShareToast('이미지는 직접 저장 후 첨부해 주세요 (이미지 저장 버튼 사용)');
-        setTimeout(() => setShareToast(''), 4000);
+      // 이미지 없이 텍스트만 공유된 경우 (텔레그램 등) 안내 토스트 표시
+      if (mode === 'no_image') {
+        setShareToast('이미지는 직접 저장 후 첨부해 주세요 (아래 이미지 저장 버튼 사용)');
+        setTimeout(() => setShareToast(''), 5000);
       }
     } catch (error) {
       if (error?.name !== 'AbortError') {
