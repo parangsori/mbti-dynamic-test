@@ -84,7 +84,7 @@ export default function ProfileInput({ birthDate, gender, onChangeBirthDate, onC
           입력하시면 오늘 흐름에 더 섬세하게 반영됩니다 <span className="text-slate-500">(선택)</span>
         </p>
         <p className="mb-4 text-center text-[11px] font-medium leading-relaxed text-slate-500 break-keep">
-          문항 진행 피드백과 결과 문구에만 반영되며, 입력하지 않아도 바로 시작할 수 있어요.
+          입력하지 않아도 바로 시작할 수 있어요.
         </p>
 
         <div className="mb-4">
