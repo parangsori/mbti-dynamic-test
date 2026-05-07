@@ -45,7 +45,7 @@ const applyAccessibilitySettings = ({ fontScale, highContrast }) => {
   document.documentElement.style.setProperty('--app-font-scale', fontScale);
   document.documentElement.classList.toggle('high-contrast', highContrast);
 };
-import { getPersonalizedTempoMessage } from './lib/personalization.js';
+import { getPersonalizedTempoMessage, getAgeGroupFromBirthDate } from './lib/personalization.js';
 
 const retryImport = (loader, retries = 1) =>
   loader().catch((error) => {
@@ -99,9 +99,10 @@ export default function App() {
   const [lastAnswerSnapshot, setLastAnswerSnapshot] = useState(null);
   const transitionLockRef = useRef(false);
 
-  // M3: Profile state
-  const [ageGroup, setAgeGroup] = useState(() => readProfile().ageGroup || '');
+  // M3: Profile state (birthDate-based)
+  const [birthDate, setBirthDate] = useState(() => readProfile().birthDate || null);
   const [gender, setGender] = useState(() => readProfile().gender || '');
+  const ageGroup = getAgeGroupFromBirthDate(birthDate);
 
   // M1: Accessibility state
   const [showAccessibility, setShowAccessibility] = useState(false);
@@ -127,8 +128,8 @@ export default function App() {
 
   // Save profile when changed
   useEffect(() => {
-    writeProfile({ ageGroup, gender });
-  }, [ageGroup, gender]);
+    writeProfile({ birthDate, ageGroup, gender });
+  }, [birthDate, ageGroup, gender]);
 
   const openHistoryModal = () => {
     trackEvent('history_open', { step });
@@ -516,9 +517,9 @@ export default function App() {
               onStart={handleStart}
               hasHistory={hasActivityReport}
               onOpenHistory={openHistoryModal}
-              ageGroup={ageGroup}
+              birthDate={birthDate}
               gender={gender}
-              onChangeAgeGroup={setAgeGroup}
+              onChangeBirthDate={setBirthDate}
               onChangeGender={setGender}
               onOpenAccessibility={() => setShowAccessibility(true)}
               onOpenVersion={openVersionModal}

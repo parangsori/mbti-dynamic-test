@@ -294,14 +294,14 @@ function ShareCard({ context }) {
   } = context;
   const themeClasses = getThemeClasses(presentation?.themeKey);
   return (
-    <div className={`relative h-[1080px] w-[1080px] overflow-hidden rounded-[64px] border border-white/10 ${themeClasses.shareShell} text-white shadow-[0_40px_120px_rgba(2,6,23,0.7)]`}>
+    <div className={`relative min-h-[1080px] w-[1080px] overflow-hidden rounded-[64px] border border-white/10 ${themeClasses.shareShell} text-white shadow-[0_40px_120px_rgba(2,6,23,0.7)]`}>
       <div className={`absolute -right-20 top-[-90px] h-80 w-80 rounded-full ${themeClasses.haloBottom} blur-3xl`}></div>
       <div className={`absolute bottom-[-80px] left-[-40px] h-72 w-72 rounded-full ${themeClasses.haloTop} blur-3xl`}></div>
       <div className="absolute left-[70px] top-[132px] h-[460px] w-[460px] rounded-full border border-white/5 bg-white/[0.04]"></div>
       <div className="absolute right-[88px] top-[208px] h-[430px] w-[430px] rounded-[46px] border border-white/10 bg-white/[0.04] rotate-[-6deg]"></div>
       <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.05),transparent_24%,transparent_72%,rgba(255,255,255,0.03))]"></div>
 
-      <div className="relative z-10 flex h-full flex-col px-20 pb-16 pt-16">
+      <div className="relative z-10 flex h-full flex-col px-20 pb-20 pt-16">
         <div className="flex items-start justify-between gap-8">
           <div className="max-w-[560px]">
             <p className="text-[24px] font-medium tracking-[-0.02em] text-slate-300">
@@ -533,8 +533,9 @@ export default function ResultView({
 
   const handleCopyShare = async () => {
     const shareText = buildShareText({ displayName, hook: shareCardCopy.hook, detail: shareCardCopy.detail, percent });
+    const copyText = `${shareText}\n${SERVICE_URL}`;
     try {
-      await navigator.clipboard.writeText(shareText);
+      await navigator.clipboard.writeText(copyText);
       setShareCopied(true);
       trackEvent('share_copy', { mbti });
       setTimeout(() => setShareCopied(false), 1800);

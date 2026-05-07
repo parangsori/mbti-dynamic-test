@@ -26,6 +26,12 @@ body {
   font-size: calc(16px * var(--app-font-scale));
 }
 
+/* 큰 글자에서도 레이아웃이 깨지지 않도록 */
+* {
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}
+
 .min-h-screen-d {
   min-height: 100dvh;
 }

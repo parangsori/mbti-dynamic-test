@@ -73,7 +73,7 @@ export const writeUserName = (name) => {
   }
 };
 
-export const readProfile = () => readJson(STORAGE_KEYS.profile, { ageGroup: '', gender: '' });
+export const readProfile = () => readJson(STORAGE_KEYS.profile, { birthDate: null, ageGroup: '', gender: '' });
 export const writeProfile = (profile) => writeJson(STORAGE_KEYS.profile, profile);
 
 export const readRecentSessions = () => readArrayJson(STORAGE_KEYS.recentIds);

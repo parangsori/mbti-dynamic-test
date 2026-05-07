@@ -1,11 +1,5 @@
+import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-
-const AGE_GROUPS = [
-  { key: '10s', label: '10대', emoji: '🎒' },
-  { key: '20s', label: '20대', emoji: '🎓' },
-  { key: '30s', label: '30대', emoji: '💼' },
-  { key: '40s', label: '40대+', emoji: '🏡' }
-];
 
 const GENDER_OPTIONS = [
   { key: 'male', label: '남성' },
@@ -13,7 +7,60 @@ const GENDER_OPTIONS = [
   { key: 'other', label: '기타/선택안함' }
 ];
 
-export default function ProfileInput({ ageGroup, gender, onChangeAgeGroup, onChangeGender }) {
+const currentYear = new Date().getFullYear();
+const YEARS = Array.from({ length: 80 }, (_, i) => currentYear - i);
+const MONTHS = Array.from({ length: 12 }, (_, i) => i + 1);
+
+function getDaysInMonth(year, month) {
+  if (!year || !month) return 31;
+  return new Date(year, month, 0).getDate();
+}
+
+export default function ProfileInput({ birthDate, gender, onChangeBirthDate, onChangeGender }) {
+  const [year, setYear] = useState(birthDate?.year || '');
+  const [month, setMonth] = useState(birthDate?.month || '');
+  const [day, setDay] = useState(birthDate?.day || '');
+
+  const days = useMemo(() => {
+    const maxDay = getDaysInMonth(year, month);
+    return Array.from({ length: maxDay }, (_, i) => i + 1);
+  }, [year, month]);
+
+  const handleYearChange = (val) => {
+    const y = val ? parseInt(val) : '';
+    setYear(y);
+    const newDate = y && month && day ? { year: y, month, day } : y && month ? { year: y, month, day: '' } : y ? { year: y, month: '', day: '' } : null;
+    onChangeBirthDate(newDate);
+  };
+
+  const handleMonthChange = (val) => {
+    const m = val ? parseInt(val) : '';
+    setMonth(m);
+    // 일 수 재계산 시 day가 범위 초과하면 리셋
+    if (m && year && day) {
+      const maxDay = getDaysInMonth(year, m);
+      const adjustedDay = day > maxDay ? '' : day;
+      setDay(adjustedDay);
+      onChangeBirthDate(adjustedDay ? { year, month: m, day: adjustedDay } : { year, month: m, day: '' });
+    } else {
+      onChangeBirthDate(year ? { year, month: m, day: '' } : null);
+    }
+  };
+
+  const handleDayChange = (val) => {
+    const d = val ? parseInt(val) : '';
+    setDay(d);
+    if (year && month && d) {
+      onChangeBirthDate({ year, month, day: d });
+    } else {
+      onChangeBirthDate(year && month ? { year, month, day: '' } : year ? { year, month: '', day: '' } : null);
+    }
+  };
+
+  const selectBaseClass = "w-full appearance-none rounded-xl border bg-slate-800/60 px-3 py-2.5 text-[13px] font-bold text-white outline-none transition-all focus:ring-2 focus:ring-cyan-400/30";
+  const selectActiveClass = "border-cyan-300/30 bg-cyan-900/20";
+  const selectIdleClass = "border-white/10 hover:border-white/20";
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -27,22 +74,46 @@ export default function ProfileInput({ ageGroup, gender, onChangeAgeGroup, onCha
         </p>
 
         <div className="mb-4">
-          <p className="text-[11px] font-bold text-slate-400 mb-2 tracking-wider uppercase">연령대</p>
-          <div className="grid grid-cols-4 gap-2">
-            {AGE_GROUPS.map((group) => (
-              <button
-                key={group.key}
-                onClick={() => onChangeAgeGroup(ageGroup === group.key ? '' : group.key)}
-                className={`rounded-2xl border px-2 py-2.5 text-center transition-all active:scale-[0.96] ${
-                  ageGroup === group.key
-                    ? 'border-brand/40 bg-brand/[0.12] text-purple-100 shadow-[0_0_12px_rgba(168,85,247,0.15)]'
-                    : 'border-white/10 bg-white/[0.03] text-slate-300 hover:bg-white/[0.06]'
-                }`}
+          <p className="text-[11px] font-bold text-slate-400 mb-2 tracking-wider uppercase">생년월일</p>
+          <div className="grid grid-cols-3 gap-2">
+            <div className="relative">
+              <select
+                value={year}
+                onChange={(e) => handleYearChange(e.target.value)}
+                className={`${selectBaseClass} ${year ? selectActiveClass : selectIdleClass}`}
               >
-                <span className="text-[16px]">{group.emoji}</span>
-                <p className="mt-0.5 text-[11px] font-bold">{group.label}</p>
-              </button>
-            ))}
+                <option value="">년</option>
+                {YEARS.map((y) => (
+                  <option key={y} value={y}>{y}년</option>
+                ))}
+              </select>
+            </div>
+            <div className="relative">
+              <select
+                value={month}
+                onChange={(e) => handleMonthChange(e.target.value)}
+                className={`${selectBaseClass} ${month ? selectActiveClass : selectIdleClass}`}
+                disabled={!year}
+              >
+                <option value="">월</option>
+                {MONTHS.map((m) => (
+                  <option key={m} value={m}>{m}월</option>
+                ))}
+              </select>
+            </div>
+            <div className="relative">
+              <select
+                value={day}
+                onChange={(e) => handleDayChange(e.target.value)}
+                className={`${selectBaseClass} ${day ? selectActiveClass : selectIdleClass}`}
+                disabled={!year || !month}
+              >
+                <option value="">일</option>
+                {days.map((d) => (
+                  <option key={d} value={d}>{d}일</option>
+                ))}
+              </select>
+            </div>
           </div>
         </div>
 

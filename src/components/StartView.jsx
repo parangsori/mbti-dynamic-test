@@ -6,9 +6,9 @@ export default function StartView({
   onChangeUserName,
   onStart,
   onOpenHistory,
-  ageGroup,
+  birthDate,
   gender,
-  onChangeAgeGroup,
+  onChangeBirthDate,
   onChangeGender,
   onOpenAccessibility,
   onOpenVersion,
@@ -44,11 +44,11 @@ export default function StartView({
         <div className="absolute inset-x-8 bottom-3 h-[2px] bg-gradient-to-r from-transparent via-cyan-500 to-transparent opacity-50"></div>
       </div>
 
-      {/* M3: Profile Input */}
+      {/* M3: Profile Input (생년월일 + 성별) */}
       <ProfileInput
-        ageGroup={ageGroup}
+        birthDate={birthDate}
         gender={gender}
-        onChangeAgeGroup={onChangeAgeGroup}
+        onChangeBirthDate={onChangeBirthDate}
         onChangeGender={onChangeGender}
       />
 

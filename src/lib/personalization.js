@@ -1,5 +1,7 @@
 /**
  * M3: 나이/성별 기반 개인화 모듈
+ * - 생년월일에서 나이 자동 계산
+ * - 확장된 연령 구간 (어린이 ~ 50대 이상)
  * - 질문 톤앤매너 조정
  * - 결과 해석 맥락 반영
  */
@@ -9,9 +11,9 @@ const STORAGE_KEY_PROFILE = 'mbti_user_profile';
 export const readProfile = () => {
   try {
     const raw = localStorage.getItem(STORAGE_KEY_PROFILE);
-    return raw ? JSON.parse(raw) : { ageGroup: '', gender: '' };
+    return raw ? JSON.parse(raw) : { birthDate: null, gender: '' };
   } catch {
-    return { ageGroup: '', gender: '' };
+    return { birthDate: null, gender: '' };
   }
 };
 
@@ -24,12 +26,66 @@ export const writeProfile = (profile) => {
 };
 
 /**
- * 연령대별 톤앤매너 설정
+ * 생년월일에서 나이 계산
+ */
+export const calculateAge = (birthDate) => {
+  if (!birthDate || !birthDate.year) return null;
+  const today = new Date();
+  const birthYear = birthDate.year;
+  const birthMonth = birthDate.month || 1;
+  const birthDay = birthDate.day || 1;
+
+  let age = today.getFullYear() - birthYear;
+  const monthDiff = today.getMonth() + 1 - birthMonth;
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDay)) {
+    age--;
+  }
+  return age;
+};
+
+/**
+ * 나이에서 연령 구간 키 매핑
+ * ~12세: child, 13~18세: teen, 19~29세: 20s, 30~39세: 30s, 40~49세: 40s, 50+: 50s
+ */
+export const getAgeGroupKey = (age) => {
+  if (age === null || age === undefined) return '';
+  if (age <= 12) return 'child';
+  if (age <= 18) return 'teen';
+  if (age <= 29) return '20s';
+  if (age <= 39) return '30s';
+  if (age <= 49) return '40s';
+  return '50s';
+};
+
+/**
+ * 생년월일에서 연령 구간 키 직접 반환
+ */
+export const getAgeGroupFromBirthDate = (birthDate) => {
+  const age = calculateAge(birthDate);
+  return getAgeGroupKey(age);
+};
+
+/**
+ * 연령대별 톤앤매너 설정 (확장)
  */
 const TONE_CONFIG = {
-  '10s': {
+  'child': {
+    label: '어린이',
+    style: 'playful',
+    resultTone: 'fun',
+    tempoMessages: [
+      '느낌 가는 대로 골라봐! 🌟',
+      '어려운 건 없어~ 그냥 느낌으로!',
+      '잘하고 있어! 계속 가보자~',
+      '좋아! 거의 다 왔어!',
+      '마지막까지 화이팅! ✨',
+      '멋지다! 조금만 더~',
+      '거의 끝! 대단해!',
+      '완전 잘하고 있어!'
+    ]
+  },
+  'teen': {
     label: '10대',
-    questionPrefix: '',
     style: 'casual',
     resultTone: 'trendy',
     tempoMessages: [
@@ -45,7 +101,6 @@ const TONE_CONFIG = {
   },
   '20s': {
     label: '20대',
-    questionPrefix: '',
     style: 'friendly',
     resultTone: 'relatable',
     tempoMessages: [
@@ -61,7 +116,6 @@ const TONE_CONFIG = {
   },
   '30s': {
     label: '30대',
-    questionPrefix: '',
     style: 'balanced',
     resultTone: 'insightful',
     tempoMessages: [
@@ -76,8 +130,7 @@ const TONE_CONFIG = {
     ]
   },
   '40s': {
-    label: '40대+',
-    questionPrefix: '',
+    label: '40대',
     style: 'respectful',
     resultTone: 'thoughtful',
     tempoMessages: [
@@ -89,6 +142,21 @@ const TONE_CONFIG = {
       '오늘의 흐름이 보이기 시작합니다',
       '마지막 질문들입니다',
       '곧 결과를 확인하실 수 있어요'
+    ]
+  },
+  '50s': {
+    label: '50대 이상',
+    style: 'polite',
+    resultTone: 'warm',
+    tempoMessages: [
+      '편안하게 골라보세요',
+      '느끼시는 그대로 선택해주시면 됩니다',
+      '천천히 생각하셔도 좋습니다',
+      '잘하고 계십니다',
+      '거의 마무리 단계입니다',
+      '오늘의 성향이 곧 나옵니다',
+      '마지막 질문입니다',
+      '곧 결과를 확인하실 수 있습니다'
     ]
   }
 };
@@ -111,7 +179,12 @@ export const getPersonalizedResultContext = (ageGroup, gender, mbti, percent) =>
   if (!ageConfig) return null;
 
   const contexts = {
-    '10s': {
+    'child': {
+      intro: `오늘은 ${mbti} 느낌이 ${percent >= 80 ? '아주 강하게' : '살짝'} 나왔어!`,
+      advice: getChildAdvice(mbti, gender),
+      tone: '재미있는'
+    },
+    'teen': {
       intro: `요즘 ${mbti} 바이브가 강하게 나오고 있어!`,
       advice: getTeenAdvice(mbti, gender),
       tone: '트렌디'
@@ -130,11 +203,22 @@ export const getPersonalizedResultContext = (ageGroup, gender, mbti, percent) =>
       intro: `오늘은 ${mbti} 성향이 ${percent >= 80 ? '분명하게' : '자연스럽게'} 드러났습니다.`,
       advice: getFortiesAdvice(mbti, gender),
       tone: '사려깊음'
+    },
+    '50s': {
+      intro: `오늘은 ${mbti} 성향이 ${percent >= 80 ? '뚜렷하게' : '편안하게'} 나타났습니다.`,
+      advice: getFiftiesAdvice(mbti, gender),
+      tone: '따뜻함'
     }
   };
 
   return contexts[ageGroup] || null;
 };
+
+function getChildAdvice(mbti, gender) {
+  const firstLetter = mbti[0];
+  if (firstLetter === 'E') return '오늘은 친구들이랑 놀면 더 신나는 날이야!';
+  return '오늘은 혼자 좋아하는 거 하면 기분이 더 좋아지는 날이야!';
+}
 
 function getTeenAdvice(mbti, gender) {
   const firstLetter = mbti[0];
@@ -160,15 +244,23 @@ function getFortiesAdvice(mbti, gender) {
   return '오늘은 유연하게 흐름을 타는 것이 더 자연스러운 날입니다. 여유를 가져보세요.';
 }
 
+function getFiftiesAdvice(mbti, gender) {
+  const fourthLetter = mbti[3];
+  if (fourthLetter === 'J') return '오늘은 차분하게 계획을 세우고 실행하기 좋은 날입니다. 마음이 가는 일부터 시작해보세요.';
+  return '오늘은 흐름에 맡기며 여유롭게 보내기 좋은 날입니다. 무리하지 마세요.';
+}
+
 /**
  * 공유 텍스트에 연령대 맥락 추가
  */
 export const getPersonalizedShareSuffix = (ageGroup) => {
   const suffixes = {
-    '10s': '🔥 나도 해보기 →',
+    'child': '나도 해보기! ✨',
+    'teen': '🔥 나도 해보기 →',
     '20s': '나도 오늘의 MBTI 확인하기 →',
     '30s': '나의 오늘 성향도 확인해보세요 →',
-    '40s': '나의 성향도 확인해보세요 →'
+    '40s': '나의 성향도 확인해보세요 →',
+    '50s': '나의 성향도 확인해보세요 →'
   };
   return suffixes[ageGroup] || '나도 해보기 →';
 };

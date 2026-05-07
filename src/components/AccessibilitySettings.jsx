@@ -2,9 +2,9 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const FONT_SIZE_OPTIONS = [
-  { key: 'default', label: '기본', scale: 1 },
-  { key: 'large', label: '크게', scale: 1.12 },
-  { key: 'xlarge', label: '더 크게', scale: 1.24 }
+  { key: 'default', label: '기본', scale: 1, px: 16 },
+  { key: 'large', label: '크게', scale: 1.25, px: 20 },
+  { key: 'xlarge', label: '더 크게', scale: 1.5, px: 24 }
 ];
 
 const STORAGE_KEY_FONT = 'mbti_font_scale';
@@ -79,17 +79,20 @@ export default function AccessibilitySettings({ isOpen, onClose }) {
                   <button
                     key={option.key}
                     onClick={() => setFontScale(option.scale)}
-                    className={`flex-1 rounded-2xl border px-3 py-3 text-center text-[13px] font-bold transition-all ${
+                    className={`flex-1 rounded-2xl border px-3 py-3 text-center transition-all ${
                       fontScale === option.scale
                         ? 'border-cyan-300/40 bg-cyan-300/[0.12] text-cyan-100'
                         : 'border-white/10 bg-white/[0.04] text-slate-300 hover:bg-white/[0.08]'
                     }`}
                   >
-                    <span style={{ fontSize: `${12 * option.scale}px` }}>가</span>
-                    <p className="mt-1 text-[11px] text-slate-400">{option.label}</p>
+                    <span className="block font-black" style={{ fontSize: `${option.px}px` }}>가</span>
+                    <p className="mt-1 text-[11px] font-bold text-slate-400">{option.label} ({option.px}px)</p>
                   </button>
                 ))}
               </div>
+              <p className="mt-2 text-[11px] text-slate-500 text-center">
+                현재: {Math.round(fontScale * 16)}px 기준
+              </p>
             </div>
 
             <div className="mt-5">
@@ -105,7 +108,7 @@ export default function AccessibilitySettings({ isOpen, onClose }) {
                 <div className="flex items-center justify-between">
                   <span>{highContrast ? '고대비 모드 켜짐' : '고대비 모드 꺼짐'}</span>
                   <div className={`w-10 h-5 rounded-full transition-colors ${highContrast ? 'bg-cyan-400' : 'bg-slate-600'}`}>
-                    <div className={`w-4 h-4 rounded-full bg-white shadow-md transition-transform mt-0.5 ${highContrast ? 'translate-x-5.5 ml-[22px]' : 'ml-0.5'}`} />
+                    <div className={`w-4 h-4 rounded-full bg-white shadow-md transition-transform mt-0.5 ${highContrast ? 'ml-[22px]' : 'ml-0.5'}`} />
                   </div>
                 </div>
                 <p className="mt-1 text-[11px] text-slate-400">텍스트와 배경의 색상 대비를 높여 가독성을 개선합니다</p>
