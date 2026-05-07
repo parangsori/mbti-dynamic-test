@@ -1,3 +1,6 @@
+const SERVICE_URL = 'https://mbti-dynamic-test.vercel.app';
+const SERVICE_NAME = '다이나믹 MBTI';
+
 export const renderShareCardCanvas = async (target) => {
   if (!target) throw new Error('공유 카드 대상이 없습니다.');
   const { default: html2canvas } = await import('html2canvas');
@@ -33,7 +36,12 @@ export const shareOrSaveBlob = async ({ blob, filename, title, text }) => {
     : null;
 
   if (file && navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-    await navigator.share({ title, text, files: [file] });
+    await navigator.share({
+      title,
+      text: `${text}\n\n${SERVICE_NAME} - ${SERVICE_URL}`,
+      url: SERVICE_URL,
+      files: [file]
+    });
     return 'shared';
   }
 
@@ -51,3 +59,12 @@ export const shareOrSaveBlob = async ({ blob, filename, title, text }) => {
   downloadBlob(blob, filename);
   return 'saved';
 };
+
+/**
+ * 공유 텍스트에 서비스 URL 자동 포함
+ */
+export const buildShareText = ({ displayName, hook, detail, percent }) => {
+  return `${displayName}님의 오늘 결과\n${hook}\n${detail}\n싱크로율 ${percent}%\n\n${SERVICE_NAME}\n${SERVICE_URL}`;
+};
+
+export { SERVICE_URL, SERVICE_NAME };

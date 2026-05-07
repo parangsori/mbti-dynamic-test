@@ -8,7 +8,9 @@ import {
 } from '../lib/resultAnalysis.js';
 import { writeHistory } from '../lib/storage.js';
 import { captureError } from '../lib/observability.js';
-import { getCanvasBlob, renderShareCardCanvas, shareOrSaveBlob } from '../lib/shareCard.js';
+import { getCanvasBlob, renderShareCardCanvas, shareOrSaveBlob, buildShareText, SERVICE_URL, SERVICE_NAME } from '../lib/shareCard.js';
+import ShareCardWatermark from './ShareCardWatermark.jsx';
+import { getPersonalizedResultContext } from '../lib/personalization.js';
 
 const DETAIL_SECTIONS = [
   { key: 'why', title: '왜 이런 결과가 나왔을까' },
@@ -370,6 +372,9 @@ function ShareCard({ context }) {
               </div>
               <p className="ml-4 whitespace-nowrap text-[15px] font-black tracking-[0.14em] text-white">오늘 무드 카드</p>
             </div>
+
+            {/* M2: Brand watermark + QR code */}
+            <ShareCardWatermark size="large" />
           </div>
 
           <div className="flex flex-col">
@@ -436,7 +441,9 @@ export default function ResultView({
   trackEvent,
   neutralCount = 0,
   usedFollowup = false,
-  questionContextSummary = null
+  questionContextSummary = null,
+  ageGroup = '',
+  gender = ''
 }) {
   const resultRef = useRef(null);
   const shareCardRef = useRef(null);
@@ -525,7 +532,7 @@ export default function ResultView({
   }, [mbti, percent, questionContextSummary, trackEvent]);
 
   const handleCopyShare = async () => {
-    const shareText = `${displayName}님의 오늘 결과\n${shareCardCopy.hook}\n${shareCardCopy.detail}\n싱크로율 ${percent}%`;
+    const shareText = buildShareText({ displayName, hook: shareCardCopy.hook, detail: shareCardCopy.detail, percent });
     try {
       await navigator.clipboard.writeText(shareText);
       setShareCopied(true);
@@ -588,9 +595,18 @@ export default function ResultView({
     recentFlowSummary
   };
 
+  const personalizedContext = ageGroup ? getPersonalizedResultContext(ageGroup, gender, mbti, percent) : null;
+
   const detailSections = {
     why: (
       <div className="space-y-4">
+        {personalizedContext && (
+          <div className="rounded-2xl border border-brand/20 bg-brand/[0.08] px-4 py-4">
+            <p className="text-[12px] font-black tracking-[0.18em] text-purple-100 uppercase">맞춤형 해석</p>
+            <p className="mt-2 text-[14px] leading-relaxed text-white break-keep">{personalizedContext.intro}</p>
+            <p className="mt-2 text-[13px] leading-relaxed text-slate-200 break-keep">{personalizedContext.advice}</p>
+          </div>
+        )}
         <div className="rounded-2xl border border-cyan-300/20 bg-cyan-300/[0.08] px-4 py-4">
           <p className="text-[12px] font-black tracking-[0.18em] text-cyan-100 uppercase">오늘 핵심 해석</p>
           <p className="mt-2 text-[14px] leading-relaxed text-white break-keep">{summaryCopy}</p>

@@ -6,7 +6,8 @@ export const STORAGE_KEYS = {
   username: 'mbti_username',
   eventStats: 'mbti_event_stats',
   recentIds: 'mbti_recent_ids',
-  errorStats: 'mbti_error_stats'
+  errorStats: 'mbti_error_stats',
+  profile: 'mbti_user_profile'
 };
 
 export const readJson = (key, fallback) => {
@@ -71,6 +72,9 @@ export const writeUserName = (name) => {
     return false;
   }
 };
+
+export const readProfile = () => readJson(STORAGE_KEYS.profile, { ageGroup: '', gender: '' });
+export const writeProfile = (profile) => writeJson(STORAGE_KEYS.profile, profile);
 
 export const readRecentSessions = () => readArrayJson(STORAGE_KEYS.recentIds);
 export const writeRecentSessions = (sessions) => writeJson(STORAGE_KEYS.recentIds, sessions);
