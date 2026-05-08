@@ -511,6 +511,7 @@ export default function ResultView({
   const resolvedImageSrc = info.image ? IMAGE_BASE64[info.image] || info.image : '';
   const themeClasses = getThemeClasses(presentation.themeKey);
   const precisionBadge = getPrecisionBadge({ percent, neutralReviewNote, boundaryAxes });
+  const syncRateClass = percent >= 100 ? 'text-[22px] min-[390px]:text-[26px]' : 'text-[24px] min-[390px]:text-[28px]';
   const todayLabel = getTodayLabel();
   const timeLabel = getTimeLabel();
 
@@ -776,7 +777,7 @@ export default function ResultView({
               <div className="flex w-[5.4rem] shrink-0 flex-col items-end gap-2 min-[390px]:w-[6rem]">
                 <div className={`w-full rounded-[1.15rem] border px-2.5 py-2 text-right shadow-[0_14px_28px_rgba(15,23,42,0.22)] min-[390px]:rounded-[1.3rem] min-[390px]:px-3 min-[390px]:py-2.5 ${themeClasses.chip}`}>
                   <p className="text-[10px] font-black tracking-[0.2em] text-purple-100 uppercase">싱크로율</p>
-                  <p className="mt-1 text-[24px] font-black text-white min-[390px]:text-[28px]">{percent}%</p>
+                  <p className={`mt-1 whitespace-nowrap font-black text-white tabular-nums ${syncRateClass}`}>{percent}%</p>
                 </div>
                 <span className="w-full rounded-full border border-cyan-300/20 bg-cyan-300/[0.1] px-2 py-1.5 text-center text-[9px] font-black leading-snug text-cyan-100 break-keep min-[390px]:text-[10px]">{precisionBadge}</span>
               </div>
