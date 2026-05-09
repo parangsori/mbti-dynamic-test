@@ -146,10 +146,23 @@ export default function StartView({
         </button>
         <button
           onClick={onOpenAccessibility}
-          className="text-sm text-slate-500 hover:text-white transition-colors rounded-full border border-white/10 px-3 py-1"
-          aria-label="접근성 설정"
+          className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-slate-400 transition-colors hover:bg-white/[0.08] hover:text-white"
+          aria-label="설정 열기"
+          title="설정"
         >
-          Aa
+          <svg
+            aria-hidden="true"
+            viewBox="0 0 24 24"
+            className="h-[18px] w-[18px]"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M9.7 3.4 10.4 2h3.2l.7 1.4 1.9.8 1.5-.5 2.2 2.2-.5 1.5.8 1.9 1.4.7v3.2l-1.4.7-.8 1.9.5 1.5-2.2 2.2-1.5-.5-1.9.8-.7 1.4h-3.2l-.7-1.4-1.9-.8-1.5.5-2.2-2.2.5-1.5-.8-1.9-1.4-.7V10l1.4-.7.8-1.9-.5-1.5 2.2-2.2 1.5.5 1.9-.8Z" />
+            <circle cx="12" cy="12" r="3" />
+          </svg>
         </button>
       </div>
 

@@ -12,7 +12,7 @@ export default function ShareCardWatermark({ size = 'large' }) {
     <div className={`flex items-center justify-between w-full ${isLarge ? 'mt-6 px-2' : 'mt-3 px-1'}`}>
       <div className="flex items-center gap-3">
         <div className={`overflow-hidden rounded-xl border border-white/15 bg-white/10 p-1 shadow-[0_12px_28px_rgba(15,23,42,0.28)] ${isLarge ? 'h-10 w-10' : 'h-7 w-7'}`}>
-          <img src="/service-icon.svg" alt="오늘의 MBTI" className="h-full w-full rounded-[0.55rem] object-cover" />
+          <img src="/service-icon-1024.png" alt="오늘의 MBTI" className="h-full w-full rounded-[0.55rem] object-cover" />
         </div>
         <div>
           <p className={`font-black text-white ${isLarge ? 'text-[16px]' : 'text-[11px]'}`}>{SERVICE_NAME}</p>

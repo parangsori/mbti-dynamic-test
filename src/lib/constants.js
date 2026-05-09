@@ -19,6 +19,13 @@ export const COMPATIBILITY = {
 
 export const CHANGELOG = [
   {
+    version: 'v1.5.6',
+    date: '2026.05.09',
+    updates: [
+      '공유 카드와 링크 미리보기의 서비스 아이콘·문구를 오늘의 MBTI 브랜딩에 맞추고, 시작 화면 설정 진입 버튼을 더 알아보기 쉬운 톱니바퀴 아이콘으로 개선'
+    ]
+  },
+  {
     version: 'v1.5.5',
     date: '2026.05.09',
     updates: [
