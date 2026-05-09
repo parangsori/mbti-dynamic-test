@@ -1,4 +1,4 @@
-export const SERVICE_NAME = '다이나믹 MBTI';
+export const SERVICE_NAME = '오늘의 MBTI';
 export const SERVICE_URL = (import.meta.env.VITE_PUBLIC_SERVICE_URL || 'https://mbti-dynamic-test.vercel.app').replace(/\/+$/, '');
 
 /**

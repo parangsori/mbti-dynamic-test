@@ -19,6 +19,13 @@ export const COMPATIBILITY = {
 
 export const CHANGELOG = [
   {
+    version: 'v1.5.4',
+    date: '2026.05.09',
+    updates: [
+      '공유 카드 하단 브랜드 영역을 홈화면 아이콘과 오늘의 MBTI 이름으로 맞춰 저장 이미지에서도 서비스 정체성이 일관되게 보이도록 개선'
+    ]
+  },
+  {
     version: 'v1.5.3',
     date: '2026.05.09',
     updates: [
