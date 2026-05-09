@@ -19,6 +19,13 @@ export const COMPATIBILITY = {
 
 export const CHANGELOG = [
   {
+    version: 'v1.5.7',
+    date: '2026.05.09',
+    updates: [
+      '공유 링크 미리보기(OG 태그)와 서비스 URL이 테스트 환경에서도 현재 도메인에 맞춰 동적으로 반영되도록 개선해 미리보기 반영 문제 해결'
+    ]
+  },
+  {
     version: 'v1.5.6',
     date: '2026.05.09',
     updates: [
