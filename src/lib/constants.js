@@ -19,6 +19,13 @@ export const COMPATIBILITY = {
 
 export const CHANGELOG = [
   {
+    version: 'v1.5.3',
+    date: '2026.05.09',
+    updates: [
+      '시작 화면 상단의 일반 MBTI 배지를 홈화면 아이콘과 오늘의 MBTI 브랜딩으로 교체해 서비스 첫인상을 더 자연스럽게 정리'
+    ]
+  },
+  {
     version: 'v1.5.2',
     date: '2026.05.09',
     updates: [

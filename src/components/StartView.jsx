@@ -23,8 +23,13 @@ export default function StartView({
       exit={{ opacity: 0, y: -20 }}
       className="w-full max-w-sm flex flex-col items-center px-6 py-10"
     >
-      <div className="w-24 h-24 mb-6 rounded-3xl bg-gradient-to-br from-brand to-cyan-400 rotate-12 flex items-center justify-center shadow-2xl shadow-brand/40">
-        <span className="text-4xl text-white font-black -rotate-12">MBTI</span>
+      <div className="mb-6 flex flex-col items-center gap-3">
+        <div className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-[1.35rem] border border-white/15 bg-white/10 p-1.5 shadow-[0_20px_55px_rgba(99,102,241,0.3)]">
+          <img src="/service-icon.svg" alt="오늘의 MBTI 서비스 아이콘" className="h-full w-full rounded-[1rem] object-cover" />
+        </div>
+        <span className="rounded-full border border-white/10 bg-white/[0.06] px-4 py-1.5 text-[12px] font-black tracking-[0.18em] text-cyan-100 uppercase">
+          오늘의 MBTI
+        </span>
       </div>
       <h1 className="text-4xl font-extrabold mb-3 text-center text-white tracking-tight">지금 내 결은 어느 쪽이 더 강할까?</h1>
       <p className="text-slate-300 mb-10 text-center font-medium leading-relaxed">
