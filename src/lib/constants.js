@@ -19,6 +19,13 @@ export const COMPATIBILITY = {
 
 export const CHANGELOG = [
   {
+    version: 'v1.5.2',
+    date: '2026.05.09',
+    updates: [
+      '결과 화면 상단에 대표 성향 문장, 핵심 요약, 성향 좌표 그래프를 배치해 상세를 열지 않아도 오늘 결과의 감정과 근거를 바로 이해할 수 있도록 개선'
+    ]
+  },
+  {
     version: 'v1.5.1',
     date: '2026.05.07',
     updates: [

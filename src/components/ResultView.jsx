@@ -206,6 +206,116 @@ function MoodPointCard({ presentation, themeClasses }) {
   );
 }
 
+function ResultEssenceCard({ info, summaryCopy, consistencyCopy, boundaryCopy, neutralReviewNote, questionContextInsight, themeClasses }) {
+  const insightRows = [
+    summaryCopy,
+    consistencyCopy,
+    neutralReviewNote || questionContextInsight || boundaryCopy
+  ].filter(Boolean).slice(0, 3);
+
+  return (
+    <div className="space-y-3">
+      <div className={`rounded-[1.45rem] border px-4 py-4 ${themeClasses.panel}`}>
+        <p className={`text-[11px] font-black tracking-[0.18em] uppercase ${themeClasses.label}`}>나를 닮은 한 줄</p>
+        <p className="mt-3 text-[15px] font-semibold leading-relaxed text-white break-keep">{info.description}</p>
+      </div>
+
+      <div className="rounded-[1.45rem] border border-cyan-300/20 bg-cyan-300/[0.08] px-4 py-4">
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-[11px] font-black tracking-[0.18em] text-cyan-100 uppercase">핵심 요약</p>
+          <span className="shrink-0 rounded-full border border-cyan-200/20 bg-black/20 px-3 py-1 text-[10px] font-black text-cyan-100">바로 읽기</span>
+        </div>
+        <div className="mt-3 space-y-2.5">
+          {insightRows.map((row, idx) => (
+            <div key={`${row}-${idx}`} className="grid grid-cols-[0.55rem_minmax(0,1fr)] gap-2">
+              <span className={`mt-[0.45rem] h-2 w-2 rounded-full ${idx === 0 ? 'bg-cyan-200' : idx === 1 ? 'bg-emerald-200' : 'bg-amber-200'}`} />
+              <p className="text-[13px] leading-relaxed text-slate-100 break-keep">{row}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AxisCoordinateCard({ axisNarratives, themeClasses }) {
+  return (
+    <div className="rounded-[1.45rem] border border-white/10 bg-white/[0.04] px-4 py-4">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-[11px] font-black tracking-[0.18em] text-slate-400 uppercase">나의 성향 좌표</p>
+          <p className="mt-1 text-[13px] leading-relaxed text-slate-300 break-keep">오늘 답변이 어느 쪽으로 기울었는지 한눈에 볼 수 있어요.</p>
+        </div>
+        <span className={`shrink-0 rounded-full border px-3 py-1 text-[10px] font-black ${themeClasses.chip}`}>4축</span>
+      </div>
+      <div className="mt-4 space-y-3.5">
+        {axisNarratives.map((axis) => (
+          <AxisCoordinateBar key={axis.pair} axis={axis} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function AxisCoordinateBar({ axis }) {
+  const isLeftDom = axis.leftScore >= axis.rightScore;
+  const leftRatio = isLeftDom ? axis.intensity : 100 - axis.intensity;
+  const rightRatio = 100 - leftRatio;
+  const markerPosition = isLeftDom ? leftRatio : 100 - rightRatio;
+
+  return (
+    <div className={`rounded-[1rem] border px-3 py-3 ${axis.isBoundary ? 'border-amber-300/20 bg-amber-300/[0.07]' : 'border-white/10 bg-black/20'}`}>
+      <div className="mb-2 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <span className="text-[12px] font-black text-white">{axis.pair}</span>
+          {axis.isBoundary && <span className="rounded-full border border-amber-300/20 bg-amber-300/[0.12] px-2 py-0.5 text-[9px] font-black text-amber-100">경계</span>}
+        </div>
+        <span className="text-[11px] font-black text-slate-200">{axis.dominantType} {axis.intensity}%</span>
+      </div>
+      <div className="grid grid-cols-[2.1rem_minmax(0,1fr)_2.1rem] items-center gap-2">
+        <div className={`text-center text-[12px] font-black ${isLeftDom ? 'text-brand' : 'text-slate-500'}`}>{axis.left}</div>
+        <div className="relative h-3 overflow-hidden rounded-full bg-slate-800/80">
+          <motion.div initial={{ width: 0 }} animate={{ width: `${leftRatio}%` }} transition={{ duration: 0.75 }} className="absolute left-0 top-0 h-full bg-gradient-to-r from-brand to-purple-400" />
+          <motion.div initial={{ width: 0 }} animate={{ width: `${rightRatio}%` }} transition={{ duration: 0.75 }} className="absolute right-0 top-0 h-full bg-gradient-to-l from-cyan-300 to-cyan-600" />
+          <motion.span
+            initial={{ left: '50%' }}
+            animate={{ left: `${markerPosition}%` }}
+            transition={{ duration: 0.75 }}
+            className="absolute top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-slate-950 shadow-[0_0_16px_rgba(255,255,255,0.28)]"
+          />
+        </div>
+        <div className={`text-center text-[12px] font-black ${!isLeftDom ? 'text-cyan-300' : 'text-slate-500'}`}>{axis.right}</div>
+      </div>
+      <p className="mt-2 text-[11px] leading-relaxed text-slate-400 break-keep">{axis.stateLabel}</p>
+    </div>
+  );
+}
+
+function ChangeSnapshotCard({ historyComparison, axisChanges, strongestAxis, trendAnalysis, themeClasses }) {
+  const stableText = axisChanges.length > 0 ? `${axisChanges.length}개 축 변화` : '직전 흐름과 같은 결';
+  const changedText = axisChanges[0] ? `${axisChanges[0].pair} ${axisChanges[0].before}에서 ${axisChanges[0].after}` : trendAnalysis?.title || '오늘 결과가 첫 기준점이에요';
+
+  return (
+    <div className="rounded-[1.45rem] border border-emerald-300/20 bg-emerald-300/[0.08] px-4 py-4">
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-[11px] font-black tracking-[0.18em] text-emerald-100 uppercase">직전 대비 변화</p>
+        <span className={`shrink-0 rounded-full border px-3 py-1 text-[10px] font-black ${themeClasses.chip}`}>{strongestAxis.dominantType} {strongestAxis.intensity}%</span>
+      </div>
+      <p className="mt-3 text-[15px] font-black leading-snug text-white break-keep">{historyComparison?.title || '오늘 결과가 첫 기준점이에요'}</p>
+      <div className="mt-3 grid gap-2 min-[390px]:grid-cols-2">
+        <div className="rounded-[1rem] border border-white/10 bg-black/20 px-3 py-3">
+          <p className="text-[10px] font-black tracking-[0.14em] text-emerald-100 uppercase">변화 메모</p>
+          <p className="mt-1 text-[12px] leading-relaxed text-white break-keep">{changedText}</p>
+        </div>
+        <div className="rounded-[1rem] border border-white/10 bg-black/20 px-3 py-3">
+          <p className="text-[10px] font-black tracking-[0.14em] text-slate-400 uppercase">유지/강점</p>
+          <p className="mt-1 text-[12px] leading-relaxed text-slate-100 break-keep">{stableText} · {strongestAxis.pair} 강세</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function AutoFitShareHook({ text }) {
   const textRef = useRef(null);
   const [stepIndex, setStepIndex] = useState(0);
@@ -638,11 +748,8 @@ export default function ResultView({
           <p className="mt-2 text-[13px] leading-relaxed text-slate-200 break-keep">{boundaryCopy}</p>
         </div>
         <div className="rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-4 text-center">
-          <p className="text-[14px] leading-relaxed text-slate-100 break-keep">{info.description}</p>
-          <div className="mt-4 rounded-2xl border border-white/10 bg-black/25 px-4 py-4">
-            <p className="text-[11px] font-black tracking-[0.18em] text-brand uppercase">상황극</p>
-            <p className="mt-2 text-[13px] leading-relaxed text-slate-200 break-keep">“{info.scenario}”</p>
-          </div>
+          <p className="text-[11px] font-black tracking-[0.18em] text-brand uppercase">생활 장면</p>
+          <p className="mt-2 text-[13px] leading-relaxed text-slate-200 break-keep">“{info.scenario}”</p>
         </div>
       </div>
     ),
@@ -834,17 +941,25 @@ export default function ResultView({
               <p className="mt-3 text-[14px] leading-relaxed text-slate-100 break-keep">{shareCardCopy.boast}</p>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <div className="rounded-[1.4rem] border border-white/10 bg-white/[0.05] px-4 py-4">
-                <p className="text-[10px] font-black tracking-[0.18em] text-slate-400 uppercase">오늘 더 또렷한 축</p>
-                <p className="mt-2 text-[22px] font-black text-white">{strongestAxis.pair}</p>
-                <p className="mt-1 text-[12px] leading-relaxed text-slate-300 break-keep">{strongestAxis.dominantType} 흐름 {strongestAxis.intensity}%</p>
-              </div>
-              <div className="rounded-[1.4rem] border border-emerald-300/20 bg-emerald-300/[0.08] px-4 py-4">
-                <p className="text-[10px] font-black tracking-[0.18em] text-emerald-100 uppercase">직전 변화</p>
-                <p className="mt-2 text-[18px] font-black leading-[1.25] text-white break-keep">{historyComparison?.title || '오늘 결과가 첫 기준점이에요'}</p>
-              </div>
-            </div>
+            <ResultEssenceCard
+              info={info}
+              summaryCopy={summaryCopy}
+              consistencyCopy={consistencyCopy}
+              boundaryCopy={boundaryCopy}
+              neutralReviewNote={neutralReviewNote}
+              questionContextInsight={questionContextInsight}
+              themeClasses={themeClasses}
+            />
+
+            <AxisCoordinateCard axisNarratives={axisNarratives} themeClasses={themeClasses} />
+
+            <ChangeSnapshotCard
+              historyComparison={historyComparison}
+              axisChanges={axisChanges}
+              strongestAxis={strongestAxis}
+              trendAnalysis={trendAnalysis}
+              themeClasses={themeClasses}
+            />
           </div>
 
           {/* 공유 안내 토스트 (텔레그램 등 이미지 공유 불가 환경) */}
