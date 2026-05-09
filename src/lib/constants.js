@@ -19,6 +19,13 @@ export const COMPATIBILITY = {
 
 export const CHANGELOG = [
   {
+    version: 'v1.5.5',
+    date: '2026.05.09',
+    updates: [
+      '시작 화면에 홈화면 추가 안내를 더하고, 다시 보지 않기와 접근성 설정의 안내 다시 보기로 사용자가 직접 노출을 조정할 수 있도록 개선'
+    ]
+  },
+  {
     version: 'v1.5.4',
     date: '2026.05.09',
     updates: [

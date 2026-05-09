@@ -75,6 +75,21 @@ const ScreenFallback = (
   </div>
 );
 
+const HOME_SCREEN_TIP_HIDDEN_KEY = 'mbti_home_screen_tip_hidden';
+
+const isStandaloneDisplay = () => {
+  if (typeof window === 'undefined') return false;
+  return window.matchMedia?.('(display-mode: standalone)').matches || window.navigator?.standalone === true;
+};
+
+const readHomeScreenTipHidden = () => {
+  try {
+    return localStorage.getItem(HOME_SCREEN_TIP_HIDDEN_KEY) === 'true';
+  } catch {
+    return false;
+  }
+};
+
 export default function App() {
   const [step, setStep] = useState('start');
   const [userName, setUserName] = useState(readUserName());
@@ -107,6 +122,10 @@ export default function App() {
 
   // M1: Accessibility state
   const [showAccessibility, setShowAccessibility] = useState(false);
+  const [isStandalone, setIsStandalone] = useState(isStandaloneDisplay);
+  const [installPromptEvent, setInstallPromptEvent] = useState(null);
+  const [homeScreenTipHidden, setHomeScreenTipHidden] = useState(readHomeScreenTipHidden);
+  const [homeScreenTipSessionHidden, setHomeScreenTipSessionHidden] = useState(false);
 
   useEffect(() => {
     setHistoryData(readHistory());
@@ -127,6 +146,45 @@ export default function App() {
     applyAccessibilitySettings(settings);
   }, []);
 
+  useEffect(() => {
+    const media = window.matchMedia?.('(display-mode: standalone)');
+    const updateStandalone = () => setIsStandalone(isStandaloneDisplay());
+    updateStandalone();
+
+    media?.addEventListener?.('change', updateStandalone);
+    media?.addListener?.(updateStandalone);
+
+    return () => {
+      media?.removeEventListener?.('change', updateStandalone);
+      media?.removeListener?.(updateStandalone);
+    };
+  }, []);
+
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (event) => {
+      event.preventDefault();
+      setInstallPromptEvent(event);
+    };
+
+    const handleAppInstalled = () => {
+      try {
+        localStorage.setItem(HOME_SCREEN_TIP_HIDDEN_KEY, 'true');
+      } catch {}
+      setHomeScreenTipHidden(true);
+      setHomeScreenTipSessionHidden(true);
+      setInstallPromptEvent(null);
+      trackEvent('home_screen_app_installed');
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    window.addEventListener('appinstalled', handleAppInstalled);
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      window.removeEventListener('appinstalled', handleAppInstalled);
+    };
+  }, []);
+
   // Profile is stored locally only; analytics below never receives raw birthDate.
   useEffect(() => {
     if (birthDate || gender) {
@@ -141,6 +199,44 @@ export default function App() {
     setGender('');
     clearProfile();
     trackEvent('profile_clear');
+  };
+
+  const handleDismissHomeScreenTip = () => {
+    setHomeScreenTipSessionHidden(true);
+    trackEvent('home_screen_tip_dismiss');
+  };
+
+  const handleHideHomeScreenTipForever = () => {
+    try {
+      localStorage.setItem(HOME_SCREEN_TIP_HIDDEN_KEY, 'true');
+    } catch {}
+    setHomeScreenTipHidden(true);
+    setHomeScreenTipSessionHidden(true);
+    trackEvent('home_screen_tip_hide_forever');
+  };
+
+  const handleShowHomeScreenTipAgain = () => {
+    try {
+      localStorage.removeItem(HOME_SCREEN_TIP_HIDDEN_KEY);
+    } catch {}
+    setHomeScreenTipHidden(false);
+    setHomeScreenTipSessionHidden(false);
+    trackEvent('home_screen_tip_restore');
+  };
+
+  const handleInstallApp = async () => {
+    if (!installPromptEvent) return;
+    installPromptEvent.prompt();
+    const choice = await installPromptEvent.userChoice;
+    setInstallPromptEvent(null);
+    trackEvent('home_screen_install_prompt', { outcome: choice?.outcome || '' });
+    if (choice?.outcome === 'accepted') {
+      try {
+        localStorage.setItem(HOME_SCREEN_TIP_HIDDEN_KEY, 'true');
+      } catch {}
+      setHomeScreenTipHidden(true);
+    }
+    setHomeScreenTipSessionHidden(true);
   };
 
   const openHistoryModal = () => {
@@ -516,6 +612,12 @@ export default function App() {
     return defaultMsg;
   };
 
+  const showHomeScreenTip =
+    step === 'start' &&
+    !isStandalone &&
+    !homeScreenTipHidden &&
+    !homeScreenTipSessionHidden;
+
   return (
     <div className={`relative w-full min-h-[100dvh] flex flex-col items-center ${step !== 'result' ? 'justify-center' : 'pt-10'}`}>
       <div className="fixed top-[-10%] left-[-10%] w-96 h-96 bg-purple-900 rounded-full mix-blend-screen filter blur-[128px] opacity-40 animate-blob pointer-events-none"></div>
@@ -544,6 +646,11 @@ export default function App() {
               onOpenAccessibility={() => setShowAccessibility(true)}
               onOpenVersion={openVersionModal}
               versionLabel={CHANGELOG[0].version}
+              showHomeScreenTip={showHomeScreenTip}
+              canInstallApp={Boolean(installPromptEvent)}
+              onInstallApp={handleInstallApp}
+              onDismissHomeScreenTip={handleDismissHomeScreenTip}
+              onHideHomeScreenTipForever={handleHideHomeScreenTipForever}
             />
           )}
 
@@ -640,7 +747,12 @@ export default function App() {
         <AnimatePresence>
           {showAccessibility && (
             <Suspense fallback={null}>
-              <AccessibilitySettings isOpen={showAccessibility} onClose={() => setShowAccessibility(false)} />
+              <AccessibilitySettings
+                isOpen={showAccessibility}
+                onClose={() => setShowAccessibility(false)}
+                homeScreenTipHidden={homeScreenTipHidden}
+                onShowHomeScreenTipAgain={handleShowHomeScreenTipAgain}
+              />
             </Suspense>
           )}
         </AnimatePresence>

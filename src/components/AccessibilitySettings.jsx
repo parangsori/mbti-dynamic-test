@@ -25,7 +25,12 @@ export const applyAccessibilitySettings = ({ fontScale, highContrast }) => {
   document.documentElement.classList.toggle('high-contrast', highContrast);
 };
 
-export default function AccessibilitySettings({ isOpen, onClose }) {
+export default function AccessibilitySettings({
+  isOpen,
+  onClose,
+  homeScreenTipHidden,
+  onShowHomeScreenTipAgain
+}) {
   const [fontScale, setFontScale] = useState(() => {
     try {
       return parseFloat(localStorage.getItem(STORAGE_KEY_FONT)) || 1;
@@ -112,6 +117,20 @@ export default function AccessibilitySettings({ isOpen, onClose }) {
                   </div>
                 </div>
                 <p className="mt-1 text-[11px] text-slate-400">텍스트와 배경의 색상 대비를 높여 가독성을 개선합니다</p>
+              </button>
+            </div>
+
+            <div className="mt-5 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-4">
+              <p className="text-[13px] font-bold text-slate-300">홈화면 추가 안내</p>
+              <p className="mt-1 text-[11px] leading-relaxed text-slate-400">
+                안내를 다시 보이게 하면 시작 화면에서 홈화면 추가 방법을 확인할 수 있어요.
+              </p>
+              <button
+                type="button"
+                onClick={onShowHomeScreenTipAgain}
+                className="mt-3 w-full rounded-2xl border border-cyan-300/25 bg-cyan-300/[0.1] px-4 py-3 text-[13px] font-black text-cyan-100 transition hover:bg-cyan-300/[0.16]"
+              >
+                {homeScreenTipHidden ? '안내 다시 보기' : '시작 화면에서 안내 보기'}
               </button>
             </div>
 

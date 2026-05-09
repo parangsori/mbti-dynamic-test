@@ -1,5 +1,65 @@
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import ProfileInput from './ProfileInput.jsx';
+
+function HomeScreenTipCard({
+  canInstallApp,
+  onInstallApp,
+  onDismiss,
+  onHideForever
+}) {
+  const [expanded, setExpanded] = useState(false);
+
+  return (
+    <div className="mb-5 w-full rounded-[1.4rem] border border-cyan-300/20 bg-cyan-300/[0.08] px-4 py-4 shadow-[0_18px_45px_rgba(8,47,73,0.22)]">
+      <div className="flex items-start gap-3">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-white/15 bg-white/10 p-1">
+          <img src="/service-icon.svg" alt="" className="h-full w-full rounded-lg object-cover" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-[13px] font-black text-white break-keep">홈화면에 추가하면 더 편해요</p>
+          <p className="mt-1 text-[12px] leading-relaxed text-cyan-50/90 break-keep">
+            오늘의 MBTI를 앱처럼 바로 열고, 오늘의 성향 흐름을 빠르게 확인할 수 있어요.
+          </p>
+        </div>
+      </div>
+
+      {expanded && (
+        <div className="mt-3 rounded-2xl border border-white/10 bg-black/20 px-3 py-3">
+          <p className="text-[11px] font-black tracking-[0.14em] text-cyan-100 uppercase">추가 방법</p>
+          <div className="mt-2 space-y-1.5 text-[12px] leading-relaxed text-slate-200 break-keep">
+            <p>iPhone: Safari 공유 버튼을 누른 뒤 홈 화면에 추가를 선택해요.</p>
+            <p>Android: Chrome 메뉴에서 앱 설치 또는 홈 화면에 추가를 선택해요.</p>
+          </div>
+        </div>
+      )}
+
+      <div className="mt-3 grid grid-cols-[minmax(0,1fr)_auto] gap-2">
+        <button
+          type="button"
+          onClick={canInstallApp ? onInstallApp : () => setExpanded((value) => !value)}
+          className="rounded-2xl border border-cyan-200/20 bg-cyan-300/[0.14] px-3 py-2.5 text-[12px] font-black text-cyan-50 transition hover:bg-cyan-300/[0.2]"
+        >
+          {canInstallApp ? '앱처럼 추가하기' : expanded ? '방법 접기' : '추가 방법 보기'}
+        </button>
+        <button
+          type="button"
+          onClick={onDismiss}
+          className="rounded-2xl border border-white/10 bg-white/[0.05] px-3 py-2.5 text-[12px] font-bold text-slate-200 transition hover:bg-white/[0.09]"
+        >
+          닫기
+        </button>
+      </div>
+      <button
+        type="button"
+        onClick={onHideForever}
+        className="mt-2 w-full rounded-2xl px-3 py-2 text-[11px] font-bold text-slate-400 transition hover:bg-white/[0.05] hover:text-slate-200"
+      >
+        다시 보지 않기
+      </button>
+    </div>
+  );
+}
 
 export default function StartView({
   userName,
@@ -13,7 +73,12 @@ export default function StartView({
   onClearProfile,
   onOpenAccessibility,
   onOpenVersion,
-  versionLabel
+  versionLabel,
+  showHomeScreenTip,
+  canInstallApp,
+  onInstallApp,
+  onDismissHomeScreenTip,
+  onHideHomeScreenTipForever
 }) {
   return (
     <motion.div
@@ -37,6 +102,14 @@ export default function StartView({
         <br />
         가볍고 재밌게 확인해보세요
       </p>
+      {showHomeScreenTip && (
+        <HomeScreenTipCard
+          canInstallApp={canInstallApp}
+          onInstallApp={onInstallApp}
+          onDismiss={onDismissHomeScreenTip}
+          onHideForever={onHideHomeScreenTipForever}
+        />
+      )}
       <div className="w-full bg-white/5 p-2 rounded-3xl mb-4 backdrop-blur-xl border border-white/10 relative shadow-inner">
         <input
           value={userName}
