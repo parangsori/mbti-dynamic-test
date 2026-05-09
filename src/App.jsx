@@ -217,7 +217,7 @@ export default function App() {
 
   const handleShowHomeScreenTipAgain = () => {
     try {
-      localStorage.removeItem(HOME_SCREEN_TIP_HIDDEN_KEY);
+      localStorage.setItem(HOME_SCREEN_TIP_HIDDEN_KEY, 'false');
     } catch {}
     setHomeScreenTipHidden(false);
     setHomeScreenTipSessionHidden(false);
@@ -614,7 +614,7 @@ export default function App() {
 
   const showHomeScreenTip =
     step === 'start' &&
-    !isStandalone &&
+    (!isStandalone || localStorage.getItem(HOME_SCREEN_TIP_HIDDEN_KEY) === 'false') &&
     !homeScreenTipHidden &&
     !homeScreenTipSessionHidden;
 
