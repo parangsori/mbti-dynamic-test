@@ -1,1 +1,0 @@
-{"timestamp": "2026-05-10TXX:XX:XX", "spec_applied": {"S_impact": 0.8, "Sync_Error_ms": 45}, "rendering_status": "SUCCESS", "audio_peak_sync_error_avg_ms": 38.5, "glitch_duration_sec_max": 0.15, "video_asset_path": "./assets/killer_sequence_final.mp4", "audio_asset_path": "./assets/killer_sequence_final.wav"}
