@@ -23,6 +23,5 @@
       "impact_score_s_impact": 0.65,
       "duration_ms": 1700
     }
-    // ... (실제로는 수백 개의 시퀀스가 포함될 것임)
   ]
 }
