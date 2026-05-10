@@ -14,6 +14,8 @@
 - UI: Tailwind CSS + Framer Motion
 - 결과 이미지 저장: `html2canvas`
 - 현재 구조는 프론트엔드 중심이며, 주요 동작은 로컬 상태와 로컬 저장소를 기반으로 한다.
+- 운영 대시보드: `admin/` 별도 Vite 앱 + Vercel Serverless API + PostHog Query API
+- 관리자 접근 보호: `admin.beatblue.net` + Cloudflare Access + Vercel 환경변수 기반 서버 측 검증
 
 ### 핵심 사용자 가치
 
@@ -48,6 +50,20 @@
 
 - 문제를 지적받으면 바로 구현부터 하지 말고, 먼저 원인과 영향 범위를 명확히 파악한다.
 - 특히 레이아웃/공유 이미지/결과 문구처럼 체감형 이슈는 "왜 그렇게 보이는지"를 먼저 설명할 수 있어야 한다.
+
+### 운영 대시보드 및 보안 원칙
+
+- 관리자 기능은 메인 사용자 앱에 숨은 라우트로 섞지 않고, `admin/` 별도 앱과 별도 Vercel 프로젝트로 분리한다.
+- 관리자 도메인은 `admin.beatblue.net`을 기준으로 하며, Cloudflare Access가 먼저 인증을 요구해야 한다.
+- Vercel 도메인 검증 단계에서는 Cloudflare DNS를 `DNS only`로 둘 수 있지만, Access 보호 적용 후에는 `admin` CNAME을 `Proxied`로 켜야 한다.
+- PostHog Personal API Key, Cloudflare Access Audience tag, JWKS URL, 관리자 토큰 등은 절대 프론트 번들 또는 `VITE_` 환경변수에 두지 않는다.
+- PostHog Personal API Key는 Vercel admin 프로젝트의 서버 환경변수 `POSTHOG_PERSONAL_API_KEY`로만 관리하고, 최소 권한(`query:read` 중심)으로 생성한다.
+- 클라이언트는 임의 HogQL/query를 서버로 보낼 수 없어야 하며, 서버리스 API는 코드에 고정된 집계 쿼리만 실행한다.
+- 운영 대시보드는 집계 숫자만 표시한다. 사용자별 이벤트 원문, distinct id, 이름, 생년월일, 원본 프로필 데이터는 응답하거나 화면에 노출하지 않는다.
+- `ADMIN_DASHBOARD_TOKEN`은 로컬 개발 또는 비상 fallback용이다. production의 주 인증 수단으로 사용하지 않는다.
+- Cloudflare Access 설정이 누락되었을 때 admin API는 열리지 않고 `admin_auth_not_configured`처럼 닫힌 상태로 실패해야 한다.
+- admin 배포 변경 후에는 비로그인 상태에서 `https://admin.beatblue.net`과 `/api/admin/metrics`가 Cloudflare Access 로그인으로 리다이렉트되는지 확인한다.
+- admin 환경변수나 보안 설정을 바꾼 뒤에는 Vercel admin 프로젝트를 반드시 redeploy해야 한다.
 
 ## 3. 테스트 원칙
 
@@ -89,6 +105,12 @@
   - 빌드 성공 여부
   - MBTI 정확도 회귀 여부
   - 공유 카드/레이아웃 핵심 시나리오 체크리스트
+- admin 운영 대시보드 작업 시 추가 확인:
+  - `npm --prefix admin run build`
+  - `node --check admin/api/admin/metrics.js`
+  - `node --check admin/scripts/verify-env.mjs`
+  - 빌드 산출물에서 `POSTHOG_PERSONAL_API_KEY`, `ADMIN_DASHBOARD_TOKEN`, `phx_` 같은 민감 문자열이 없는지 검색
+  - 비인증 외부 접근이 Cloudflare Access 로그인으로 리다이렉트되는지 확인
 - 향후 자동화는 "시간 대비 효율이 높은 것"만 추가한다.
 
 ## 4. 백업 및 복구 원칙
@@ -149,13 +171,17 @@
 1. 결과 화면 및 공유 카드 안정성 유지
 2. 반복 사용 시 결과 문구/테마/질문 신선도 개선
 3. 변경 작업 시 회귀 방지와 백업-비교 체계 고정
-4. 이후 백엔드 작업 전, 프론트 경험 품질과 테스트 흐름 안정화
+4. PostHog 기반 모바일 운영 대시보드로 유입, 시작, 완료, 공유, 재방문 지표를 계속 확인
+5. 이후 백엔드/수익화 작업 전, 프론트 경험 품질과 운영 지표 판단 흐름 안정화
 
 ### 지속 주의할 문제
 
 - 공유 카드 레이아웃은 긴 문구에서 쉽게 무너질 수 있다.
 - 결과 화면은 한 곳 수정이 다른 정상 영역에 영향을 주기 쉬우므로 범위 통제가 중요하다.
 - 자동 캡처/자동 UI 검증은 시간과 크레딧을 많이 소모할 수 있으므로 항상 효율성을 먼저 판단한다.
+- admin 대시보드 보안은 "URL을 숨기는 것"으로 해결하지 않는다. 반드시 Cloudflare Access, 서버 전용 환경변수, 집계 응답 제한을 함께 유지한다.
+- Vercel에서 `admin.beatblue.net`이 `DNS Change Recommended`로 보이더라도, Access 보호를 위해 Cloudflare 프록시가 필요한 상태인지 먼저 판단한다.
+- PostHog 이벤트/대시보드 지표를 추가할 때는 개인정보 payload가 포함되지 않는지 먼저 확인한다.
 
 ### 최근 해결/미해결 이슈
 
@@ -193,7 +219,11 @@
 - 2026-05-09: 홈화면 설치 후 독립 실행(Standalone) 모드에서도 설정에서 `안내 다시 보기`를 선택하면 안내 카드가 나타나도록 로직을 보완했다.
 - 2026-05-09: 공유 텍스트와 QR의 서비스 URL은 테스트 환경(Vercel Preview 등)에서도 현재 도메인에 맞춰 동적으로 반영되도록 개선했다. 단, KakaoTalk 등 공유 미리보기 호환을 위해 index.html의 OG 이미지와 URL은 운영 도메인 절대 URL을 유지한다.
 - 2026-05-10: 서비스와 직접 관련 없는 외부 AI 에이전트 산출물(`sessions/`의 AVD/Killer Sequence 문서 및 연결 로그)을 백업 후 삭제했다.
-- 2026-05-11: PostHog를 직접 보기 어려운 운영 문제를 줄이기 위해 메인 서비스와 분리된 `admin/` 모바일 운영 대시보드 v0를 추가했다. 관리자 앱은 Cloudflare Access 보호와 서버리스 PostHog 집계 API를 전제로 하며, 개인 API 키는 서버 환경변수에만 둔다. 별도 Vercel 프로젝트 배포용 보안 헤더, 환경변수 검증, 배포 체크리스트를 함께 둔다.
+- 2026-05-11: PostHog를 직접 보기 어려운 운영 문제를 줄이기 위해 메인 서비스와 분리된 `admin/` 모바일 운영 대시보드 v0를 추가했다. 관리자 앱은 별도 Vercel 프로젝트(`today-mbti-admin`)로 배포하고 `admin.beatblue.net`에 연결했다.
+- 2026-05-11: `beatblue.net`을 Cloudflare 네임서버(`fiona.ns.cloudflare.com`, `mitch.ns.cloudflare.com`)로 위임하고, `admin.beatblue.net` CNAME을 Vercel 권장 target(`ad1097a26e572acb.vercel-dns-017.com`)으로 연결했다.
+- 2026-05-11: Vercel 도메인 검증 후 Cloudflare DNS의 `admin` CNAME을 `Proxied`로 전환해 Cloudflare Access가 로그인/이메일 코드 인증을 먼저 요구하도록 구성했다. 비인증 `curl` 요청은 `/`와 `/api/admin/metrics` 모두 Cloudflare Access 로그인 URL로 `302` 리다이렉트됨을 확인했다.
+- 2026-05-11: Vercel admin 프로젝트 환경변수로 `POSTHOG_PERSONAL_API_KEY`, `POSTHOG_PROJECT_ID`, `POSTHOG_API_HOST`, `CLOUDFLARE_ACCESS_AUD`, `CLOUDFLARE_ACCESS_JWKS_URL`을 등록하고 redeploy 후 모바일 대시보드에서 PostHog 집계 데이터가 표시됨을 확인했다. 30일 기준 방문 73, 시작 48, 완료율 71%, 공유율 44%가 표시되었다.
+- 2026-05-11: admin 보안 기준을 고정했다. PostHog 개인 API 키는 서버 전용 환경변수로만 관리하고 `VITE_` prefix를 금지하며, Cloudflare Access 설정 누락 시 API는 닫힌 상태로 실패해야 한다. 운영 대시보드는 집계 숫자만 표시하고 사용자별 원문 로그와 개인정보성 payload를 노출하지 않는다.
 
 ### 다음 채팅에서 먼저 확인할 체크포인트
 
@@ -202,6 +232,8 @@
 - 이번 수정이 기존 정상 동작 영역에 영향을 줄 가능성이 있는지 먼저 판단한다.
 - 테스트는 기본 검증만으로 충분한지, 아니면 사용자 빠른 확인으로 전환해야 하는지 먼저 결정한다.
 - 스와이프/드래그/키보드 답변 흐름은 모바일 HTTPS 실기기에서 답변 카드 좌우 선택, 세로 스크롤 충돌, 오입력, 되돌리기 복원을 빠르게 확인한다.
+- admin/운영 대시보드 요청이면 `admin/README.md`와 `admin/DEPLOYMENT_CHECKLIST.md`를 함께 확인하고, Cloudflare Access와 Vercel 환경변수 상태를 먼저 점검한다.
+- admin 도메인 문제는 Cloudflare DNS `admin` CNAME target, Proxy 상태, Vercel domain 상태, Access application 정책 순서로 확인한다.
 
 ### 운영 로그 갱신 원칙
 

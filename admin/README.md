@@ -2,6 +2,16 @@
 
 PostHog 데이터를 모바일에서 빠르게 읽기 위한 별도 관리자 앱입니다. 메인 서비스 번들에 관리자 코드를 섞지 않고, 별도 Vercel 프로젝트 또는 별도 서브도메인으로 배포하는 것을 전제로 합니다.
 
+## 현재 운영 상태
+
+- Vercel admin 프로젝트: `today-mbti-admin`
+- Admin 도메인: `https://admin.beatblue.net`
+- Cloudflare Access: 적용됨. 비로그인 접근은 Cloudflare Access 로그인으로 먼저 리다이렉트되어야 합니다.
+- Cloudflare DNS: `admin` CNAME은 Vercel 권장 target을 가리키고, Access 보호를 위해 `Proxied` 상태여야 합니다.
+- PostHog 데이터 조회: Vercel 서버 환경변수와 redeploy가 완료되면 `/api/admin/metrics`가 집계 숫자만 반환합니다.
+
+운영 중 문제가 생기면 먼저 `PROJECT_PRINCIPLES.md`의 "운영 대시보드 및 보안 원칙"과 이 문서의 보안 구조를 확인합니다.
+
 ## 보안 구조
 
 - Cloudflare Access가 관리자 도메인을 1차로 보호합니다.
