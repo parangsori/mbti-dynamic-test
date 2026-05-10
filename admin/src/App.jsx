@@ -147,9 +147,11 @@ export default function App() {
   const [error, setError] = useState('');
   const [tokenInput, setTokenInput] = useState(getStoredToken);
   const [tokenVersion, setTokenVersion] = useState(0);
+  const [refreshVersion, setRefreshVersion] = useState(0);
 
   const summary = metrics?.summary || {};
   const lastUpdated = useMemo(() => formatTime(metrics?.generatedAt), [metrics?.generatedAt]);
+  const isRefreshing = status === 'loading' && Boolean(metrics);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -162,7 +164,8 @@ export default function App() {
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
       try {
-        const response = await fetch(`/api/admin/metrics?range=${range}`, {
+        const response = await fetch(`/api/admin/metrics?range=${range}&refresh=${Date.now()}`, {
+          cache: 'no-store',
           headers,
           signal: controller.signal
         });
@@ -185,7 +188,19 @@ export default function App() {
     load();
 
     return () => controller.abort();
-  }, [range, tokenVersion]);
+  }, [range, tokenVersion, refreshVersion]);
+
+  useEffect(() => {
+    const refreshTimer = window.setInterval(() => {
+      setRefreshVersion((value) => value + 1);
+    }, 60_000);
+
+    return () => window.clearInterval(refreshTimer);
+  }, []);
+
+  const refreshMetrics = () => {
+    setRefreshVersion((value) => value + 1);
+  };
 
   const applyToken = () => {
     storeToken(tokenInput.trim());
@@ -206,6 +221,12 @@ export default function App() {
         <p className="eyebrow">오늘의 MBTI 운영</p>
         <h1>모바일 대시보드</h1>
         <p>PostHog 원천 데이터를 운영 판단용 숫자로만 요약합니다.</p>
+        <div className="refresh-row">
+          <span>PostHog 반영은 보통 약간 지연될 수 있습니다.</span>
+          <button type="button" onClick={refreshMetrics} disabled={isRefreshing}>
+            {isRefreshing ? '갱신 중' : '새로고침'}
+          </button>
+        </div>
         <div className="range-tabs" aria-label="조회 기간">
           {RANGES.map((item) => (
             <button
@@ -304,6 +325,7 @@ export default function App() {
 
           <footer className="footer">
             <p>마지막 갱신: {lastUpdated}</p>
+            <p>화면은 60초마다 자동으로 다시 조회됩니다.</p>
             <p>집계 숫자만 표시하며 사용자별 원문 로그는 노출하지 않습니다.</p>
           </footer>
         </>
