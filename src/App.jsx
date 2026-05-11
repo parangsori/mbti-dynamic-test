@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useRef, useState } from 'react';
+import { Component, lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import StartView from './components/StartView.jsx';
 import QuestionView from './components/QuestionView.jsx';
@@ -30,7 +30,7 @@ import {
   writeRecentSessions,
   writeUserName
 } from './lib/storage.js';
-import { installGlobalErrorHandlers } from './lib/observability.js';
+import { captureError, installGlobalErrorHandlers } from './lib/observability.js';
 import { getHistoryComparison, getHistoryEntryNote, getHistoryInsights } from './lib/resultAnalysis.js';
 // Accessibility helpers are loaded inline to avoid dual-import warning
 const loadAccessibilitySettings = () => {
@@ -70,10 +70,68 @@ const AccessibilitySettings = lazy(() => import('./components/AccessibilitySetti
 const ScreenFallback = (
   <div className="w-full max-w-sm px-6 py-10">
     <div className="rounded-3xl border border-white/10 bg-white/5 px-6 py-10 text-center text-sm font-semibold text-slate-300">
-      화면을 준비하고 있어요...
+      <p>화면을 준비하고 있어요...</p>
+      <button
+        type="button"
+        onClick={() => window.location.reload()}
+        className="mt-5 rounded-2xl border border-cyan-200/20 bg-cyan-300/[0.12] px-4 py-3 text-[13px] font-black text-cyan-50 transition hover:bg-cyan-300/[0.18]"
+      >
+        새로고침 후 이어가기
+      </button>
     </div>
   </div>
 );
+
+class ResultErrorBoundary extends Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error, info) {
+    captureError(error, {
+      key: 'result_screen_error',
+      stage: 'result_render',
+      componentStack: info?.componentStack || ''
+    });
+  }
+
+  render() {
+    if (!this.state.hasError) return this.props.children;
+
+    return (
+      <div className="w-full max-w-sm px-6 py-10">
+        <div className="rounded-3xl border border-red-300/20 bg-red-950/30 px-6 py-8 text-center shadow-[0_20px_55px_rgba(127,29,29,0.22)]">
+          <p className="text-[12px] font-black tracking-[0.18em] text-red-100 uppercase">결과 화면 오류</p>
+          <h2 className="mt-3 text-xl font-black text-white break-keep">결과를 불러오지 못했어요</h2>
+          <p className="mt-3 text-[13px] leading-relaxed text-slate-200 break-keep">
+            네트워크가 순간적으로 끊겼거나 결과 화면 파일을 새로 받아오지 못했을 수 있어요.
+          </p>
+          <div className="mt-5 grid gap-2">
+            <button
+              type="button"
+              onClick={() => window.location.reload()}
+              className="rounded-2xl border border-cyan-200/20 bg-cyan-300/[0.14] px-4 py-3 text-[13px] font-black text-cyan-50 transition hover:bg-cyan-300/[0.2]"
+            >
+              새로고침 후 이어가기
+            </button>
+            <button
+              type="button"
+              onClick={this.props.onRestart}
+              className="rounded-2xl border border-white/10 bg-white/[0.05] px-4 py-3 text-[13px] font-bold text-slate-200 transition hover:bg-white/[0.09]"
+            >
+              처음으로 돌아가기
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+}
 
 const HOME_SCREEN_TIP_HIDDEN_KEY = 'mbti_home_screen_tip_hidden';
 
@@ -88,6 +146,15 @@ const readHomeScreenTipHidden = () => {
   } catch {
     return false;
   }
+};
+
+const PULL_REFRESH_START_ZONE = 96;
+const PULL_REFRESH_THRESHOLD = 92;
+const PULL_REFRESH_MAX = 128;
+
+const isInteractiveTarget = (target) => {
+  const tagName = target?.tagName?.toLowerCase();
+  return tagName === 'button' || tagName === 'input' || tagName === 'textarea' || tagName === 'select' || target?.isContentEditable;
 };
 
 export default function App() {
@@ -126,6 +193,8 @@ export default function App() {
   const [installPromptEvent, setInstallPromptEvent] = useState(null);
   const [homeScreenTipHidden, setHomeScreenTipHidden] = useState(readHomeScreenTipHidden);
   const [homeScreenTipSessionHidden, setHomeScreenTipSessionHidden] = useState(false);
+  const [resultBoundaryKey, setResultBoundaryKey] = useState(0);
+  const [pullRefresh, setPullRefresh] = useState({ active: false, distance: 0, refreshing: false });
 
   useEffect(() => {
     setHistoryData(readHistory());
@@ -159,6 +228,73 @@ export default function App() {
       media?.removeListener?.(updateStandalone);
     };
   }, []);
+
+  useEffect(() => {
+    if (!isStandalone) return undefined;
+
+    let startY = 0;
+    let startX = 0;
+    let pulling = false;
+
+    const resetPull = () => setPullRefresh({ active: false, distance: 0, refreshing: false });
+
+    const handleTouchStart = (event) => {
+      const touch = event.touches?.[0];
+      if (!touch || isInteractiveTarget(event.target) || window.scrollY > 0 || touch.clientY > PULL_REFRESH_START_ZONE) {
+        pulling = false;
+        return;
+      }
+
+      startY = touch.clientY;
+      startX = touch.clientX;
+      pulling = true;
+    };
+
+    const handleTouchMove = (event) => {
+      if (!pulling) return;
+      const touch = event.touches?.[0];
+      if (!touch) return;
+
+      const deltaY = touch.clientY - startY;
+      const deltaX = Math.abs(touch.clientX - startX);
+      if (deltaY <= 0 || deltaX > deltaY * 0.8 || window.scrollY > 0) {
+        resetPull();
+        pulling = false;
+        return;
+      }
+
+      const distance = Math.min(PULL_REFRESH_MAX, Math.round(deltaY * 0.55));
+      if (distance > 8) {
+        event.preventDefault();
+        setPullRefresh({ active: true, distance, refreshing: false });
+      }
+    };
+
+    const handleTouchEnd = () => {
+      if (!pulling) return;
+      pulling = false;
+
+      setPullRefresh((current) => {
+        if (current.distance >= PULL_REFRESH_THRESHOLD) {
+          window.setTimeout(() => window.location.reload(), 120);
+          return { active: true, distance: PULL_REFRESH_THRESHOLD, refreshing: true };
+        }
+        return { active: false, distance: 0, refreshing: false };
+      });
+    };
+
+    window.addEventListener('touchstart', handleTouchStart, { passive: true });
+    window.addEventListener('touchmove', handleTouchMove, { passive: false });
+    window.addEventListener('touchend', handleTouchEnd, { passive: true });
+    window.addEventListener('touchcancel', resetPull, { passive: true });
+
+    return () => {
+      window.removeEventListener('touchstart', handleTouchStart);
+      window.removeEventListener('touchmove', handleTouchMove);
+      window.removeEventListener('touchend', handleTouchEnd);
+      window.removeEventListener('touchcancel', resetPull);
+    };
+  }, [isStandalone]);
 
   useEffect(() => {
     const handleBeforeInstallPrompt = (event) => {
@@ -373,11 +509,15 @@ export default function App() {
       neutralCount: neutralQuestionIds.length,
       questionContextTop: nextQuestionContextSummary.topTag
     });
-    clearActiveSession();
     setScores(finalScores);
     setLastAnswerSnapshot(null);
     transitionLockRef.current = false;
+    setResultBoundaryKey((value) => value + 1);
     setStep('result');
+  };
+
+  const handleResultReady = () => {
+    clearActiveSession();
   };
 
   const activeQuestions = questionPhase === 'followup' ? followupQuestions : questions;
@@ -620,6 +760,15 @@ export default function App() {
 
   return (
     <div className={`relative w-full min-h-[100dvh] flex flex-col items-center ${step !== 'result' ? 'justify-center' : 'pt-10'}`}>
+      {isStandalone && (pullRefresh.active || pullRefresh.refreshing) && (
+        <div
+          className="fixed left-1/2 top-3 z-[99998] flex -translate-x-1/2 items-center gap-2 rounded-full border border-cyan-200/20 bg-slate-950/85 px-4 py-2 text-[12px] font-black text-cyan-50 shadow-2xl backdrop-blur-xl transition-transform"
+          style={{ transform: `translate(-50%, ${Math.max(0, pullRefresh.distance - 22)}px)` }}
+        >
+          <span className={`inline-block h-3 w-3 rounded-full border-2 border-cyan-100 border-t-transparent ${pullRefresh.refreshing ? 'animate-spin' : ''}`} />
+          {pullRefresh.refreshing ? '새로고침 중' : pullRefresh.distance >= PULL_REFRESH_THRESHOLD ? '놓으면 새로고침' : '아래로 당겨 새로고침'}
+        </div>
+      )}
       <div className="fixed top-[-10%] left-[-10%] w-96 h-96 bg-purple-900 rounded-full mix-blend-screen filter blur-[128px] opacity-40 animate-blob pointer-events-none"></div>
       <div className="fixed top-[20%] right-[-10%] w-96 h-96 bg-cyan-900 rounded-full mix-blend-screen filter blur-[128px] opacity-40 animate-blob pointer-events-none" style={{ animationDelay: '2s' }}></div>
       <div className="fixed bottom-[-20%] left-[20%] w-96 h-96 bg-pink-900 rounded-full mix-blend-screen filter blur-[128px] opacity-40 animate-blob pointer-events-none" style={{ animationDelay: '4s' }}></div>
@@ -682,25 +831,28 @@ export default function App() {
           )}
 
           {step === 'result' && (
-            <Suspense fallback={ScreenFallback}>
-              <ResultView
-                key="result"
-                scores={scores}
-                userName={userName}
-                historyData={historyData}
-                setHistoryData={setHistoryData}
-                defaultUserName={DEFAULT_USERNAME}
-                openHistoryModal={openHistoryModal}
-                onRestart={handleRestart}
-                onOpenAxisGuide={setAxisGuideKey}
-                trackEvent={trackEvent}
-                neutralCount={neutralQuestionIds.length}
-                usedFollowup={followupQuestions.length > 0}
-                questionContextSummary={questionContextSummary}
-                ageGroup={ageGroup}
-                gender={gender}
-              />
-            </Suspense>
+            <ResultErrorBoundary key={`result-boundary-${resultBoundaryKey}`} onRestart={handleRestart}>
+              <Suspense fallback={ScreenFallback}>
+                <ResultView
+                  key="result"
+                  scores={scores}
+                  userName={userName}
+                  historyData={historyData}
+                  setHistoryData={setHistoryData}
+                  defaultUserName={DEFAULT_USERNAME}
+                  openHistoryModal={openHistoryModal}
+                  onRestart={handleRestart}
+                  onOpenAxisGuide={setAxisGuideKey}
+                  onResultReady={handleResultReady}
+                  trackEvent={trackEvent}
+                  neutralCount={neutralQuestionIds.length}
+                  usedFollowup={followupQuestions.length > 0}
+                  questionContextSummary={questionContextSummary}
+                  ageGroup={ageGroup}
+                  gender={gender}
+                />
+              </Suspense>
+            </ResultErrorBoundary>
           )}
         </AnimatePresence>
 

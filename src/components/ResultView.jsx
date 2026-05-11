@@ -552,6 +552,7 @@ export default function ResultView({
   openHistoryModal,
   onRestart,
   onOpenAxisGuide,
+  onResultReady,
   trackEvent,
   neutralCount = 0,
   usedFollowup = false,
@@ -562,6 +563,7 @@ export default function ResultView({
   const resultRef = useRef(null);
   const shareCardRef = useRef(null);
   const currentEntryRef = useRef(null);
+  const resultReadyRef = useRef(false);
   const [shareCopied, setShareCopied] = useState(false);
   const [saveImageState, setSaveImageState] = useState('idle');
   const [shareToast, setShareToast] = useState('');  // 안내 토스트 메시지
@@ -636,12 +638,22 @@ export default function ResultView({
       axes: spectrum.map(toHistoryAxisSnapshot)
     };
 
-    if (historyData[0]?.createdAt === newEntry.createdAt) return;
+    if (historyData[0]?.createdAt === newEntry.createdAt) {
+      if (!resultReadyRef.current) {
+        resultReadyRef.current = true;
+        onResultReady?.();
+      }
+      return;
+    }
 
     const updated = [newEntry, ...historyData].slice(0, 7);
     writeHistory(updated);
     setHistoryData(updated);
-  }, [historyData, mbti, percent, presentation.themeKey, presentation.variantKey, questionContextSummary, setHistoryData, spectrum]);
+    if (!resultReadyRef.current) {
+      resultReadyRef.current = true;
+      onResultReady?.();
+    }
+  }, [historyData, mbti, onResultReady, percent, presentation.themeKey, presentation.variantKey, questionContextSummary, setHistoryData, spectrum]);
 
   useEffect(() => {
     trackEvent('result_view', { mbti, percent, questionContextTop: questionContextSummary?.topTag || '' });
