@@ -3,6 +3,7 @@ import { emitAnalyticsEvent } from './observability.js';
 export const STORAGE_KEYS = {
   history: 'mbti_history',
   activeSession: 'mbti_active_session',
+  pendingResult: 'mbti_pending_result',
   username: 'mbti_username',
   eventStats: 'mbti_event_stats',
   recentIds: 'mbti_recent_ids',
@@ -55,6 +56,29 @@ export const writeActiveSession = (payload) => writeJson(STORAGE_KEYS.activeSess
   savedAt: new Date().toISOString()
 });
 export const clearActiveSession = () => removeItem(STORAGE_KEYS.activeSession);
+
+const PENDING_RESULT_MAX_AGE_MS = 30 * 60_000;
+
+export const readPendingResult = () => {
+  const value = readJson(STORAGE_KEYS.pendingResult, null);
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+
+  const savedAt = Date.parse(value.savedAt || '');
+  if (!Number.isFinite(savedAt) || Date.now() - savedAt > PENDING_RESULT_MAX_AGE_MS) {
+    removeItem(STORAGE_KEYS.pendingResult);
+    return null;
+  }
+
+  if (!value.scores || typeof value.scores !== 'object' || Array.isArray(value.scores)) return null;
+  return value;
+};
+
+export const writePendingResult = (payload) => writeJson(STORAGE_KEYS.pendingResult, {
+  ...payload,
+  savedAt: new Date().toISOString()
+});
+
+export const clearPendingResult = () => removeItem(STORAGE_KEYS.pendingResult);
 
 export const readUserName = () => {
   try {

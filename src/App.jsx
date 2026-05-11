@@ -19,13 +19,16 @@ import {
   clearAllLocalData,
   clearActiveSession,
   clearProfile,
+  clearPendingResult,
   readActiveSession,
   readHistory,
+  readPendingResult,
   readProfile,
   readRecentSessions,
   readUserName,
   trackEvent,
   writeActiveSession,
+  writePendingResult,
   writeProfile,
   writeRecentSessions,
   writeUserName
@@ -76,7 +79,7 @@ const ScreenFallback = (
         onClick={() => window.location.reload()}
         className="mt-5 rounded-2xl border border-cyan-200/20 bg-cyan-300/[0.12] px-4 py-3 text-[13px] font-black text-cyan-50 transition hover:bg-cyan-300/[0.18]"
       >
-        새로고침 후 이어가기
+        결과 다시 불러오기
       </button>
     </div>
   </div>
@@ -117,7 +120,7 @@ class ResultErrorBoundary extends Component {
               onClick={() => window.location.reload()}
               className="rounded-2xl border border-cyan-200/20 bg-cyan-300/[0.14] px-4 py-3 text-[13px] font-black text-cyan-50 transition hover:bg-cyan-300/[0.2]"
             >
-              새로고침 후 이어가기
+              결과 다시 불러오기
             </button>
             <button
               type="button"
@@ -197,7 +200,27 @@ export default function App() {
   const [pullRefresh, setPullRefresh] = useState({ active: false, distance: 0, refreshing: false });
 
   useEffect(() => {
-    setHistoryData(readHistory());
+    const storedHistory = readHistory();
+    const pendingResult = readPendingResult();
+
+    setHistoryData(storedHistory);
+
+    if (pendingResult) {
+      setUserName(pendingResult.userName || '');
+      setScores(pendingResult.scores || createEmptyScores());
+      setQuestionContextSummary(pendingResult.questionContextSummary || null);
+      setNeutralQuestionIds(Array.from({ length: pendingResult.neutralCount || 0 }, (_, index) => `pending-neutral-${index}`));
+      setFollowupQuestions(Array.from({ length: pendingResult.followupCount || 0 }, (_, index) => ({ id: `pending-followup-${index}` })));
+      setRecoverableSession(null);
+      setShowRecoveryPrompt(false);
+      setResultBoundaryKey((value) => value + 1);
+      setStep('result');
+      trackEvent('result_recovery_resume', {
+        ageSeconds: Math.max(0, Math.round((Date.now() - Date.parse(pendingResult.savedAt || '')) / 1000))
+      });
+      return;
+    }
+
     const savedSession = readActiveSession();
     if (savedSession && savedSession.questions?.length && savedSession.currIdx < savedSession.questions.length) {
       setRecoverableSession(savedSession);
@@ -383,6 +406,7 @@ export default function App() {
   const handleRestart = () => {
     trackEvent('restart_click');
     clearActiveSession();
+    clearPendingResult();
     setFollowupQuestions([]);
     setQuestionPhase('base');
     setSessionQuestionIds([]);
@@ -503,6 +527,14 @@ export default function App() {
     const nextQuestionContextSummary = summarizeQuestionContext(questions, followupQuestions);
     setQuestionContextSummary(nextQuestionContextSummary);
     writeRecentSessions([finalSessionIds, ...recentSessionsSnapshot].slice(0, 6));
+    writePendingResult({
+      scores: finalScores,
+      userName,
+      questionContextSummary: nextQuestionContextSummary,
+      neutralCount: neutralQuestionIds.length,
+      followupCount: followupQuestions.length,
+      usedFollowup: questionPhase === 'followup' || followupQuestions.length > 0
+    });
     trackEvent('complete_test', {
       usedFollowup: questionPhase === 'followup' || followupQuestions.length > 0,
       followupCount: followupQuestions.length,
@@ -518,6 +550,7 @@ export default function App() {
 
   const handleResultReady = () => {
     clearActiveSession();
+    clearPendingResult();
   };
 
   const activeQuestions = questionPhase === 'followup' ? followupQuestions : questions;

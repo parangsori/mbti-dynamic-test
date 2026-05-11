@@ -19,6 +19,14 @@ export const COMPATIBILITY = {
 
 export const CHANGELOG = [
   {
+    version: 'v1.5.9',
+    date: '2026.05.11',
+    updates: [
+      '마지막 질문 완료 직후 결과 데이터를 임시 저장해, 결과 화면 로딩이 실패해도 새로고침 후 결과를 바로 다시 불러올 수 있도록 개선',
+      '결과 복구 버튼 문구를 “결과 다시 불러오기”로 정리해 홈화면 앱 모드에서도 사용자가 다시 처음부터 하지 않도록 보완'
+    ]
+  },
+  {
     version: 'v1.5.8',
     date: '2026.05.11',
     updates: [
