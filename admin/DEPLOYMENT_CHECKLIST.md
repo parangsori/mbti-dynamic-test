@@ -23,7 +23,12 @@
 
 ## 3. Vercel 환경변수
 
-Production 환경에만 아래 값을 등록한다.
+메인 사용자 서비스 프로젝트의 Production 환경에는 이벤트 수집용 값을 등록한다.
+
+- `VITE_POSTHOG_KEY`: PostHog `phc_` Project token
+- `VITE_POSTHOG_HOST`: `https://e.beatblue.net`
+
+Admin 프로젝트의 Production 환경에는 조회용 서버 값을 등록한다.
 
 - `POSTHOG_PERSONAL_API_KEY`
 - `POSTHOG_PROJECT_ID`
@@ -34,6 +39,8 @@ Production 환경에만 아래 값을 등록한다.
 주의:
 
 - PostHog personal key는 `VITE_` prefix를 붙이지 않는다.
+- `phx_` Personal API Key는 admin 서버 전용이며, 메인 사용자 서비스의 `VITE_POSTHOG_KEY`에 넣지 않는다.
+- `phc_` Project token은 메인 사용자 서비스의 브라우저 SDK 전용이다.
 - `ADMIN_DASHBOARD_TOKEN`은 로컬 fallback용이다. production의 기본 인증 수단으로 쓰지 않는다.
 - PostHog personal key는 최소 권한으로 생성한다.
 
@@ -53,10 +60,13 @@ node admin/scripts/verify-env.mjs
 - 모바일 화면에서 KPI 카드, 퍼널, 공유/설치 지표가 넘치지 않는지 확인한다.
 - `/api/admin/metrics?range=7d`가 Cloudflare Access 뒤에서만 정상 응답하는지 확인한다.
 - 응답에 사용자별 이벤트 원문, distinct id, 이름, 생년월일이 없는지 확인한다.
+- PostHog Installation Health가 6/6 passed인지 확인한다.
+- 메인 사용자 서비스 테스트 1회 후 admin 대시보드 수치가 갱신되는지 확인한다.
 
 ## 6. 이상 징후 대응
 
 - 401 또는 403: Cloudflare Access 정책, Audience tag, JWKS URL을 확인한다.
 - 503: PostHog key/project/env 설정을 확인한다.
 - 지표가 0으로만 보임: PostHog project id와 이벤트 수집 project가 같은지 확인한다.
+- 메인 서비스 테스트가 admin에 반영되지 않음: 메인 서비스 `VITE_POSTHOG_KEY`가 `phc_` Project token인지, `VITE_POSTHOG_HOST`가 `https://e.beatblue.net`인지, admin `POSTHOG_PERSONAL_API_KEY`가 서버 전용 `phx_` 키인지 확인한다.
 - 호출이 느림: 조회 기간을 줄이거나 대시보드 쿼리 수를 줄인다.

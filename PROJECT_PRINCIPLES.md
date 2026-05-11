@@ -58,6 +58,8 @@
 - Vercel 도메인 검증 단계에서는 Cloudflare DNS를 `DNS only`로 둘 수 있지만, Access 보호 적용 후에는 `admin` CNAME을 `Proxied`로 켜야 한다.
 - PostHog Personal API Key, Cloudflare Access Audience tag, JWKS URL, 관리자 토큰 등은 절대 프론트 번들 또는 `VITE_` 환경변수에 두지 않는다.
 - PostHog Personal API Key는 Vercel admin 프로젝트의 서버 환경변수 `POSTHOG_PERSONAL_API_KEY`로만 관리하고, 최소 권한(`query:read` 중심)으로 생성한다.
+- 메인 사용자 서비스의 PostHog 브라우저 SDK에는 `phc_` Project token만 `VITE_POSTHOG_KEY`로 넣는다. `phx_` Personal API Key를 `VITE_` 변수에 넣으면 프론트 번들에 노출되므로 즉시 폐기/재발급한다.
+- 메인 사용자 서비스의 PostHog 수집 호스트는 reverse proxy `VITE_POSTHOG_HOST=https://e.beatblue.net`을 사용한다.
 - 클라이언트는 임의 HogQL/query를 서버로 보낼 수 없어야 하며, 서버리스 API는 코드에 고정된 집계 쿼리만 실행한다.
 - 운영 대시보드는 집계 숫자만 표시한다. 사용자별 이벤트 원문, distinct id, 이름, 생년월일, 원본 프로필 데이터는 응답하거나 화면에 노출하지 않는다.
 - `ADMIN_DASHBOARD_TOKEN`은 로컬 개발 또는 비상 fallback용이다. production의 주 인증 수단으로 사용하지 않는다.
@@ -224,6 +226,7 @@
 - 2026-05-11: Vercel 도메인 검증 후 Cloudflare DNS의 `admin` CNAME을 `Proxied`로 전환해 Cloudflare Access가 로그인/이메일 코드 인증을 먼저 요구하도록 구성했다. 비인증 `curl` 요청은 `/`와 `/api/admin/metrics` 모두 Cloudflare Access 로그인 URL로 `302` 리다이렉트됨을 확인했다.
 - 2026-05-11: Vercel admin 프로젝트 환경변수로 `POSTHOG_PERSONAL_API_KEY`, `POSTHOG_PROJECT_ID`, `POSTHOG_API_HOST`, `CLOUDFLARE_ACCESS_AUD`, `CLOUDFLARE_ACCESS_JWKS_URL`을 등록하고 redeploy 후 모바일 대시보드에서 PostHog 집계 데이터가 표시됨을 확인했다. 30일 기준 방문 73, 시작 48, 완료율 71%, 공유율 44%가 표시되었다.
 - 2026-05-11: admin 보안 기준을 고정했다. PostHog 개인 API 키는 서버 전용 환경변수로만 관리하고 `VITE_` prefix를 금지하며, Cloudflare Access 설정 누락 시 API는 닫힌 상태로 실패해야 한다. 운영 대시보드는 집계 숫자만 표시하고 사용자별 원문 로그와 개인정보성 payload를 노출하지 않는다.
+- 2026-05-11: PostHog Installation Health 개선을 위해 `e.beatblue.net` managed reverse proxy를 구성하고, 메인 사용자 서비스의 `VITE_POSTHOG_HOST`를 해당 도메인으로 전환했다. 메인 서비스는 `phc_` Project token을, admin은 새 `phx_` Personal API Key를 서버 전용으로 사용하도록 역할을 분리했다. 테스트 수치가 admin에 반영되고 Installation Health 경고가 모두 해소됨을 확인했다.
 
 ### 다음 채팅에서 먼저 확인할 체크포인트
 
