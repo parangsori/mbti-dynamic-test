@@ -209,6 +209,8 @@ const runPostHogQuery = async (query) => {
 
 const eventListSql = () => POSTHOG_EVENTS.map((event) => `'${event.replace(/'/g, "''")}'`).join(', ');
 
+const kstDateSql = (value) => `toDate(toTimeZone(${value}, '${DASHBOARD_TIME_ZONE}'))`;
+
 const kstDateWindowSql = (days) => {
   const lookbackDays = Math.max(days - 1, 0);
   const scanDays = days + 1;
@@ -216,7 +218,7 @@ const kstDateWindowSql = (days) => {
   return `
 WHERE timestamp >= now() - INTERVAL ${scanDays} DAY
   AND timestamp <= now()
-  AND toDate(timestamp, '${DASHBOARD_TIME_ZONE}') >= addDays(toDate(now('${DASHBOARD_TIME_ZONE}')), -${lookbackDays})
+  AND ${kstDateSql('timestamp')} >= subtractDays(${kstDateSql('now()')}, ${lookbackDays})
 `;
 };
 
@@ -233,7 +235,7 @@ GROUP BY event
 
 const buildDailyQuery = (days) => `
 SELECT
-  toDate(timestamp, '${DASHBOARD_TIME_ZONE}') AS day,
+  ${kstDateSql('timestamp')} AS day,
   event,
   count() AS total
 FROM events
