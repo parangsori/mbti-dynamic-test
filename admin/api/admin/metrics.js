@@ -20,6 +20,7 @@ const RANGE_DAYS = {
   '30d': 30
 };
 
+const DASHBOARD_TIME_ZONE = 'Asia/Seoul';
 const RATE_LIMIT_WINDOW_MS = 60_000;
 const RATE_LIMIT_MAX = 30;
 const JWKS_CACHE_MS = 5 * 60_000;
@@ -208,24 +209,35 @@ const runPostHogQuery = async (query) => {
 
 const eventListSql = () => POSTHOG_EVENTS.map((event) => `'${event.replace(/'/g, "''")}'`).join(', ');
 
+const kstDateWindowSql = (days) => {
+  const lookbackDays = Math.max(days - 1, 0);
+  const scanDays = days + 1;
+
+  return `
+WHERE timestamp >= now() - INTERVAL ${scanDays} DAY
+  AND timestamp <= now()
+  AND toDate(timestamp, '${DASHBOARD_TIME_ZONE}') >= addDays(toDate(now('${DASHBOARD_TIME_ZONE}')), -${lookbackDays})
+`;
+};
+
 const buildEventCountQuery = (days) => `
 SELECT
   event,
   count() AS total,
   count(DISTINCT distinct_id) AS actors
 FROM events
-WHERE timestamp >= now() - INTERVAL ${days} DAY
+${kstDateWindowSql(days)}
   AND event IN (${eventListSql()})
 GROUP BY event
 `;
 
 const buildDailyQuery = (days) => `
 SELECT
-  toDate(timestamp) AS day,
+  toDate(timestamp, '${DASHBOARD_TIME_ZONE}') AS day,
   event,
   count() AS total
 FROM events
-WHERE timestamp >= now() - INTERVAL ${days} DAY
+${kstDateWindowSql(days)}
   AND event IN ('$pageview', 'start_click', 'complete_test', 'share_copy', 'result_image_share', 'result_image_save')
 GROUP BY day, event
 ORDER BY day ASC
@@ -295,6 +307,7 @@ const buildMetrics = ({ range, counts, daily }) => {
   return {
     range,
     generatedAt: new Date().toISOString(),
+    timeZone: DASHBOARD_TIME_ZONE,
     summary: {
       pageviews,
       visitors,

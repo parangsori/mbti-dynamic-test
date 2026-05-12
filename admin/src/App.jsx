@@ -6,17 +6,22 @@ const RANGES = [
   { key: '7d', label: '7일' },
   { key: '30d', label: '30일' }
 ];
+const DASHBOARD_TIME_ZONE = 'Asia/Seoul';
+const DASHBOARD_TIME_ZONE_LABEL = '한국 시간(KST)';
 
 const formatNumber = (value) => new Intl.NumberFormat('ko-KR').format(Number(value) || 0);
 
 const formatTime = (iso) => {
   if (!iso) return '';
-  return new Intl.DateTimeFormat('ko-KR', {
+  const formatted = new Intl.DateTimeFormat('ko-KR', {
     month: 'short',
     day: 'numeric',
     hour: '2-digit',
-    minute: '2-digit'
+    minute: '2-digit',
+    hour12: false,
+    timeZone: DASHBOARD_TIME_ZONE
   }).format(new Date(iso));
+  return `${formatted} KST`;
 };
 
 const getStoredToken = () => {
@@ -220,7 +225,7 @@ export default function App() {
       <header className="hero">
         <p className="eyebrow">오늘의 MBTI 운영</p>
         <h1>모바일 대시보드</h1>
-        <p>PostHog 원천 데이터를 운영 판단용 숫자로만 요약합니다.</p>
+        <p>PostHog 원천 데이터를 {DASHBOARD_TIME_ZONE_LABEL} 기준 운영 숫자로 요약합니다.</p>
         <div className="refresh-row">
           <span>PostHog 반영은 보통 약간 지연될 수 있습니다.</span>
           <button type="button" onClick={refreshMetrics} disabled={isRefreshing}>
@@ -325,6 +330,7 @@ export default function App() {
 
           <footer className="footer">
             <p>마지막 갱신: {lastUpdated}</p>
+            <p>조회 기간과 일별 흐름은 {DASHBOARD_TIME_ZONE_LABEL} 달력일 기준입니다.</p>
             <p>화면은 60초마다 자동으로 다시 조회됩니다.</p>
             <p>집계 숫자만 표시하며 사용자별 원문 로그는 노출하지 않습니다.</p>
           </footer>
