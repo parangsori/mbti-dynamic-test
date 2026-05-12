@@ -1,7 +1,8 @@
-import { Component, lazy, Suspense, useEffect, useRef, useState } from 'react';
+import { Component, lazy, Suspense, useEffect, useState } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import StartView from './components/StartView.jsx';
 import QuestionView from './components/QuestionView.jsx';
+import PullToRefreshIndicator from './components/PullToRefreshIndicator.jsx';
 import { AXIS_GUIDE, CHANGELOG, DEFAULT_USERNAME, QUESTION_TEMPO_COPY } from './lib/constants.js';
 import {
   buildFollowupQuestions,
@@ -35,6 +36,7 @@ import {
 } from './lib/storage.js';
 import { captureError, installGlobalErrorHandlers } from './lib/observability.js';
 import { getHistoryComparison, getHistoryEntryNote, getHistoryInsights } from './lib/resultAnalysis.js';
+import { useSessionFlow } from './hooks/useSessionFlow.js';
 // Accessibility helpers are loaded inline to avoid dual-import warning
 const loadAccessibilitySettings = () => {
   try {
@@ -151,15 +153,6 @@ const readHomeScreenTipHidden = () => {
   }
 };
 
-const PULL_REFRESH_START_ZONE = 96;
-const PULL_REFRESH_THRESHOLD = 92;
-const PULL_REFRESH_MAX = 128;
-
-const isInteractiveTarget = (target) => {
-  const tagName = target?.tagName?.toLowerCase();
-  return tagName === 'button' || tagName === 'input' || tagName === 'textarea' || tagName === 'select' || target?.isContentEditable;
-};
-
 export default function App() {
   const [step, setStep] = useState('start');
   const [userName, setUserName] = useState(readUserName());
@@ -169,21 +162,39 @@ export default function App() {
   const [recoverableSession, setRecoverableSession] = useState(null);
   const [axisGuideKey, setAxisGuideKey] = useState(null);
   const [historyData, setHistoryData] = useState([]);
-  const [questions, setQuestions] = useState([]);
-  const [followupQuestions, setFollowupQuestions] = useState([]);
-  const [currIdx, setCurrIdx] = useState(0);
-  const [scores, setScores] = useState(createEmptyScores());
-  const [microCopy, setMicroCopy] = useState('');
-  const [isTransitioning, setIsTransitioning] = useState(false);
-  const [questionDirection, setQuestionDirection] = useState(1);
-  const [questionPhase, setQuestionPhase] = useState('base');
-  const [recentSessionsSnapshot, setRecentSessionsSnapshot] = useState([]);
-  const [sessionQuestionIds, setSessionQuestionIds] = useState([]);
-  const [neutralSignals, setNeutralSignals] = useState(createEmptyNeutralSignals());
-  const [neutralQuestionIds, setNeutralQuestionIds] = useState([]);
-  const [questionContextSummary, setQuestionContextSummary] = useState(null);
-  const [lastAnswerSnapshot, setLastAnswerSnapshot] = useState(null);
-  const transitionLockRef = useRef(false);
+  const {
+    questions,
+    setQuestions,
+    followupQuestions,
+    setFollowupQuestions,
+    currIdx,
+    setCurrIdx,
+    scores,
+    setScores,
+    microCopy,
+    setMicroCopy,
+    isTransitioning,
+    setIsTransitioning,
+    questionDirection,
+    setQuestionDirection,
+    questionPhase,
+    setQuestionPhase,
+    recentSessionsSnapshot,
+    setRecentSessionsSnapshot,
+    sessionQuestionIds,
+    setSessionQuestionIds,
+    neutralSignals,
+    setNeutralSignals,
+    neutralQuestionIds,
+    setNeutralQuestionIds,
+    questionContextSummary,
+    setQuestionContextSummary,
+    lastAnswerSnapshot,
+    setLastAnswerSnapshot,
+    transitionLockRef,
+    createQuestionSnapshot,
+    writeSessionFromSnapshot
+  } = useSessionFlow();
 
   // M3: Profile state (birthDate-based)
   const [birthDate, setBirthDate] = useState(() => readProfile().birthDate || null);
@@ -197,7 +208,6 @@ export default function App() {
   const [homeScreenTipHidden, setHomeScreenTipHidden] = useState(readHomeScreenTipHidden);
   const [homeScreenTipSessionHidden, setHomeScreenTipSessionHidden] = useState(false);
   const [resultBoundaryKey, setResultBoundaryKey] = useState(0);
-  const [pullRefresh, setPullRefresh] = useState({ active: false, distance: 0, refreshing: false });
 
   useEffect(() => {
     const storedHistory = readHistory();
@@ -251,73 +261,6 @@ export default function App() {
       media?.removeListener?.(updateStandalone);
     };
   }, []);
-
-  useEffect(() => {
-    if (!isStandalone) return undefined;
-
-    let startY = 0;
-    let startX = 0;
-    let pulling = false;
-
-    const resetPull = () => setPullRefresh({ active: false, distance: 0, refreshing: false });
-
-    const handleTouchStart = (event) => {
-      const touch = event.touches?.[0];
-      if (!touch || isInteractiveTarget(event.target) || window.scrollY > 0 || touch.clientY > PULL_REFRESH_START_ZONE) {
-        pulling = false;
-        return;
-      }
-
-      startY = touch.clientY;
-      startX = touch.clientX;
-      pulling = true;
-    };
-
-    const handleTouchMove = (event) => {
-      if (!pulling) return;
-      const touch = event.touches?.[0];
-      if (!touch) return;
-
-      const deltaY = touch.clientY - startY;
-      const deltaX = Math.abs(touch.clientX - startX);
-      if (deltaY <= 0 || deltaX > deltaY * 0.8 || window.scrollY > 0) {
-        resetPull();
-        pulling = false;
-        return;
-      }
-
-      const distance = Math.min(PULL_REFRESH_MAX, Math.round(deltaY * 0.55));
-      if (distance > 8) {
-        event.preventDefault();
-        setPullRefresh({ active: true, distance, refreshing: false });
-      }
-    };
-
-    const handleTouchEnd = () => {
-      if (!pulling) return;
-      pulling = false;
-
-      setPullRefresh((current) => {
-        if (current.distance >= PULL_REFRESH_THRESHOLD) {
-          window.setTimeout(() => window.location.reload(), 120);
-          return { active: true, distance: PULL_REFRESH_THRESHOLD, refreshing: true };
-        }
-        return { active: false, distance: 0, refreshing: false };
-      });
-    };
-
-    window.addEventListener('touchstart', handleTouchStart, { passive: true });
-    window.addEventListener('touchmove', handleTouchMove, { passive: false });
-    window.addEventListener('touchend', handleTouchEnd, { passive: true });
-    window.addEventListener('touchcancel', resetPull, { passive: true });
-
-    return () => {
-      window.removeEventListener('touchstart', handleTouchStart);
-      window.removeEventListener('touchmove', handleTouchMove);
-      window.removeEventListener('touchend', handleTouchEnd);
-      window.removeEventListener('touchcancel', resetPull);
-    };
-  }, [isStandalone]);
 
   useEffect(() => {
     const handleBeforeInstallPrompt = (event) => {
@@ -566,35 +509,6 @@ export default function App() {
         ? '둘 중 하나가 딱 안 잡히면 보조 버튼으로 넘어갈 수 있어요'
         : '';
 
-  const createQuestionSnapshot = () => ({
-    userName,
-    questions,
-    followupQuestions,
-    currIdx,
-    scores,
-    questionPhase,
-    recentSessions: recentSessionsSnapshot,
-    sessionQuestionIds,
-    neutralSignals,
-    neutralQuestionIds,
-    questionContextSummary
-  });
-
-  const writeSessionFromSnapshot = (snapshot) => {
-    writeActiveSession({
-      userName: snapshot.userName || '',
-      questions: snapshot.questions || [],
-      followupQuestions: snapshot.followupQuestions || [],
-      currIdx: snapshot.currIdx || 0,
-      scores: snapshot.scores || createEmptyScores(),
-      questionPhase: snapshot.questionPhase || 'base',
-      recentSessions: snapshot.recentSessions || [],
-      sessionQuestionIds: snapshot.sessionQuestionIds || [],
-      neutralSignals: snapshot.neutralSignals || createEmptyNeutralSignals(),
-      neutralQuestionIds: snapshot.neutralQuestionIds || []
-    });
-  };
-
   const getAnswerDirection = (method) => (method?.includes('left') ? -1 : 1);
 
   const trackQuestionAnswer = (method) => {
@@ -703,7 +617,7 @@ export default function App() {
   const handleQuestionAnswer = (option, method = 'tap') => {
     if (isTransitioning || transitionLockRef.current) return;
     transitionLockRef.current = true;
-    setLastAnswerSnapshot(createQuestionSnapshot());
+    setLastAnswerSnapshot(createQuestionSnapshot({ userName }));
     setIsTransitioning(true);
     trackQuestionAnswer(method);
 
@@ -719,7 +633,7 @@ export default function App() {
   const handleMiddleAnswer = (method = 'middle') => {
     if (isTransitioning || transitionLockRef.current) return;
     transitionLockRef.current = true;
-    setLastAnswerSnapshot(createQuestionSnapshot());
+    setLastAnswerSnapshot(createQuestionSnapshot({ userName }));
     setIsTransitioning(true);
     trackQuestionAnswer(method);
 
@@ -793,15 +707,7 @@ export default function App() {
 
   return (
     <div className={`relative w-full min-h-[100dvh] flex flex-col items-center ${step !== 'result' ? 'justify-center' : 'pt-10'}`}>
-      {isStandalone && (pullRefresh.active || pullRefresh.refreshing) && (
-        <div
-          className="fixed left-1/2 top-3 z-[99998] flex -translate-x-1/2 items-center gap-2 rounded-full border border-cyan-200/20 bg-slate-950/85 px-4 py-2 text-[12px] font-black text-cyan-50 shadow-2xl backdrop-blur-xl transition-transform"
-          style={{ transform: `translate(-50%, ${Math.max(0, pullRefresh.distance - 22)}px)` }}
-        >
-          <span className={`inline-block h-3 w-3 rounded-full border-2 border-cyan-100 border-t-transparent ${pullRefresh.refreshing ? 'animate-spin' : ''}`} />
-          {pullRefresh.refreshing ? '새로고침 중' : pullRefresh.distance >= PULL_REFRESH_THRESHOLD ? '놓으면 새로고침' : '아래로 당겨 새로고침'}
-        </div>
-      )}
+      <PullToRefreshIndicator enabled={isStandalone} />
       <div className="fixed top-[-10%] left-[-10%] w-96 h-96 bg-purple-900 rounded-full mix-blend-screen filter blur-[128px] opacity-40 animate-blob pointer-events-none"></div>
       <div className="fixed top-[20%] right-[-10%] w-96 h-96 bg-cyan-900 rounded-full mix-blend-screen filter blur-[128px] opacity-40 animate-blob pointer-events-none" style={{ animationDelay: '2s' }}></div>
       <div className="fixed bottom-[-20%] left-[20%] w-96 h-96 bg-pink-900 rounded-full mix-blend-screen filter blur-[128px] opacity-40 animate-blob pointer-events-none" style={{ animationDelay: '4s' }}></div>

@@ -235,6 +235,7 @@
 - 2026-05-11: Vercel admin 프로젝트 환경변수로 `POSTHOG_PERSONAL_API_KEY`, `POSTHOG_PROJECT_ID`, `POSTHOG_API_HOST`, `CLOUDFLARE_ACCESS_AUD`, `CLOUDFLARE_ACCESS_JWKS_URL`을 등록하고 redeploy 후 모바일 대시보드에서 PostHog 집계 데이터가 표시됨을 확인했다. 30일 기준 방문 73, 시작 48, 완료율 71%, 공유율 44%가 표시되었다.
 - 2026-05-11: admin 보안 기준을 고정했다. PostHog 개인 API 키는 서버 전용 환경변수로만 관리하고 `VITE_` prefix를 금지하며, Cloudflare Access 설정 누락 시 API는 닫힌 상태로 실패해야 한다. 운영 대시보드는 집계 숫자만 표시하고 사용자별 원문 로그와 개인정보성 payload를 노출하지 않는다.
 - 2026-05-11: PostHog Installation Health 개선을 위해 `e.beatblue.net` managed reverse proxy를 구성하고, 메인 사용자 서비스의 `VITE_POSTHOG_HOST`를 해당 도메인으로 전환했다. 메인 서비스는 `phc_` Project token을, admin은 새 `phx_` Personal API Key를 서버 전용으로 사용하도록 역할을 분리했다. 테스트 수치가 admin에 반영되고 Installation Health 경고가 모두 해소됨을 확인했다.
+- 2026-05-13: 내부 검토 리포트 우선순위에 따라 `dev`에서 pull-to-refresh 렌더 상태를 전용 컴포넌트로 격리하고, 질문 세션 상태를 `useSessionFlow` 훅으로 묶었으며, 공유 카드 DOM을 별도 컴포넌트로 분리했다. 사용자-facing 카피/레이아웃은 유지하고 `npm run build`, `npm run test:accuracy`, `npm run test:freshness`로 회귀를 확인했다.
 
 ### 다음 채팅에서 먼저 확인할 체크포인트
 
