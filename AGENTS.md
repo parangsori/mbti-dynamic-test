@@ -19,5 +19,6 @@
 - 자동 검증은 짧고 효과적인 범위로 유지하고, 시간이 길어지는 UI 확인은 사용자 빠른 테스트로 전환할 수 있다.
 - 운영 대시보드와 관리자 접근 작업에서는 URL 은닉을 보안으로 간주하지 않는다. Cloudflare Access 보호, 서버 전용 환경변수, 집계 응답 제한, 비인증 접근 차단을 모두 확인한다.
 - PostHog Personal API Key, Cloudflare Access Audience tag/JWKS URL, 관리자 토큰은 절대 `VITE_` 변수나 프론트 번들에 두지 않고, 채팅/문서/커밋에 실제 값을 남기지 않는다.
+- `moodtype-lab-review-report.*` 파일은 로컬 참고용 내부 검토 리포트이다. Git에 푸시하지 않으며, `.gitignore`에 등록된 상태를 유지한다.
 
 상세 운영 기준, 버전 반영 기준, 현재 우선순위는 `PROJECT_PRINCIPLES.md`를 기준으로 따른다.
