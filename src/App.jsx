@@ -5,11 +5,9 @@ import QuestionView from './components/QuestionView.jsx';
 import PullToRefreshIndicator from './components/PullToRefreshIndicator.jsx';
 import { AXIS_GUIDE, CHANGELOG, DEFAULT_USERNAME, QUESTION_TEMPO_COPY } from './lib/constants.js';
 import {
-  buildFollowupQuestions,
   buildQuestionSession,
   createEmptyNeutralSignals,
   createEmptyScores,
-  formatMicroCopy,
   getFollowupTempoMessage,
   getQuestionContextVisual,
   getQuestionTempoMessage,
@@ -174,7 +172,6 @@ export default function App() {
     microCopy,
     setMicroCopy,
     isTransitioning,
-    setIsTransitioning,
     questionDirection,
     setQuestionDirection,
     questionPhase,
@@ -183,7 +180,6 @@ export default function App() {
     setRecentSessionsSnapshot,
     sessionQuestionIds,
     setSessionQuestionIds,
-    neutralSignals,
     setNeutralSignals,
     neutralQuestionIds,
     setNeutralQuestionIds,
@@ -192,8 +188,10 @@ export default function App() {
     lastAnswerSnapshot,
     setLastAnswerSnapshot,
     transitionLockRef,
-    createQuestionSnapshot,
-    writeSessionFromSnapshot
+    activeQuestion,
+    handleQuestionAnswer,
+    handleMiddleAnswer,
+    handleQuestionBack
   } = useSessionFlow();
 
   // M3: Profile state (birthDate-based)
@@ -496,8 +494,6 @@ export default function App() {
     clearPendingResult();
   };
 
-  const activeQuestions = questionPhase === 'followup' ? followupQuestions : questions;
-  const activeQuestion = activeQuestions[currIdx];
   const activeQuestionContextVisual = activeQuestion ? getQuestionContextVisual(activeQuestion) : null;
   const followupHasNeutralReview = questionPhase === 'followup' && followupQuestions.some((item) => (item.trigger?.neutralCount || 0) > 0);
   const questionPhaseHint =
@@ -509,182 +505,10 @@ export default function App() {
         ? '둘 중 하나가 딱 안 잡히면 보조 버튼으로 넘어갈 수 있어요'
         : '';
 
-  const getAnswerDirection = (method) => (method?.includes('left') ? -1 : 1);
-
-  const trackQuestionAnswer = (method) => {
-    trackEvent('question_answer', {
-      method,
-      phase: questionPhase,
-      questionId: activeQuestion?.id || '',
-      axis: activeQuestion?._axis || '',
-      index: currIdx + 1
-    });
-  };
-
-  const advanceWithResponse = ({
-    nextScores,
-    nextNeutralSignals = neutralSignals,
-    nextNeutralQuestionIds = neutralQuestionIds,
-    microText = '',
-    direction = 1
-  }) => {
-    setScores(nextScores);
-    setNeutralSignals(nextNeutralSignals);
-    setNeutralQuestionIds(nextNeutralQuestionIds);
-    setMicroCopy(formatMicroCopy(microText));
-    setQuestionDirection(direction);
-
-    setTimeout(() => {
-      setMicroCopy('');
-
-      if (questionPhase === 'base') {
-        if (currIdx + 1 >= 12) {
-          const nextFollowupQuestions = buildFollowupQuestions(
-            nextScores,
-            recentSessionsSnapshot,
-            sessionQuestionIds,
-            nextNeutralSignals
-          );
-
-          if (nextFollowupQuestions.length > 0) {
-            const nextSessionIds = [...sessionQuestionIds, ...nextFollowupQuestions.map((item) => item.id)];
-            trackEvent('followup_start', {
-              count: nextFollowupQuestions.length,
-              neutralCount: nextNeutralQuestionIds.length
-            });
-            setFollowupQuestions(nextFollowupQuestions);
-            setQuestionPhase('followup');
-            setCurrIdx(0);
-            setSessionQuestionIds(nextSessionIds);
-            writeActiveSession({
-              userName,
-              questions,
-              followupQuestions: nextFollowupQuestions,
-              currIdx: 0,
-              scores: nextScores,
-              questionPhase: 'followup',
-              recentSessions: recentSessionsSnapshot,
-              sessionQuestionIds: nextSessionIds,
-              neutralSignals: nextNeutralSignals,
-              neutralQuestionIds: nextNeutralQuestionIds
-            });
-          } else {
-            finishSession(nextScores);
-          }
-        } else {
-          const nextIdx = currIdx + 1;
-          if (nextIdx === 3) trackEvent('question_reach_3');
-          if (nextIdx === 6) trackEvent('question_reach_6');
-          if (nextIdx === 9) trackEvent('question_reach_9');
-          setCurrIdx(nextIdx);
-          writeActiveSession({
-            userName,
-            questions,
-            followupQuestions,
-            currIdx: nextIdx,
-            scores: nextScores,
-            questionPhase,
-            recentSessions: recentSessionsSnapshot,
-            sessionQuestionIds,
-            neutralSignals: nextNeutralSignals,
-            neutralQuestionIds: nextNeutralQuestionIds
-          });
-        }
-      } else if (currIdx + 1 >= followupQuestions.length) {
-        finishSession(nextScores);
-      } else {
-        const nextIdx = currIdx + 1;
-        setCurrIdx(nextIdx);
-        writeActiveSession({
-          userName,
-          questions,
-          followupQuestions,
-          currIdx: nextIdx,
-          scores: nextScores,
-          questionPhase,
-          recentSessions: recentSessionsSnapshot,
-          sessionQuestionIds,
-          neutralSignals: nextNeutralSignals,
-          neutralQuestionIds: nextNeutralQuestionIds
-        });
-      }
-
-      transitionLockRef.current = false;
-      setIsTransitioning(false);
-    }, 800);
-  };
-
-  const handleQuestionAnswer = (option, method = 'tap') => {
-    if (isTransitioning || transitionLockRef.current) return;
-    transitionLockRef.current = true;
-    setLastAnswerSnapshot(createQuestionSnapshot({ userName }));
-    setIsTransitioning(true);
-    trackQuestionAnswer(method);
-
-    const weight = activeQuestion?.weight || 1;
-    const nextScores = { ...scores, [option.type]: (scores[option.type] || 0) + weight };
-    advanceWithResponse({
-      nextScores,
-      microText: option.micro,
-      direction: getAnswerDirection(method)
-    });
-  };
-
-  const handleMiddleAnswer = (method = 'middle') => {
-    if (isTransitioning || transitionLockRef.current) return;
-    transitionLockRef.current = true;
-    setLastAnswerSnapshot(createQuestionSnapshot({ userName }));
-    setIsTransitioning(true);
-    trackQuestionAnswer(method);
-
-    const axisCode = activeQuestion?._axis;
-    const nextNeutralSignals = axisCode
-      ? { ...neutralSignals, [axisCode]: (neutralSignals[axisCode] || 0) + 1 }
-      : neutralSignals;
-    const nextNeutralQuestionIds = activeQuestion?.id
-      ? [...neutralQuestionIds, activeQuestion.id]
-      : neutralQuestionIds;
-
-    advanceWithResponse({
-      nextScores: scores,
-      nextNeutralSignals,
-      nextNeutralQuestionIds,
-      microText: '이 축은 한 번 더 볼게요'
-    });
-  };
-
-  const handleQuestionBack = () => {
-    if (!lastAnswerSnapshot || isTransitioning || transitionLockRef.current) return;
-
-    const snapshot = lastAnswerSnapshot;
-    transitionLockRef.current = false;
-    setUserName(snapshot.userName || '');
-    setQuestions(snapshot.questions || []);
-    setFollowupQuestions(snapshot.followupQuestions || []);
-    setCurrIdx(snapshot.currIdx || 0);
-    setScores(snapshot.scores || createEmptyScores());
-    setQuestionPhase(snapshot.questionPhase || 'base');
-    setRecentSessionsSnapshot(snapshot.recentSessions || []);
-    setSessionQuestionIds(snapshot.sessionQuestionIds || []);
-    setNeutralSignals(snapshot.neutralSignals || createEmptyNeutralSignals());
-    setNeutralQuestionIds(snapshot.neutralQuestionIds || []);
-    setQuestionContextSummary(snapshot.questionContextSummary || null);
-    setMicroCopy('');
-    setQuestionDirection(-1);
-    setStep('question');
-    setLastAnswerSnapshot(null);
-    writeSessionFromSnapshot(snapshot);
-
-    const restoredQuestions = snapshot.questionPhase === 'followup'
-      ? snapshot.followupQuestions || []
-      : snapshot.questions || [];
-    const restoredQuestion = restoredQuestions[snapshot.currIdx || 0];
-    trackEvent('question_back', {
-      phase: snapshot.questionPhase || 'base',
-      questionId: restoredQuestion?.id || '',
-      axis: restoredQuestion?._axis || '',
-      index: (snapshot.currIdx || 0) + 1
-    });
+  const answerActionContext = {
+    userName,
+    trackEvent,
+    onFinishSession: finishSession
   };
 
   // M3: Get personalized tempo message
@@ -763,9 +587,9 @@ export default function App() {
               middleLabel="둘 다 비슷해요"
               contextVisual={activeQuestionContextVisual}
               canGoBack={Boolean(lastAnswerSnapshot)}
-              onAnswer={handleQuestionAnswer}
-              onMiddleAnswer={handleMiddleAnswer}
-              onBack={handleQuestionBack}
+              onAnswer={(option, method) => handleQuestionAnswer(option, method, answerActionContext)}
+              onMiddleAnswer={(method) => handleMiddleAnswer(method, answerActionContext)}
+              onBack={() => handleQuestionBack({ setUserName, setStep, trackEvent })}
             />
           )}
 

@@ -236,6 +236,7 @@
 - 2026-05-11: admin 보안 기준을 고정했다. PostHog 개인 API 키는 서버 전용 환경변수로만 관리하고 `VITE_` prefix를 금지하며, Cloudflare Access 설정 누락 시 API는 닫힌 상태로 실패해야 한다. 운영 대시보드는 집계 숫자만 표시하고 사용자별 원문 로그와 개인정보성 payload를 노출하지 않는다.
 - 2026-05-11: PostHog Installation Health 개선을 위해 `e.beatblue.net` managed reverse proxy를 구성하고, 메인 사용자 서비스의 `VITE_POSTHOG_HOST`를 해당 도메인으로 전환했다. 메인 서비스는 `phc_` Project token을, admin은 새 `phx_` Personal API Key를 서버 전용으로 사용하도록 역할을 분리했다. 테스트 수치가 admin에 반영되고 Installation Health 경고가 모두 해소됨을 확인했다.
 - 2026-05-13: 내부 검토 리포트 우선순위에 따라 `dev`에서 pull-to-refresh 렌더 상태를 전용 컴포넌트로 격리하고, 질문 세션 상태를 `useSessionFlow` 훅으로 묶었으며, 공유 카드 DOM을 별도 컴포넌트로 분리했다. 사용자-facing 카피/레이아웃은 유지하고 `npm run build`, `npm run test:accuracy`, `npm run test:freshness`로 회귀를 확인했다.
+- 2026-05-14: 2차 리팩토링 2-A로 질문 답변, 중간 답변, 보정 질문 전환, 직전 문항 되돌리기, 진행 중 세션 저장 흐름을 `useSessionFlow`로 확장했다. 사용자-facing 화면/카피는 유지하고, 결과 완료와 analytics 같은 외부 부수효과는 App에서 콜백으로 명시 연결한다.
 
 ### 다음 채팅에서 먼저 확인할 체크포인트
 
