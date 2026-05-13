@@ -3,14 +3,12 @@ import { motion } from 'framer-motion';
 import { IMAGE_BASE64 } from '../data/mbtiData.js';
 import {
   buildResultViewModel,
-  toHistoryAxisSnapshot,
   PRESENTATION_THEMES
 } from '../lib/resultAnalysis.js';
-import { writeHistory } from '../lib/storage.js';
-import { captureError } from '../lib/observability.js';
-import { getCanvasBlob, renderShareCardCanvas, shareOrSaveBlob, buildShareText, SERVICE_URL } from '../lib/shareCard.js';
 import ShareCard from './ShareCard.jsx';
 import { getPersonalizedResultContext } from '../lib/personalization.js';
+import { useResultRecord } from '../hooks/useResultRecord.js';
+import { useResultShare } from '../hooks/useResultShare.js';
 
 const DETAIL_SECTIONS = [
   { key: 'why', title: '왜 이런 결과가 나왔을까' },
@@ -326,10 +324,6 @@ export default function ResultView({
   const resultRef = useRef(null);
   const shareCardRef = useRef(null);
   const currentEntryRef = useRef(null);
-  const resultReadyRef = useRef(false);
-  const [shareCopied, setShareCopied] = useState(false);
-  const [saveImageState, setSaveImageState] = useState('idle');
-  const [shareToast, setShareToast] = useState('');  // 안내 토스트 메시지
   const [detailOpen, setDetailOpen] = useState({ why: false, axes: false, history: false });
   const [showMoodLegend, setShowMoodLegend] = useState(false);
 
@@ -390,94 +384,36 @@ export default function ResultView({
   const todayLabel = getTodayLabel();
   const timeLabel = getTimeLabel();
 
-  useEffect(() => {
-    const newEntry = {
-      ...currentEntryRef.current,
-      mbti,
-      percent,
-      variantKey: presentation.variantKey,
-      themeKey: presentation.themeKey,
-      questionContextSummary,
-      axes: spectrum.map(toHistoryAxisSnapshot)
-    };
-
-    if (historyData[0]?.createdAt === newEntry.createdAt) {
-      if (!resultReadyRef.current) {
-        resultReadyRef.current = true;
-        onResultReady?.();
-      }
-      return;
-    }
-
-    const updated = [newEntry, ...historyData].slice(0, 7);
-    writeHistory(updated);
-    setHistoryData(updated);
-    if (!resultReadyRef.current) {
-      resultReadyRef.current = true;
-      onResultReady?.();
-    }
-  }, [historyData, mbti, onResultReady, percent, presentation.themeKey, presentation.variantKey, questionContextSummary, setHistoryData, spectrum]);
+  useResultRecord({
+    currentEntry: currentEntryRef.current,
+    historyData,
+    mbti,
+    onResultReady,
+    percent,
+    presentation,
+    questionContextSummary,
+    setHistoryData,
+    spectrum
+  });
 
   useEffect(() => {
     trackEvent('result_view', { mbti, percent, questionContextTop: questionContextSummary?.topTag || '' });
   }, [mbti, percent, questionContextSummary, trackEvent]);
 
-  const handleCopyShare = async () => {
-    const shareText = buildShareText({ displayName, hook: shareCardCopy.hook, detail: shareCardCopy.detail, percent });
-    const copyText = `${shareText}\n${SERVICE_URL}`;
-    try {
-      await navigator.clipboard.writeText(copyText);
-      setShareCopied(true);
-      trackEvent('share_copy', { mbti });
-      setTimeout(() => setShareCopied(false), 1800);
-    } catch (error) {
-      captureError(error, {
-        key: 'share_copy_error',
-        stage: 'share_copy',
-        mbti
-      });
-      setShareCopied(false);
-    }
-  };
-
-  const handleSaveImage = async () => {
-    if (saveImageState === 'saving') return;
-    if (!shareCardRef.current) return;
-    setSaveImageState('saving');
-    try {
-      const canvas = await renderShareCardCanvas(shareCardRef.current);
-      const blob = await getCanvasBlob(canvas);
-      const filename = `today-mbti-${mbti.toLowerCase()}.png`;
-      const mode = await shareOrSaveBlob({
-        blob,
-        filename,
-        title: `${displayName}님의 오늘 MBTI 카드`,
-        text: shareCardCopy.boast
-      });
-      if (mode === 'cancelled') {
-        setSaveImageState('idle');
-        return;
-      }
-      setSaveImageState(mode === 'shared' || mode === 'no_image' ? 'shared' : 'saved');
-      trackEvent(mode === 'shared' ? 'result_image_share' : 'result_image_save', { mbti, mode });
-      // 이미지 없이 텍스트만 공유된 경우 (텔레그램 등) 안내 토스트 표시
-      if (mode === 'no_image') {
-        setShareToast('이미지는 직접 저장 후 첨부해 주세요 (아래 이미지 저장 버튼 사용)');
-        setTimeout(() => setShareToast(''), 5000);
-      }
-    } catch (error) {
-      if (error?.name !== 'AbortError') {
-        captureError(error, {
-          key: 'share_card_save_error',
-          stage: 'share_card_save',
-          mbti
-        });
-      }
-      setSaveImageState('idle');
-    } finally {
-      setTimeout(() => setSaveImageState('idle'), 1800);
-    }
-  };
+  const {
+    handleCopyShare,
+    handleSaveImage,
+    saveImageState,
+    shareCopied,
+    shareToast
+  } = useResultShare({
+    displayName,
+    mbti,
+    percent,
+    shareCardCopy,
+    shareCardRef,
+    trackEvent
+  });
 
   const shareContext = {
     displayName,
