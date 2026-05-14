@@ -145,11 +145,39 @@ const TONE_CONFIG = {
 /**
  * 연령대에 맞는 템포 메시지 반환
  */
-export const getPersonalizedTempoMessage = (ageGroup, index, defaultMessage) => {
+export const getPersonalizedTempoMessage = (ageGroup, index, total = 12, defaultMessage) => {
   const config = TONE_CONFIG[ageGroup];
   if (!config) return defaultMessage;
   const messages = config.tempoMessages;
-  return messages[index % messages.length] || defaultMessage;
+  if (!messages.length) return defaultMessage;
+
+  const safeTotal = Math.max(1, Number(total) || 1);
+  const current = Math.min(Math.max(1, index + 1), safeTotal);
+  const progress = current / safeTotal;
+  const lastIndex = messages.length - 1;
+  const lastNonFinalIndex = Math.max(0, lastIndex - 2);
+  const finalMessageIndex = messages.findLastIndex((message) => /마지막 선택|마지막 질문/.test(message));
+  const safeFinalIndex = finalMessageIndex >= 0 ? finalMessageIndex : lastIndex;
+
+  if (current >= safeTotal) return messages[safeFinalIndex] || defaultMessage;
+  if (current === safeTotal - 1) {
+    const penultimateIndex = safeFinalIndex === lastIndex ? Math.max(0, lastIndex - 1) : lastIndex;
+    return messages[penultimateIndex] || defaultMessage;
+  }
+
+  if (progress < 0.3) {
+    return messages[Math.min(index, 2)] || defaultMessage;
+  }
+
+  if (progress < 0.5) {
+    return messages[Math.min(3, lastIndex)] || defaultMessage;
+  }
+
+  if (progress < 0.75) {
+    return messages[Math.min(Math.max(4, Math.floor(messages.length * 0.55)), lastNonFinalIndex)] || defaultMessage;
+  }
+
+  return messages[Math.min(Math.max(5, Math.floor(messages.length * 0.72)), lastNonFinalIndex)] || defaultMessage;
 };
 
 /**

@@ -65,8 +65,37 @@ export const summarizeQuestionContext = (baseQuestions = [], followupQuestions =
   };
 };
 
-export const getQuestionTempoMessage = (index, fallback = '지금의 결대로 가볍게 골라보세요', source = []) =>
-  source[index] || fallback;
+export const getQuestionTempoMessage = (index, total = 12, fallback = '지금의 결대로 가볍게 골라보세요', source = []) => {
+  if (!source.length) return fallback;
+
+  const safeTotal = Math.max(1, Number(total) || 1);
+  const current = Math.min(Math.max(1, index + 1), safeTotal);
+  const progress = current / safeTotal;
+  const lastIndex = source.length - 1;
+  const lastNonFinalIndex = Math.max(0, lastIndex - 2);
+  const finalMessageIndex = source.findLastIndex((message) => /마지막 선택|마지막 질문/.test(message));
+  const safeFinalIndex = finalMessageIndex >= 0 ? finalMessageIndex : lastIndex;
+
+  if (current >= safeTotal) return source[safeFinalIndex] || fallback;
+  if (current === safeTotal - 1) {
+    const penultimateIndex = safeFinalIndex === lastIndex ? Math.max(0, lastIndex - 1) : lastIndex;
+    return source[penultimateIndex] || fallback;
+  }
+
+  if (progress < 0.3) {
+    return source[Math.min(index, 2)] || fallback;
+  }
+
+  if (progress < 0.5) {
+    return source[Math.min(3, lastIndex)] || fallback;
+  }
+
+  if (progress < 0.75) {
+    return source[Math.min(Math.max(4, Math.floor(source.length * 0.55)), lastNonFinalIndex)] || fallback;
+  }
+
+  return source[Math.min(Math.max(5, Math.floor(source.length * 0.72)), lastNonFinalIndex)] || fallback;
+};
 
 export const formatMicroCopy = (micro = '') => {
   const trimmed = micro

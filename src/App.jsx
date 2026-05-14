@@ -597,9 +597,10 @@ export default function App() {
     if (questionPhase === 'followup') {
       return getFollowupTempoMessage(currIdx, followupQuestions.length);
     }
-    const defaultMsg = getQuestionTempoMessage(currIdx, '지금의 결대로 가볍게 골라보세요', QUESTION_TEMPO_COPY);
+    const baseTotal = questions.length || 12;
+    const defaultMsg = getQuestionTempoMessage(currIdx, baseTotal, '지금의 결대로 가볍게 골라보세요', QUESTION_TEMPO_COPY);
     if (ageGroup) {
-      return getPersonalizedTempoMessage(ageGroup, currIdx, defaultMsg);
+      return getPersonalizedTempoMessage(ageGroup, currIdx, baseTotal, defaultMsg);
     }
     return defaultMsg;
   };
