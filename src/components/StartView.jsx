@@ -86,18 +86,23 @@ export default function StartView({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
-      className="w-full max-w-sm flex flex-col items-center px-6 py-10"
+      className="w-full max-w-sm flex flex-col items-center px-6 py-8 min-[390px]:py-10"
     >
-      <div className="mb-6 flex flex-col items-center gap-3">
-        <div className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-[1.35rem] border border-white/15 bg-white/10 p-1.5 shadow-[0_20px_55px_rgba(99,102,241,0.3)]">
-          <img src="/service-icon.svg" alt="오늘의 MBTI 서비스 아이콘" className="h-full w-full rounded-[1rem] object-cover" />
+      <div className="mb-5 flex flex-col items-center gap-3 min-[390px]:mb-6">
+        <div className="relative flex h-[7.25rem] w-[7.25rem] items-center justify-center rounded-[2rem] bg-white/[0.045] shadow-[inset_0_1px_0_rgba(255,255,255,0.16),0_24px_70px_rgba(34,211,238,0.16)]">
+          <div className="absolute inset-2 rounded-[1.7rem] bg-gradient-to-br from-cyan-300/14 via-white/[0.03] to-brand/14" />
+          <div className="relative flex h-24 w-24 items-center justify-center overflow-hidden rounded-[1.65rem] border border-white/15 bg-white/10 p-2 shadow-[0_18px_42px_rgba(15,23,42,0.28)]">
+            <img src="/service-icon.svg" alt="오늘의 MBTI 서비스 아이콘" className="h-full w-full rounded-[1.3rem] object-cover" />
+          </div>
         </div>
-        <span className="rounded-full border border-white/10 bg-white/[0.06] px-4 py-1.5 text-[12px] font-black tracking-[0.18em] text-cyan-100 uppercase">
+        <span className="rounded-full border border-white/10 bg-white/[0.06] px-4 py-1.5 text-[12px] font-black tracking-[0.18em] text-cyan-100 uppercase shadow-[0_12px_28px_rgba(15,23,42,0.22)]">
           오늘의 MBTI
         </span>
       </div>
-      <h1 className="text-4xl font-extrabold mb-3 text-center text-white tracking-tight">지금 내 결은 어느 쪽이 더 강할까?</h1>
-      <p className="text-slate-300 mb-10 text-center font-medium leading-relaxed">
+      <h1 className="mb-3 text-center text-[2.05rem] font-black leading-[1.12] text-white min-[390px]:text-[2.35rem]">
+        지금 내 결은 어느 쪽이 더 강할까?
+      </h1>
+      <p className="mb-8 text-center font-medium leading-relaxed text-slate-300 min-[390px]:mb-9">
         12문항으로 오늘의 무드와 성향 흐름을
         <br />
         가볍고 재밌게 확인해보세요
@@ -134,7 +139,7 @@ export default function StartView({
 
       <button
         onClick={onStart}
-        className="w-full mt-6 py-5 rounded-3xl font-black text-xl transition-all duration-300 bg-gradient-to-r from-brand to-cyan-500 text-white shadow-[0_0_40px_rgba(168,85,247,0.4)] hover:scale-[1.02] active:scale-[0.98]"
+        className="mt-5 w-[92%] max-w-[19rem] rounded-[1.35rem] bg-gradient-to-r from-brand to-cyan-500 py-4 text-base font-black text-white shadow-[0_14px_34px_rgba(34,211,238,0.2)] transition-all duration-300 hover:scale-[1.01] active:scale-[0.98] min-[390px]:mt-6 min-[390px]:py-[1.05rem] min-[390px]:text-lg"
       >
         바로 시작하기
       </button>

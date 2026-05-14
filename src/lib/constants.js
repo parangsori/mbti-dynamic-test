@@ -19,6 +19,14 @@ export const COMPATIBILITY = {
 
 export const CHANGELOG = [
   {
+    version: 'v1.6.1',
+    date: '2026.05.14',
+    updates: [
+      '마지막 답변 후 짧은 분석 중 화면을 거쳐 결과로 진입하도록 개선해 결과 확인의 기대감과 완성도 강화',
+      '시작 화면의 로고, 타이틀, 버튼 여백을 정돈해 앱처럼 바로 시작하는 느낌을 보완'
+    ]
+  },
+  {
     version: 'v1.6.0',
     date: '2026.05.14',
     updates: [

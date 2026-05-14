@@ -1,5 +1,5 @@
 import { Component, lazy, Suspense, useEffect, useState } from 'react';
-import { AnimatePresence } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import StartView from './components/StartView.jsx';
 import QuestionView from './components/QuestionView.jsx';
 import PullToRefreshIndicator from './components/PullToRefreshIndicator.jsx';
@@ -70,6 +70,13 @@ const VersionModal = lazy(() => import('./components/VersionModal.jsx'));
 const AxisGuideModal = lazy(() => import('./components/AxisGuideModal.jsx'));
 const AccessibilitySettings = lazy(() => import('./components/AccessibilitySettings.jsx'));
 
+const ANALYSIS_DURATION_MS = 2800;
+const ANALYSIS_STEPS = [
+  '답변 흐름 확인 중',
+  '성향 축 정리 중',
+  '오늘의 결과 준비 중'
+];
+
 const ScreenFallback = (
   <div className="w-full max-w-sm px-6 py-10">
     <div className="rounded-3xl border border-white/10 bg-white/5 px-6 py-10 text-center text-sm font-semibold text-slate-300">
@@ -134,6 +141,66 @@ class ResultErrorBoundary extends Component {
       </div>
     );
   }
+}
+
+function AnalysisView() {
+  return (
+    <motion.div
+      key="analysis"
+      initial={{ opacity: 0, y: 18, scale: 0.98 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, y: -18, scale: 0.98 }}
+      transition={{ duration: 0.32, ease: 'easeOut' }}
+      className="w-full max-w-sm px-6 py-10"
+    >
+      <div className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-slate-950/72 px-5 py-8 text-center shadow-[0_26px_80px_rgba(15,23,42,0.46)] backdrop-blur-2xl">
+        <div className="absolute left-1/2 top-[-96px] h-48 w-48 -translate-x-1/2 rounded-full bg-cyan-400/20 blur-3xl" />
+        <div className="absolute bottom-[-108px] right-[-70px] h-56 w-56 rounded-full bg-fuchsia-400/16 blur-3xl" />
+
+        <div className="relative mx-auto flex h-20 w-20 items-center justify-center overflow-hidden rounded-[1.5rem] border border-cyan-100/20 bg-white/[0.07] p-2 shadow-[0_22px_60px_rgba(34,211,238,0.18)]">
+          <img src="/service-icon.svg" alt="" className="h-full w-full rounded-[1.15rem] object-cover" />
+          <div className="absolute inset-0 rounded-[1.5rem] bg-gradient-to-br from-white/18 via-transparent to-cyan-300/16" />
+        </div>
+
+        <p className="relative mt-5 text-[11px] font-black uppercase tracking-[0.18em] text-cyan-100/80">오늘의 MBTI</p>
+        <h2 className="relative mt-3 text-[23px] font-black leading-tight text-white break-keep">
+          방금 고른 선택들로 지금의 성향을 정리하고 있어요
+        </h2>
+        <p className="relative mt-3 text-[13px] font-semibold leading-relaxed text-slate-300 break-keep">
+          조금만 기다리시면 지금의 MBTI가 분석됩니다
+        </p>
+
+        <div className="relative mt-7">
+          <div className="h-3.5 overflow-hidden rounded-full border border-white/10 bg-white/[0.06]">
+            <motion.div
+              className="h-full rounded-full bg-gradient-to-r from-cyan-300 via-brand to-pink-300 shadow-[0_0_24px_rgba(34,211,238,0.45)]"
+              initial={{ width: '6%' }}
+              animate={{ width: '100%' }}
+              transition={{ duration: ANALYSIS_DURATION_MS / 1000, ease: 'easeInOut' }}
+            />
+          </div>
+          <div className="mt-4 grid grid-cols-1 gap-2">
+            {ANALYSIS_STEPS.map((label, index) => (
+              <motion.div
+                key={label}
+                initial={{ opacity: 0.42, y: 6 }}
+                animate={{ opacity: [0.5, 1, 0.72], y: 0 }}
+                transition={{
+                  delay: index * 0.45,
+                  duration: 1,
+                  repeat: Infinity,
+                  repeatDelay: 1.2
+                }}
+                className="rounded-2xl border border-white/10 bg-white/[0.045] px-3 py-2 text-[10px] font-black text-slate-200 break-keep"
+              >
+                {label}
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </motion.div>
+  );
 }
 
 const HOME_SCREEN_TIP_HIDDEN_KEY = 'mbti_home_screen_tip_hidden';
@@ -486,8 +553,22 @@ export default function App() {
     setLastAnswerSnapshot(null);
     transitionLockRef.current = false;
     setResultBoundaryKey((value) => value + 1);
-    setStep('result');
+    trackEvent('analysis_view', {
+      questionContextTop: nextQuestionContextSummary.topTag
+    });
+    setStep('analysis');
   };
+
+  useEffect(() => {
+    if (step !== 'analysis') return undefined;
+
+    const timer = window.setTimeout(() => {
+      trackEvent('analysis_complete');
+      setStep('result');
+    }, ANALYSIS_DURATION_MS);
+
+    return () => window.clearTimeout(timer);
+  }, [step]);
 
   const handleResultReady = () => {
     clearActiveSession();
@@ -592,6 +673,8 @@ export default function App() {
               onBack={() => handleQuestionBack({ setUserName, setStep, trackEvent })}
             />
           )}
+
+          {step === 'analysis' && <AnalysisView key="analysis" />}
 
           {step === 'result' && (
             <ResultErrorBoundary key={`result-boundary-${resultBoundaryKey}`} onRestart={handleRestart}>
