@@ -50,6 +50,23 @@ const readArrayJson = (key) => {
 export const readHistory = () => readArrayJson(STORAGE_KEYS.history);
 export const writeHistory = (history) => writeJson(STORAGE_KEYS.history, history);
 
+export const getHistoryEntryKey = (entry = {}) => entry.localEntryId || entry.createdAt || '';
+
+export const patchHistoryEntry = (entryKey, patch) => {
+  if (!entryKey) return readHistory();
+
+  const history = readHistory();
+  let changed = false;
+  const updated = history.map((item) => {
+    if (getHistoryEntryKey(item) !== entryKey) return item;
+    changed = true;
+    return { ...item, ...patch };
+  });
+
+  if (changed) writeHistory(updated);
+  return updated;
+};
+
 export const readActiveSession = () => readJson(STORAGE_KEYS.activeSession, null);
 export const writeActiveSession = (payload) => writeJson(STORAGE_KEYS.activeSession, {
   ...payload,

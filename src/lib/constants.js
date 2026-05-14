@@ -19,6 +19,14 @@ export const COMPATIBILITY = {
 
 export const CHANGELOG = [
   {
+    version: 'v1.6.0',
+    date: '2026.05.14',
+    updates: [
+      '기존 테스트 경험은 유지하면서 결과 기록을 서버에도 백업할 수 있는 기초 동기화 구조를 추가',
+      '서버 저장이 준비되지 않았거나 실패해도 결과 표시와 공유 흐름이 막히지 않도록 로컬 우선 구조 유지'
+    ]
+  },
+  {
     version: 'v1.5.9',
     date: '2026.05.11',
     updates: [

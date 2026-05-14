@@ -385,6 +385,7 @@ export default function ResultView({
   const timeLabel = getTimeLabel();
 
   useResultRecord({
+    ageGroup,
     currentEntry: currentEntryRef.current,
     historyData,
     mbti,
@@ -393,7 +394,9 @@ export default function ResultView({
     presentation,
     questionContextSummary,
     setHistoryData,
-    spectrum
+    scores,
+    spectrum,
+    trackEvent
   });
 
   useEffect(() => {

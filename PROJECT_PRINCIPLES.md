@@ -14,6 +14,7 @@
 - UI: Tailwind CSS + Framer Motion
 - 결과 이미지 저장: `html2canvas`
 - 현재 구조는 프론트엔드 중심이며, 주요 동작은 로컬 상태와 로컬 저장소를 기반으로 한다.
+- 결과 기록 백업: Supabase 익명 세션 기반 선택적 동기화. Supabase 환경변수가 없거나 저장에 실패해도 로컬 기록과 테스트 완료 흐름을 막지 않는다.
 - 운영 대시보드: `admin/` 별도 Vite 앱 + Vercel Serverless API + PostHog Query API
 - 관리자 접근 보호: `admin.beatblue.net` + Cloudflare Access + Vercel 환경변수 기반 서버 측 검증
 
@@ -62,6 +63,8 @@
 - PostHog Personal API Key는 Vercel admin 프로젝트의 서버 환경변수 `POSTHOG_PERSONAL_API_KEY`로만 관리하고, 최소 권한(`query:read` 중심)으로 생성한다.
 - 메인 사용자 서비스의 PostHog 브라우저 SDK에는 `phc_` Project token만 `VITE_POSTHOG_KEY`로 넣는다. `phx_` Personal API Key를 `VITE_` 변수에 넣으면 프론트 번들에 노출되므로 즉시 폐기/재발급한다.
 - 메인 사용자 서비스의 PostHog 수집 호스트는 reverse proxy `VITE_POSTHOG_HOST=https://e.beatblue.net`을 사용한다.
+- Supabase 클라이언트에는 publishable/anon key만 `VITE_SUPABASE_*` 변수로 둔다. service role key, secret key, DB password는 절대 `VITE_` 변수나 프론트 번들에 두지 않는다.
+- Supabase 결과 저장은 로컬 기록의 보조 백업으로만 시작한다. 서버 저장 성공 여부 때문에 테스트 완료, 결과 표시, 공유 카드 저장 흐름이 막히면 안 된다.
 - 클라이언트는 임의 HogQL/query를 서버로 보낼 수 없어야 하며, 서버리스 API는 코드에 고정된 집계 쿼리만 실행한다.
 - 운영 대시보드는 집계 숫자만 표시한다. 사용자별 이벤트 원문, distinct id, 이름, 생년월일, 원본 프로필 데이터는 응답하거나 화면에 노출하지 않는다.
 - `ADMIN_DASHBOARD_TOKEN`은 로컬 개발 또는 비상 fallback용이다. production의 주 인증 수단으로 사용하지 않는다.
@@ -182,7 +185,8 @@
 2. 반복 사용 시 결과 문구/테마/질문 신선도 개선
 3. 변경 작업 시 회귀 방지와 백업-비교 체계 고정
 4. PostHog 기반 모바일 운영 대시보드로 유입, 시작, 완료, 공유, 재방문 지표를 계속 확인
-5. 이후 백엔드/수익화 작업 전, 프론트 경험 품질과 운영 지표 판단 흐름 안정화
+5. Supabase 기반 결과 기록 백업을 로컬 우선 구조로 안정화
+6. 이후 백엔드/수익화 작업 전, 프론트 경험 품질과 운영 지표 판단 흐름 안정화
 
 ### 지속 주의할 문제
 
@@ -238,6 +242,7 @@
 - 2026-05-13: 내부 검토 리포트 우선순위에 따라 `dev`에서 pull-to-refresh 렌더 상태를 전용 컴포넌트로 격리하고, 질문 세션 상태를 `useSessionFlow` 훅으로 묶었으며, 공유 카드 DOM을 별도 컴포넌트로 분리했다. 사용자-facing 카피/레이아웃은 유지하고 `npm run build`, `npm run test:accuracy`, `npm run test:freshness`로 회귀를 확인했다.
 - 2026-05-14: 2차 리팩토링 2-A로 질문 답변, 중간 답변, 보정 질문 전환, 직전 문항 되돌리기, 진행 중 세션 저장 흐름을 `useSessionFlow`로 확장했다. 사용자-facing 화면/카피는 유지하고, 결과 완료와 analytics 같은 외부 부수효과는 App에서 콜백으로 명시 연결한다.
 - 2026-05-14: 2차 리팩토링 2-B로 결과 기록 저장과 공유/이미지 저장 핸들러를 `useResultRecord`, `useResultShare` 훅으로 분리했다. `ShareCard` DOM과 사용자-facing 카피/레이아웃은 유지하고, 모바일 공유/저장 동작은 dev URL에서 수동 확인한다.
+- 2026-05-14: Supabase 기반 결과 기록 백업 기초를 추가했다. 기존 로컬 기록을 1차 소스로 유지하고, 환경변수가 준비된 경우에만 익명 세션으로 `test_results`에 비차단 동기화한다. 서버 저장 실패는 결과 표시와 공유 흐름을 막지 않는다.
 
 ### 다음 채팅에서 먼저 확인할 체크포인트
 
