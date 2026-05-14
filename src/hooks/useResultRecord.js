@@ -28,7 +28,10 @@ export function useResultRecord({
 
     syncResultEntry({ entry, scores, ageGroup })
       .then((result) => {
-        if (result.status === 'skipped') return;
+        if (result.status === 'skipped') {
+          trackEvent?.('result_server_sync_skipped', { reason: result.reason || '' });
+          return;
+        }
 
         const syncedAt = new Date().toISOString();
         const patch = result.status === 'synced'
