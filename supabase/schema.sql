@@ -15,18 +15,21 @@ alter table public.profiles enable row level security;
 drop policy if exists "profiles_select_own" on public.profiles;
 create policy "profiles_select_own"
   on public.profiles for select
-  using (auth.uid() = id);
+  to authenticated
+  using ((select auth.uid()) = id);
 
 drop policy if exists "profiles_insert_own" on public.profiles;
 create policy "profiles_insert_own"
   on public.profiles for insert
-  with check (auth.uid() = id);
+  to authenticated
+  with check ((select auth.uid()) = id);
 
 drop policy if exists "profiles_update_own" on public.profiles;
 create policy "profiles_update_own"
   on public.profiles for update
-  using (auth.uid() = id)
-  with check (auth.uid() = id);
+  to authenticated
+  using ((select auth.uid()) = id)
+  with check ((select auth.uid()) = id);
 
 create table if not exists public.test_results (
   id uuid primary key default gen_random_uuid(),
@@ -52,21 +55,47 @@ alter table public.test_results enable row level security;
 drop policy if exists "test_results_select_own" on public.test_results;
 create policy "test_results_select_own"
   on public.test_results for select
-  using (auth.uid() = user_id);
+  to authenticated
+  using ((select auth.uid()) = user_id);
 
 drop policy if exists "test_results_insert_own" on public.test_results;
 create policy "test_results_insert_own"
   on public.test_results for insert
-  with check (auth.uid() = user_id);
+  to authenticated
+  with check ((select auth.uid()) = user_id);
 
 drop policy if exists "test_results_update_own" on public.test_results;
 create policy "test_results_update_own"
   on public.test_results for update
-  using (auth.uid() = user_id)
-  with check (auth.uid() = user_id);
+  to authenticated
+  using ((select auth.uid()) = user_id)
+  with check ((select auth.uid()) = user_id);
 
 create index if not exists test_results_user_created_idx
   on public.test_results (user_id, client_created_at desc);
 
 create index if not exists test_results_user_mbti_idx
   on public.test_results (user_id, mbti_result);
+
+-- Required when "Automatically expose new tables" is disabled.
+-- Anonymous Supabase auth sessions use the authenticated database role,
+-- and RLS policies above still apply after these grants.
+grant usage on schema public to authenticated;
+grant select, insert, update on public.profiles to authenticated;
+grant select, insert, update on public.test_results to authenticated;
+
+-- Supabase automatic RLS can create a SECURITY DEFINER helper in public.
+-- Keep it unavailable through the public REST/RPC surface when it exists.
+do $$
+begin
+  if exists (
+    select 1
+    from pg_proc p
+    join pg_namespace n on n.oid = p.pronamespace
+    where n.nspname = 'public'
+      and p.proname = 'rls_auto_enable'
+      and p.pronargs = 0
+  ) then
+    revoke execute on function public.rls_auto_enable() from public, anon, authenticated;
+  end if;
+end $$;

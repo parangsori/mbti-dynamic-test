@@ -54,7 +54,9 @@ export function useResultRecord({
         });
 
         trackEvent?.(result.status === 'synced' ? 'result_server_sync_success' : 'result_server_sync_fail', {
-          reason: result.reason || ''
+          reason: result.reason || '',
+          code: result.error?.code || '',
+          message: result.error?.message || ''
         });
       })
       .catch((error) => {
