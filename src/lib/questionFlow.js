@@ -392,6 +392,19 @@ export const sortQuestionsForTempo = (selected, recentIds = new Set()) => {
   return [...opening, ...remaining];
 };
 
+const applyQuestionAgeVariant = (question, ageGroup = '') => {
+  const variants = question.ageVariants;
+  const variant = ageGroup && variants?.[ageGroup] ? variants[ageGroup] : null;
+  if (!variant) return question;
+
+  return {
+    ...question,
+    ...variant,
+    options: Array.isArray(variant.options) ? variant.options : question.options,
+    ageVariantKey: ageGroup
+  };
+};
+
 export const buildQuestionSession = (recentSessions = [], { ageGroup = '' } = {}) => {
   const recentIds = new Set(recentSessions.flatMap(getRecentSessionIds));
   const recentLifeTags = new Set(recentSessions.flatMap(getRecentSessionLifeTags));
@@ -410,7 +423,7 @@ export const buildQuestionSession = (recentSessions = [], { ageGroup = '' } = {}
     const pool = [...basePool, ...extPool];
     const meta = [...baseMeta, ...extMeta];
 
-    const enriched = pool.map((q, i) => ({
+    const enriched = pool.map((q, i) => applyQuestionAgeVariant({
       ...q,
       id: meta[i]?.id || `${axis}_${i + 1}`,
       familyId: meta[i]?.familyId || `${axis}_${i + 1}`,
@@ -421,7 +434,7 @@ export const buildQuestionSession = (recentSessions = [], { ageGroup = '' } = {}
       ageFit: Array.isArray(meta[i]?.ageFit) ? meta[i].ageFit : q.ageFit,
       allowMiddleCandidate: meta[i]?.allowMiddleCandidate || false,
       _axis: axis
-    }));
+    }, ageGroup));
 
     const rolePools = [
       enriched.filter((question) => question.role === 'anchor'),
