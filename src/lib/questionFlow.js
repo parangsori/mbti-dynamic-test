@@ -12,9 +12,15 @@ export const createEmptyNeutralSignals = () => ({ EI: 0, SN: 0, TF: 0, JP: 0 });
 const DEFAULT_CONTEXT_TAG = 'daily';
 const DEFAULT_LIFE_TAG = 'daily_choice';
 const FRESH_CONTEXT_WEIGHT_BOOST = 4;
-const AGE_FIT_WEIGHT_BOOST = 1.28;
+const AGE_FIT_WEIGHT_BOOST = 2.15;
 const FRESH_LIFE_TAG_WEIGHT_BOOST = 1.22;
 const MAX_LIFE_TAG_PER_SESSION = 3;
+const AGE_FIT_MIN_PER_AXIS = 1;
+
+const AGE_MISMATCH_PATTERNS = {
+  child: /퇴근|직장|동료|회사|신규 사업|소개팅|데이트|상사|회의/,
+  teen: /퇴근|직장|동료|회사|신규 사업|소개팅|데이트|상사/
+};
 
 const CONTEXT_LABELS = {
   today: '오늘 컨디션',
@@ -73,6 +79,22 @@ export const getQuestionLifeTag = (question = {}) => {
   if (question.role === 'state') return 'emotion_check';
   if (question.role === 'parallel') return 'self_growth';
   return DEFAULT_LIFE_TAG;
+};
+
+const getQuestionTextBundle = (question = {}) => [
+  question.q,
+  ...(question.options || []).flatMap((option) => [option.text, option.micro])
+].filter(Boolean).join(' ');
+
+const isAgeFit = (question = {}, ageGroup = '') =>
+  Boolean(ageGroup && Array.isArray(question.ageFit) && question.ageFit.includes(ageGroup));
+
+const isQuestionAgeCompatible = (question = {}, ageGroup = '') => {
+  if (!ageGroup) return true;
+  if (isAgeFit(question, ageGroup)) return true;
+  const mismatchPattern = AGE_MISMATCH_PATTERNS[ageGroup];
+  if (!mismatchPattern) return true;
+  return !mismatchPattern.test(getQuestionTextBundle(question));
 };
 
 const getRecentSessionIds = (session) => {
@@ -204,7 +226,8 @@ const getSelectionWeight = (question, { ageGroup = '', recentLifeTags = new Set(
 const pickWeightedQuestion = (pool, { recentIds, recentLifeTags, usedIds, usedFamilyIds, usedLifeTagCounts, ageGroup }) => {
   const usableBase = pool.filter((question) =>
     !usedIds.has(question.id) &&
-    !usedFamilyIds.has(question.familyId)
+    !usedFamilyIds.has(question.familyId) &&
+    isQuestionAgeCompatible(question, ageGroup)
   );
   const usable = usableBase.filter((question) => {
     const lifeTag = getQuestionLifeTag(question);
@@ -235,6 +258,43 @@ const addPickedQuestion = (question, selected, usedIds, usedFamilyIds, usedLifeT
   const lifeTag = getQuestionLifeTag(question);
   usedLifeTagCounts[lifeTag] = (usedLifeTagCounts[lifeTag] || 0) + 1;
   return true;
+};
+
+const removePickedQuestion = (question, selected, usedIds, usedFamilyIds, usedLifeTagCounts) => {
+  const index = selected.findIndex((item) => item.id === question.id);
+  if (index < 0) return false;
+  selected.splice(index, 1);
+  usedIds.delete(question.id);
+  usedFamilyIds.delete(question.familyId);
+  const lifeTag = getQuestionLifeTag(question);
+  usedLifeTagCounts[lifeTag] = Math.max((usedLifeTagCounts[lifeTag] || 1) - 1, 0);
+  return true;
+};
+
+const ensureAgeFitForAxis = ({ axis, enriched, selected, usedIds, usedFamilyIds, usedLifeTagCounts, recentIds, recentLifeTags, ageGroup }) => {
+  if (!ageGroup) return;
+  const axisSelected = selected.filter((question) => question._axis === axis);
+  const ageFitCount = axisSelected.filter((question) => isAgeFit(question, ageGroup)).length;
+  if (ageFitCount >= AGE_FIT_MIN_PER_AXIS) return;
+
+  const ageFitPool = enriched.filter((question) => isAgeFit(question, ageGroup));
+  const replacement = pickWeightedQuestion(ageFitPool, {
+    recentIds,
+    recentLifeTags,
+    usedIds,
+    usedFamilyIds,
+    usedLifeTagCounts,
+    ageGroup
+  });
+  if (!replacement) return;
+
+  const replaceTarget = [...axisSelected]
+    .filter((question) => !isAgeFit(question, ageGroup))
+    .sort((a, b) => (a.weight || 1) - (b.weight || 1))[0];
+
+  if (!replaceTarget) return;
+  removePickedQuestion(replaceTarget, selected, usedIds, usedFamilyIds, usedLifeTagCounts);
+  addPickedQuestion(replacement, selected, usedIds, usedFamilyIds, usedLifeTagCounts);
 };
 
 const AXIS_CONFIG = [
@@ -392,6 +452,18 @@ export const buildQuestionSession = (recentSessions = [], { ageGroup = '' } = {}
       });
       if (!addPickedQuestion(fallback, selected, usedIds, usedFamilyIds, usedLifeTagCounts)) break;
     }
+
+    ensureAgeFitForAxis({
+      axis,
+      enriched,
+      selected,
+      usedIds,
+      usedFamilyIds,
+      usedLifeTagCounts,
+      recentIds,
+      recentLifeTags,
+      ageGroup
+    });
   });
 
   const ordered = sortQuestionsForTempo(selected, recentIds);

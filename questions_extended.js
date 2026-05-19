@@ -1571,7 +1571,7 @@ const FRESHNESS_QUESTION_BOOST = {
     { q: "바쁜 날 부탁을 거절해야 한다면?", options: [{ text: "가능한 범위와 이유를 명확히 말함", type: "T", micro: "범위를 분명히 말함" }, { text: "상대가 서운하지 않게 표현을 고름", type: "F", micro: "표현을 조심히 고름" }] },
     { q: "실수한 동료를 볼 때 먼저 떠오르는 건?", options: [{ text: "어디서 프로세스가 어긋났는지", type: "T", micro: "원인을 먼저 봄" }, { text: "얼마나 민망하고 속상할지", type: "F", micro: "마음이 먼저 보임" }] },
     { q: "중요한 대화를 앞두고 준비하는 건?", options: [{ text: "핵심 근거와 말할 순서를 정리함", type: "T", micro: "할 말을 정리함" }, { text: "상대가 어떻게 느낄지 표현을 다듬음", type: "F", micro: "표현을 다듬음" }] },
-    { q: "내가 좋은 리더라고 느끼는 모습은?", options: [{ text: "방향을 명확히 잡고 공정하게 판단하는 사람", type: "T", micro: "나침반형 리더" }, { text: "사람의 마음을 살피며 함께 가게 하는 사람", type: "F", micro: "온도 조절형 리더" }] },
+    { q: "친구들과 함께 정할 때 내가 믿음직하다고 느끼는 모습은?", options: [{ text: "기준을 분명히 잡고 공정하게 정리하는 모습", type: "T", micro: "기준 정리형" }, { text: "각자 마음을 살피며 함께 가게 하는 모습", type: "F", micro: "마음 조율형" }] },
     { q: "하루 끝에 후회가 덜 남는 쪽은?", options: [{ text: "할 말은 정확히 하고 기준을 지킨 날", type: "T", micro: "기준을 지킨 날" }, { text: "다정함을 잃지 않고 관계를 지킨 날", type: "F", micro: "다정함을 지킨 날" }] }
   ],
   JP: [
@@ -1650,7 +1650,7 @@ const FRESHNESS_META_BOOST = {
     { id: "TF_076", familyId: "TF_DECLINE_BUSY", role: "forced_choice", weight: 1.2, contextTag: "situation", lifeTag: "unexpected", ageFit: ["20s", "30s", "40s", "50s"], allowMiddleCandidate: true },
     { id: "TF_077", familyId: "TF_COLLEAGUE_ERROR", role: "discriminator", weight: 1.12, contextTag: "daily", lifeTag: "work_study", ageFit: ["20s", "30s", "40s", "50s"] },
     { id: "TF_078", familyId: "TF_IMPORTANT_TALK_PREP", role: "parallel", weight: 1.05, contextTag: "relationship", lifeTag: "relationship", ageFit: ["teen", "20s", "30s", "40s", "50s"] },
-    { id: "TF_079", familyId: "TF_GOOD_LEADER_IMAGE", role: "anchor", weight: 1.35, contextTag: "daily", lifeTag: "self_growth", ageFit: ["teen", "20s", "30s", "40s"] },
+    { id: "TF_079", familyId: "TF_GOOD_LEADER_IMAGE", role: "parallel", weight: 0.85, contextTag: "relationship", lifeTag: "relationship", ageFit: ["teen", "20s", "30s", "40s"] },
     { id: "TF_080", familyId: "TF_DAY_END_REGRET", role: "state", weight: 0.9, contextTag: "today", lifeTag: "emotion_check", ageFit: ["20s", "30s", "40s", "50s"] }
   ],
   JP: [

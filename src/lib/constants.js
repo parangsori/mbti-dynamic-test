@@ -19,6 +19,14 @@ export const COMPATIBILITY = {
 
 export const CHANGELOG = [
   {
+    version: 'v1.6.3',
+    date: '2026.05.19',
+    updates: [
+      '10대 프로필에서 성인 생활 맥락이 강한 문항이 덜 나오도록 후보 필터와 연령대 문항 보장 로직을 보강',
+      '리더 관련 문항을 친구들과 함께 정하는 상황으로 바꿔 10대도 자연스럽게 이해할 수 있도록 개선'
+    ]
+  },
+  {
     version: 'v1.6.2',
     date: '2026.05.18',
     updates: [

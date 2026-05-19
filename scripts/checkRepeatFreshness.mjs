@@ -8,6 +8,7 @@ const SESSION_COUNT = 5;
 const EXPECTED_AXIS_COUNT = 3;
 const MAX_REPEAT_RATE = 0.18;
 const MIN_LIFE_TAGS_PER_SESSION = 3;
+const MIN_AGE_FIT_PER_SESSION = 4;
 const AXES = ['EI', 'SN', 'TF', 'JP'];
 const AGE_GROUPS = ['teen', '20s', '30s', '40s', '50s'];
 const PRESENTATION_STATES = ['streak', 'shift', 'boundary', 'clear', 'default'];
@@ -144,8 +145,8 @@ lifeTagsBySession.forEach(({ session, uniqueCount, counts }) => {
 });
 
 ageFitBySession.forEach(({ session, ageGroup, count }) => {
-  if (count < 1) {
-    failures.push(`session ${session}: ${ageGroup} ageFit 문항이 반영되지 않았습니다.`);
+  if (count < MIN_AGE_FIT_PER_SESSION) {
+    failures.push(`session ${session}: ${ageGroup} ageFit 문항이 ${MIN_AGE_FIT_PER_SESSION}개보다 적습니다. actual=${count}`);
   }
 });
 
