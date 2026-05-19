@@ -1515,6 +1515,169 @@ export const QUESTIONS_EXTENDED = {
 // index.html의 handleStart 로직과 호환되도록 평탄화된 변수 추가 할당
 export const QUESTIONS_META_EXTENDED = QUESTIONS_EXTENDED._META;
 
+const FRESHNESS_QUESTION_BOOST = {
+  EI: [
+    { q: "오랜 대화 뒤 집에 돌아온 순간, 무엇을 해야 가장 편해질까?", options: [{ text: "좋았던 장면을 누군가에게 또 말하며 여운을 이어감", type: "E", micro: "대화 후에도 에너지 남음" }, { text: "조용히 씻고 알림을 잠시 내려놓아야 숨이 돌아옴", type: "I", micro: "조용히 쉬면 회복돼요" }] },
+    { q: "새로운 팀이나 반에 들어갔을 때, 마음이 먼저 가는 쪽은?", options: [{ text: "가볍게 말을 붙이며 분위기를 직접 익혀봄", type: "E", micro: "먼저 다가가면 편해요" }, { text: "사람들의 리듬을 관찰한 뒤 편한 타이밍을 찾음", type: "I", micro: "천천히 살피는 편" }] },
+    { q: "하루가 꼬였을 때 가장 빨리 기분이 풀리는 순간은?", options: [{ text: "누군가와 짧게라도 웃고 떠들며 마음을 환기할 때", type: "E", micro: "대화로 기분 환기" }, { text: "혼자 좋아하는 음악이나 영상에 조용히 잠길 때", type: "I", micro: "혼자 쉬면 충전돼요" }] },
+    { q: "중요한 생각이 떠올랐을 때 더 자연스러운 첫 행동은?", options: [{ text: "말로 꺼내보며 반응을 보고 생각을 다듬음", type: "E", micro: "말할수록 선명해요" }, { text: "메모로 정리하고 스스로 납득한 뒤 공유함", type: "I", micro: "혼자 정리하면 선명" }] },
+    { q: "피곤한데 약속 제안이 왔다면 마음속 저울은?", options: [{ text: "좋은 사람이라면 나가서 에너지를 다시 얻을 수도 있음", type: "E", micro: "만나면 힘이 날 수도" }, { text: "좋은 사람이어도 오늘은 내 체력과 먼저 협상함", type: "I", micro: "오늘 체력을 먼저 봐요" }] },
+    { q: "관계가 살짝 어색해졌을 때 더 편한 회복 방식은?", options: [{ text: "짧게라도 직접 말해 공기를 풀어보는 쪽", type: "E", micro: "말로 온도 조절" }, { text: "시간을 두고 정리한 뒤 차분하게 접근하는 쪽", type: "I", micro: "감정 정리 후 입장" }] },
+    { q: "집중해야 하는 날, 가장 방해가 덜 되는 환경은?", options: [{ text: "적당한 사람 기척과 생활 소음이 있는 곳", type: "E", micro: "조용한 북적임 선호" }, { text: "내 리듬만 들리는 방해 없는 자리", type: "I", micro: "집중 보호막 필요" }] },
+    { q: "칭찬을 받았을 때 오래 남는 쪽은?", options: [{ text: "그 자리에서 함께 웃고 반응을 나눈 순간", type: "E", micro: "반응이 보너스 포인트" }, { text: "혼자 다시 떠올리며 조용히 뿌듯해지는 순간", type: "I", micro: "속으로 저장 완료" }] },
+    { q: "주말 오전, 갑자기 시간이 비면 먼저 떠오르는 건?", options: [{ text: "누구와 뭐 할지 연락부터 해보고 싶음", type: "E", micro: "주말 레이더 가동" }, { text: "혼자 밀린 취향과 휴식을 챙기고 싶음", type: "I", micro: "내 시간 예약 완료" }] },
+    { q: "낯선 공간에서 길을 잃었을 때 더 빠른 해결은?", options: [{ text: "근처 사람에게 물어보며 바로 방향을 잡음", type: "E", micro: "물어보면 빨라요" }, { text: "지도와 표지판을 보며 혼자 루트를 정리함", type: "I", micro: "혼자 확인하면 편해요" }] },
+    { q: "하루 끝에 마음을 정리하는 방식은?", options: [{ text: "오늘 있었던 일을 누군가와 나누며 마무리함", type: "E", micro: "나누면 정리돼요" }, { text: "혼자 생각을 접어두며 내일 쓸 힘을 남김", type: "I", micro: "조용히 하루 정리" }] },
+    { q: "새 취미를 시작한다면 더 끌리는 형태는?", options: [{ text: "같이 배우고 서로 반응을 나누는 모임형", type: "E", micro: "취미도 팀플이면 신남" }, { text: "내 속도대로 조용히 익히는 개인형", type: "I", micro: "혼자 레벨업 선호" }] },
+    { q: "메시지를 읽고 바로 답하기 어려울 때 나는?", options: [{ text: "짧게라도 반응을 먼저 보내 연결을 유지함", type: "E", micro: "연결 불씨 살리기" }, { text: "생각이 정리된 뒤 제대로 답하고 싶어짐", type: "I", micro: "답장 숙성 중" }] },
+    { q: "좋은 소식을 들었을 때 가장 먼저 하고 싶은 건?", options: [{ text: "바로 누군가에게 알려 기쁨을 키움", type: "E", micro: "나누면 더 기뻐요" }, { text: "혼자 충분히 음미한 뒤 천천히 나눔", type: "I", micro: "천천히 즐기고 싶어요" }] },
+    { q: "오늘 내 에너지를 비유하면 더 가까운 쪽은?", options: [{ text: "밖으로 번지는 밝은 조명 같은 느낌", type: "E", micro: "주변과 함께 밝아져요" }, { text: "안쪽에서 은은하게 켜지는 스탠드 같은 느낌", type: "I", micro: "내 안에서 차분해져요" }] },
+    { q: "갈등이 생겼을 때 오래 지치지 않는 방식은?", options: [{ text: "대화를 열어 서로의 생각을 빨리 맞춰보는 것", type: "E", micro: "대화로 교통정리" }, { text: "감정이 가라앉은 뒤 필요한 말만 정확히 하는 것", type: "I", micro: "차분함을 먼저 확보" }] },
+    { q: "일이 잘 풀렸을 때 보상으로 더 좋은 건?", options: [{ text: "좋아하는 사람과 맛있는 걸 먹으며 축하하기", type: "E", micro: "성취는 나눌수록 진함" }, { text: "혼자 편한 곳에서 아무 방해 없이 쉬기", type: "I", micro: "휴식 단독 콘서트" }] },
+    { q: "새로운 사람과 가까워지는 속도는?", options: [{ text: "말이 통하면 비교적 빠르게 편해지는 편", type: "E", micro: "대화가 지름길" }, { text: "시간을 두고 신뢰가 쌓여야 편해지는 편", type: "I", micro: "친밀감은 저속 충전" }] }
+  ],
+  SN: [
+    { q: "새로운 정보를 들었을 때 먼저 확인하고 싶은 건?", options: [{ text: "실제로 어디에 쓰이고 어떤 사례가 있는지", type: "S", micro: "사례가 있어야 이해돼요" }, { text: "이게 어떤 흐름과 가능성으로 이어지는지", type: "N", micro: "가능성을 먼저 봐요" }] },
+    { q: "하루를 기록한다면 더 먼저 남길 내용은?", options: [{ text: "무슨 일이 있었는지 순서와 장면", type: "S", micro: "있었던 일이 먼저" }, { text: "그 일이 내게 남긴 느낌과 의미", type: "N", micro: "남은 느낌이 먼저" }] },
+    { q: "익숙한 길에서 새 가게를 발견하면?", options: [{ text: "가격, 메뉴, 위치처럼 실제 정보를 먼저 봄", type: "S", micro: "실제 정보부터 확인" }, { text: "분위기와 콘셉트가 어떤지 상상부터 함", type: "N", micro: "어떤 느낌일지 상상" }] },
+    { q: "설명을 들을 때 집중이 잘 되는 방식은?", options: [{ text: "단계별 예시와 체크리스트가 있을 때", type: "S", micro: "순서가 있으면 마음 편함" }, { text: "큰 그림과 원리를 먼저 잡아줄 때", type: "N", micro: "지도부터 봐야 출발" }] },
+    { q: "문제가 애매할 때 믿음이 가는 단서는?", options: [{ text: "눈앞의 데이터와 이미 검증된 경험", type: "S", micro: "증거가 제일 든든" }, { text: "패턴에서 느껴지는 방향성과 직감", type: "N", micro: "감이 조용히 손듦" }] },
+    { q: "여행 후 가장 오래 남는 기억은?", options: [{ text: "음식, 거리, 냄새처럼 구체적인 장면", type: "S", micro: "감각 사진첩 선명" }, { text: "그 여행이 내게 준 분위기와 이야기", type: "N", micro: "여운 편집본 저장" }] },
+    { q: "새로운 목표를 세울 때 시작점은?", options: [{ text: "지금 가능한 준비물과 첫 단계 정리", type: "S", micro: "첫 칸부터 착실히" }, { text: "이 목표가 바꿀 미래 모습 상상", type: "N", micro: "미래 예고편 재생" }] },
+    { q: "좋은 글이나 영상을 봤을 때 더 남는 건?", options: [{ text: "쓸 만한 표현, 정보, 팁", type: "S", micro: "바로 쓸 수 있는 점" }, { text: "전체 메시지와 떠오르는 연결 생각", type: "N", micro: "다른 생각으로 이어짐" }] },
+    { q: "누군가의 고민을 들을 때 먼저 하는 반응은?", options: [{ text: "상황을 구체적으로 물어 맥락을 확인함", type: "S", micro: "팩트부터 차분히" }, { text: "그 사람이 왜 그런 마음인지 흐름을 읽음", type: "N", micro: "마음의 줄거리 읽기" }] },
+    { q: "방을 정리한다면 더 만족스러운 결과는?", options: [{ text: "물건 위치가 실제로 쓰기 편해진 것", type: "S", micro: "쓰기 편해야 만족" }, { text: "공간의 분위기와 컨셉이 살아난 것", type: "N", micro: "분위기가 중요해요" }] },
+    { q: "갑작스러운 제안을 판단할 때 먼저 보는 건?", options: [{ text: "시간, 비용, 준비 가능성", type: "S", micro: "현실 조건 먼저 체크" }, { text: "재밌을 가능성과 얻게 될 경험", type: "N", micro: "경험의 가능성을 봐요" }] },
+    { q: "오늘의 나를 한 문장으로 적는다면?", options: [{ text: "실제로 한 일과 남은 일을 중심으로 적음", type: "S", micro: "오늘 한 일이 먼저" }, { text: "오늘을 관통한 느낌과 키워드로 적음", type: "N", micro: "오늘의 느낌이 먼저" }] },
+    { q: "새 앱이나 도구를 배울 때 더 편한 건?", options: [{ text: "버튼을 눌러보며 기능을 하나씩 익힘", type: "S", micro: "손으로 배우는 타입" }, { text: "전체 구조를 이해한 뒤 응용법을 상상함", type: "N", micro: "구조부터 머리에 저장" }] },
+    { q: "사람을 기억할 때 더 먼저 떠오르는 건?", options: [{ text: "말투, 옷차림, 행동 같은 구체적 단서", type: "S", micro: "디테일 저장력 좋음" }, { text: "그 사람의 분위기와 내게 준 인상", type: "N", micro: "느낌 태그가 먼저" }] },
+    { q: "일이 막혔을 때 다시 움직이게 하는 질문은?", options: [{ text: "지금 당장 할 수 있는 다음 행동은?", type: "S", micro: "다음 한 칸 찾기" }, { text: "이 일이 결국 어디로 이어질까?", type: "N", micro: "방향 다시 잡기" }] },
+    { q: "추천을 받을 때 더 설득되는 방식은?", options: [{ text: "구체적인 장단점과 사용 후기", type: "S", micro: "후기가 있으면 든든" }, { text: "내 취향과 맞을 것 같은 이유", type: "N", micro: "취향과 맞는지가 중요" }] },
+    { q: "아무 계획 없는 저녁을 상상하면?", options: [{ text: "먹을 것, 할 일, 동선을 현실적으로 떠올림", type: "S", micro: "저녁 계획이 먼저" }, { text: "어떤 기분으로 보내고 싶은지 먼저 떠올림", type: "N", micro: "저녁 분위기가 먼저" }] },
+    { q: "대화가 길어질수록 더 흥미로운 쪽은?", options: [{ text: "실제로 있었던 일과 구체적 경험담", type: "S", micro: "실제 이야기가 좋아요" }, { text: "가정, 의미, 가능성으로 확장되는 이야기", type: "N", micro: "생각이 넓어져요" }] }
+  ],
+  TF: [
+    { q: "친구가 실수로 힘들어할 때 먼저 건네는 건?", options: [{ text: "무엇이 문제였는지 같이 정리해 다음 방법을 찾음", type: "T", micro: "다음 방법을 찾고 싶음" }, { text: "속상했을 마음을 먼저 알아주고 곁에 있어줌", type: "F", micro: "마음부터 살펴요" }] },
+    { q: "결정을 내려야 할 때 가장 믿는 기준은?", options: [{ text: "논리적으로 납득되는 근거와 결과", type: "T", micro: "근거가 있어야 편함" }, { text: "사람들에게 남을 감정과 관계의 온도", type: "F", micro: "사람 마음도 중요" }] },
+    { q: "피드백을 줄 때 더 신경 쓰는 부분은?", options: [{ text: "정확하게 개선 포인트를 짚는 것", type: "T", micro: "정확하게 말하고 싶음" }, { text: "상대가 받아들일 수 있는 말의 온도", type: "F", micro: "받아들이기 쉽게 말함" }] },
+    { q: "내가 억울함을 느끼는 순간은?", options: [{ text: "기준과 사실이 흐려져 판단이 불공정할 때", type: "T", micro: "공정함이 중요해요" }, { text: "마음과 의도가 충분히 이해받지 못할 때", type: "F", micro: "진심을 알아줬으면" }] },
+    { q: "갈등 상황에서 먼저 풀고 싶은 것은?", options: [{ text: "무엇이 맞고 틀렸는지 쟁점을 정리하는 것", type: "T", micro: "쟁점부터 정리" }, { text: "서로 상한 마음이 어디서 생겼는지 보는 것", type: "F", micro: "마음부터 확인" }] },
+    { q: "칭찬을 들을 때 더 힘이 나는 말은?", options: [{ text: "결과가 좋고 판단이 정확했다는 말", type: "T", micro: "실력을 인정받는 느낌" }, { text: "함께해서 든든하고 고마웠다는 말", type: "F", micro: "마음이 전해지는 느낌" }] },
+    { q: "팀에서 의견이 갈릴 때 내가 맡기 쉬운 역할은?", options: [{ text: "근거를 모아 선택지를 비교하는 역할", type: "T", micro: "비교해보면 편함" }, { text: "사람들의 입장을 살피며 분위기를 조율하는 역할", type: "F", micro: "입장을 살피는 편" }] },
+    { q: "누군가 조언을 구하면 먼저 확인하는 건?", options: [{ text: "문제의 원인과 실제로 가능한 선택지", type: "T", micro: "가능한 방법부터" }, { text: "그 사람이 지금 듣고 싶은 위로의 방식", type: "F", micro: "필요한 위로부터" }] },
+    { q: "오늘 내가 덜 지치려면 필요한 건?", options: [{ text: "불필요한 감정 소모를 줄이고 기준을 세우기", type: "T", micro: "기준을 세우면 편함" }, { text: "내 마음도 챙기며 너무 세게 버티지 않기", type: "F", micro: "내 마음도 챙기기" }] },
+    { q: "사과를 받을 때 더 중요하게 보는 건?", options: [{ text: "무엇을 고칠지 구체적으로 말하는지", type: "T", micro: "다음 행동이 중요" }, { text: "미안함이 진심으로 전해지는지", type: "F", micro: "진심이 느껴져야 함" }] },
+    { q: "좋은 선택을 했다고 느끼는 순간은?", options: [{ text: "결과적으로 가장 합리적인 길이었다고 확인될 때", type: "T", micro: "납득되면 편해요" }, { text: "사람들과 나 모두 마음이 덜 다쳤을 때", type: "F", micro: "마음이 덜 다친 선택" }] },
+    { q: "바쁜 날 부탁을 거절해야 한다면?", options: [{ text: "가능한 범위와 이유를 명확히 말함", type: "T", micro: "범위를 분명히 말함" }, { text: "상대가 서운하지 않게 표현을 고름", type: "F", micro: "표현을 조심히 고름" }] },
+    { q: "실수한 동료를 볼 때 먼저 떠오르는 건?", options: [{ text: "어디서 프로세스가 어긋났는지", type: "T", micro: "원인을 먼저 봄" }, { text: "얼마나 민망하고 속상할지", type: "F", micro: "마음이 먼저 보임" }] },
+    { q: "중요한 대화를 앞두고 준비하는 건?", options: [{ text: "핵심 근거와 말할 순서를 정리함", type: "T", micro: "할 말을 정리함" }, { text: "상대가 어떻게 느낄지 표현을 다듬음", type: "F", micro: "표현을 다듬음" }] },
+    { q: "내가 좋은 리더라고 느끼는 모습은?", options: [{ text: "방향을 명확히 잡고 공정하게 판단하는 사람", type: "T", micro: "나침반형 리더" }, { text: "사람의 마음을 살피며 함께 가게 하는 사람", type: "F", micro: "온도 조절형 리더" }] },
+    { q: "하루 끝에 후회가 덜 남는 쪽은?", options: [{ text: "할 말은 정확히 하고 기준을 지킨 날", type: "T", micro: "기준을 지킨 날" }, { text: "다정함을 잃지 않고 관계를 지킨 날", type: "F", micro: "다정함을 지킨 날" }] }
+  ],
+  JP: [
+    { q: "해야 할 일이 갑자기 늘었을 때 먼저 하는 건?", options: [{ text: "우선순위를 정하고 목록을 다시 짬", type: "J", micro: "정리하면 마음이 놓임" }, { text: "가장 손이 가는 것부터 처리하며 흐름을 탐", type: "P", micro: "시작하면서 풀어감" }] },
+    { q: "쉬는 날을 잘 보냈다고 느끼는 기준은?", options: [{ text: "쉬는 시간도 어느 정도 계획대로 챙겼을 때", type: "J", micro: "쉬는 것도 미리 챙김" }, { text: "그때그때 마음 가는 대로 흘러갔을 때", type: "P", micro: "흐름대로 쉬면 좋음" }] },
+    { q: "약속 장소를 정할 때 더 편한 방식은?", options: [{ text: "시간, 거리, 예약 가능성을 미리 맞춰두기", type: "J", micro: "미리 정해야 편함" }, { text: "대략 정하고 당일 분위기에 맞춰 조정하기", type: "P", micro: "상황에 맞춰 조정" }] },
+    { q: "새로운 한 주를 시작할 때 마음이 놓이는 건?", options: [{ text: "중요한 일정을 미리 확인하고 틀을 잡는 것", type: "J", micro: "미리 보면 안정돼요" }, { text: "큰 방향만 보고 상황에 맞게 움직이는 것", type: "P", micro: "흐름에 맞춰 움직임" }] },
+    { q: "방이 어수선할 때 먼저 드는 마음은?", options: [{ text: "정리해야 마음이 놓이고 다음 일을 할 수 있음", type: "J", micro: "정리되면 편해요" }, { text: "지금 할 일에 지장 없으면 크게 신경 쓰지 않음", type: "P", micro: "필요하면 그때 정리" }] },
+    { q: "마감이 가까워질 때 나를 움직이는 힘은?", options: [{ text: "미리 끝내두고 마음 편하게 확인하는 것", type: "J", micro: "미리 끝내면 편함" }, { text: "압박이 오면 집중력이 확 올라오는 것", type: "P", micro: "마감이 집중을 부름" }] },
+    { q: "계획이 틀어졌을 때 회복 방식은?", options: [{ text: "새 계획을 세워 다시 통제감을 찾음", type: "J", micro: "다시 계획을 잡음" }, { text: "오히려 생긴 빈틈에서 다른 가능성을 봄", type: "P", micro: "변수도 활용해요" }] },
+    { q: "오늘 하나만 제대로 해도 괜찮다면 고르는 쪽은?", options: [{ text: "가장 중요한 일을 끝내 확실한 체크를 남김", type: "J", micro: "끝냈다는 느낌이 좋음" }, { text: "지금 에너지가 맞는 일을 골라 추진력을 살림", type: "P", micro: "에너지 맞는 일부터" }] },
+    { q: "여행 가방을 싸는 방식은?", options: [{ text: "필요한 걸 목록으로 확인하며 빠짐없이 챙김", type: "J", micro: "목록이 있으면 안심" }, { text: "기본만 챙기고 부족하면 현지에서 해결함", type: "P", micro: "필요하면 그때 해결" }] },
+    { q: "일정을 비워둔 시간이 생기면?", options: [{ text: "밀린 일을 넣어 하루를 알차게 만듦", type: "J", micro: "빈 시간을 활용함" }, { text: "그 빈칸 자체를 여유로 남겨둠", type: "P", micro: "여유를 남겨둠" }] },
+    { q: "결정을 미뤄도 되는 상황에서 나는?", options: [{ text: "빨리 정해야 마음이 편해서 결론을 냄", type: "J", micro: "정해야 마음이 편함" }, { text: "조금 더 열어두고 좋은 선택지를 기다림", type: "P", micro: "조금 더 열어둠" }] },
+    { q: "갑자기 재미있는 제안을 받았을 때?", options: [{ text: "기존 일정과 무리가 없는지 먼저 확인함", type: "J", micro: "일정부터 확인" }, { text: "끌리면 일단 가능하게 만드는 쪽으로 봄", type: "P", micro: "가능하게 맞춰봄" }] },
+    { q: "집중이 흐트러질 때 도움이 되는 건?", options: [{ text: "타이머나 목록으로 다시 구조를 세우는 것", type: "J", micro: "구조를 다시 잡음" }, { text: "장소나 순서를 바꿔 새 자극을 주는 것", type: "P", micro: "분위기를 바꿔봄" }] },
+    { q: "오늘의 성공 기준을 정한다면?", options: [{ text: "정한 일을 끝내고 깔끔하게 마무리하기", type: "J", micro: "마무리가 중요" }, { text: "예상 밖으로 재밌거나 의미 있는 흐름 만들기", type: "P", micro: "뜻밖의 흐름도 좋음" }] },
+    { q: "누군가 늦는다고 했을 때 나는?", options: [{ text: "새 도착 시간을 확인하고 계획을 다시 맞춤", type: "J", micro: "일정을 다시 맞춤" }, { text: "생긴 시간에 할 수 있는 걸 즉흥적으로 찾음", type: "P", micro: "남는 시간을 활용" }] },
+    { q: "새 목표를 세울 때 더 자연스러운 출발은?", options: [{ text: "기간과 단계를 나눠 실행 계획을 세움", type: "J", micro: "단계를 나누면 편함" }, { text: "큰 방향만 잡고 해보며 조정함", type: "P", micro: "해보며 조정함" }] }
+  ]
+};
+
+const FRESHNESS_META_BOOST = {
+  EI: [
+    { id: "EI_063", familyId: "EI_RECOVERY_BUTTON", role: "state", weight: 0.95, contextTag: "today", lifeTag: "rest_recovery", ageFit: ["20s", "30s", "40s", "50s"] },
+    { id: "EI_064", familyId: "EI_NEW_GROUP_WARMUP", role: "discriminator", weight: 1.12, contextTag: "relationship", lifeTag: "relationship", ageFit: ["teen", "20s"] },
+    { id: "EI_065", familyId: "EI_DAY_RESET", role: "parallel", weight: 1.05, contextTag: "today", lifeTag: "emotion_check", ageFit: ["teen", "20s", "30s"] },
+    { id: "EI_066", familyId: "EI_IDEA_FIRST_MOVE", role: "discriminator", weight: 1.12, contextTag: "daily", lifeTag: "self_growth", ageFit: ["20s", "30s", "40s"] },
+    { id: "EI_067", familyId: "EI_TIRED_INVITE", role: "state", weight: 0.95, contextTag: "situation", lifeTag: "rest_recovery", ageFit: ["20s", "30s", "40s", "50s"], allowMiddleCandidate: true },
+    { id: "EI_068", familyId: "EI_AWKWARD_REPAIR", role: "parallel", weight: 1.05, contextTag: "relationship", lifeTag: "relationship", ageFit: ["teen", "20s", "30s", "40s"] },
+    { id: "EI_069", familyId: "EI_FOCUS_ENV", role: "discriminator", weight: 1.12, contextTag: "daily", lifeTag: "work_study", ageFit: ["teen", "20s", "30s", "40s"] },
+    { id: "EI_070", familyId: "EI_PRAISE_AFTER", role: "state", weight: 0.9, contextTag: "relationship", lifeTag: "emotion_check", ageFit: ["teen", "20s", "30s"] },
+    { id: "EI_071", familyId: "EI_FREE_WEEKEND", role: "parallel", weight: 1.05, contextTag: "daily", lifeTag: "daily_choice", ageFit: ["20s", "30s", "40s", "50s"] },
+    { id: "EI_072", familyId: "EI_LOST_PLACE", role: "forced_choice", weight: 1.2, contextTag: "situation", lifeTag: "unexpected", ageFit: ["teen", "20s", "30s", "40s", "50s"] },
+    { id: "EI_073", familyId: "EI_DAY_END", role: "state", weight: 0.9, contextTag: "today", lifeTag: "rest_recovery", ageFit: ["30s", "40s", "50s"] },
+    { id: "EI_074", familyId: "EI_NEW_HOBBY", role: "parallel", weight: 1.05, contextTag: "daily", lifeTag: "self_growth", ageFit: ["teen", "20s", "30s", "40s", "50s"] },
+    { id: "EI_075", familyId: "EI_REPLY_DELAY", role: "discriminator", weight: 1.12, contextTag: "relationship", lifeTag: "relationship", ageFit: ["teen", "20s", "30s"] },
+    { id: "EI_076", familyId: "EI_GOOD_NEWS", role: "state", weight: 0.9, contextTag: "today", lifeTag: "emotion_check", ageFit: ["teen", "20s", "30s", "40s", "50s"] },
+    { id: "EI_077", familyId: "EI_TODAY_COLOR", role: "parallel", weight: 1.05, contextTag: "today", lifeTag: "emotion_check", ageFit: ["teen", "20s", "30s"] },
+    { id: "EI_078", familyId: "EI_CONFLICT_STAMINA", role: "forced_choice", weight: 1.2, contextTag: "relationship", lifeTag: "relationship", ageFit: ["20s", "30s", "40s", "50s"] },
+    { id: "EI_079", familyId: "EI_REWARD_STYLE", role: "state", weight: 0.9, contextTag: "daily", lifeTag: "rest_recovery", ageFit: ["20s", "30s", "40s", "50s"] },
+    { id: "EI_080", familyId: "EI_CLOSENESS_SPEED", role: "discriminator", weight: 1.12, contextTag: "relationship", lifeTag: "relationship", ageFit: ["teen", "20s", "30s", "40s"] }
+  ],
+  SN: [
+    { id: "SN_063", familyId: "SN_INFO_FIRST_CHECK", role: "discriminator", weight: 1.12, contextTag: "daily", lifeTag: "work_study", ageFit: ["teen", "20s", "30s", "40s"] },
+    { id: "SN_064", familyId: "SN_DAY_RECORD", role: "state", weight: 0.9, contextTag: "today", lifeTag: "emotion_check", ageFit: ["teen", "20s", "30s", "40s", "50s"] },
+    { id: "SN_065", familyId: "SN_NEW_SHOP", role: "parallel", weight: 1.05, contextTag: "daily", lifeTag: "daily_choice", ageFit: ["20s", "30s", "40s"] },
+    { id: "SN_066", familyId: "SN_EXPLAIN_STYLE", role: "anchor", weight: 1.35, contextTag: "daily", lifeTag: "work_study", ageFit: ["teen", "20s", "30s", "40s", "50s"] },
+    { id: "SN_067", familyId: "SN_AMBIGUOUS_CLUE", role: "forced_choice", weight: 1.2, contextTag: "situation", lifeTag: "unexpected", ageFit: ["20s", "30s", "40s", "50s"], allowMiddleCandidate: true },
+    { id: "SN_068", familyId: "SN_TRAVEL_MEMORY_DETAIL", role: "state", weight: 0.9, contextTag: "daily", lifeTag: "self_growth", ageFit: ["20s", "30s", "40s", "50s"] },
+    { id: "SN_069", familyId: "SN_GOAL_START", role: "discriminator", weight: 1.12, contextTag: "daily", lifeTag: "self_growth", ageFit: ["teen", "20s", "30s"] },
+    { id: "SN_070", familyId: "SN_CONTENT_TAKEAWAY", role: "parallel", weight: 1.05, contextTag: "daily", lifeTag: "self_growth", ageFit: ["teen", "20s", "30s", "40s"] },
+    { id: "SN_071", familyId: "SN_LISTEN_WORRY", role: "discriminator", weight: 1.12, contextTag: "relationship", lifeTag: "relationship", ageFit: ["teen", "20s", "30s", "40s", "50s"] },
+    { id: "SN_072", familyId: "SN_ROOM_SATISFY", role: "state", weight: 0.9, contextTag: "daily", lifeTag: "rest_recovery", ageFit: ["20s", "30s", "40s", "50s"] },
+    { id: "SN_073", familyId: "SN_SUDDEN_OFFER_CHECK", role: "forced_choice", weight: 1.2, contextTag: "situation", lifeTag: "unexpected", ageFit: ["20s", "30s", "40s"] },
+    { id: "SN_074", familyId: "SN_TODAY_SENTENCE", role: "state", weight: 0.9, contextTag: "today", lifeTag: "emotion_check", ageFit: ["teen", "20s", "30s", "40s", "50s"] },
+    { id: "SN_075", familyId: "SN_NEW_TOOL_LEARN", role: "parallel", weight: 1.05, contextTag: "daily", lifeTag: "work_study", ageFit: ["teen", "20s", "30s", "40s"] },
+    { id: "SN_076", familyId: "SN_REMEMBER_PERSON", role: "discriminator", weight: 1.12, contextTag: "relationship", lifeTag: "relationship", ageFit: ["teen", "20s", "30s", "40s", "50s"] },
+    { id: "SN_077", familyId: "SN_STUCK_QUESTION", role: "forced_choice", weight: 1.2, contextTag: "situation", lifeTag: "unexpected", ageFit: ["20s", "30s", "40s"], allowMiddleCandidate: true },
+    { id: "SN_078", familyId: "SN_RECOMMEND_TRUST_STYLE", role: "discriminator", weight: 1.12, contextTag: "daily", lifeTag: "daily_choice", ageFit: ["20s", "30s", "40s", "50s"] },
+    { id: "SN_079", familyId: "SN_EMPTY_EVENING_IMAGINE", role: "state", weight: 0.9, contextTag: "today", lifeTag: "rest_recovery", ageFit: ["20s", "30s", "40s", "50s"] },
+    { id: "SN_080", familyId: "SN_LONG_TALK_INTEREST", role: "parallel", weight: 1.05, contextTag: "relationship", lifeTag: "relationship", ageFit: ["teen", "20s", "30s"] }
+  ],
+  TF: [
+    { id: "TF_065", familyId: "TF_FRIEND_MISTAKE_SUPPORT", role: "parallel", weight: 1.05, contextTag: "relationship", lifeTag: "relationship", ageFit: ["teen", "20s", "30s", "40s", "50s"] },
+    { id: "TF_066", familyId: "TF_DECISION_STANDARD", role: "anchor", weight: 1.35, contextTag: "daily", lifeTag: "daily_choice", ageFit: ["20s", "30s", "40s", "50s"] },
+    { id: "TF_067", familyId: "TF_FEEDBACK_CARE", role: "discriminator", weight: 1.12, contextTag: "daily", lifeTag: "work_study", ageFit: ["teen", "20s", "30s", "40s"] },
+    { id: "TF_068", familyId: "TF_UNFAIR_MOMENT", role: "state", weight: 0.9, contextTag: "today", lifeTag: "emotion_check", ageFit: ["20s", "30s", "40s", "50s"] },
+    { id: "TF_069", familyId: "TF_CONFLICT_FIRST_FIX", role: "forced_choice", weight: 1.2, contextTag: "relationship", lifeTag: "relationship", ageFit: ["teen", "20s", "30s", "40s"], allowMiddleCandidate: true },
+    { id: "TF_070", familyId: "TF_PRAISE_POWER", role: "state", weight: 0.9, contextTag: "relationship", lifeTag: "emotion_check", ageFit: ["teen", "20s", "30s", "40s"] },
+    { id: "TF_071", familyId: "TF_TEAM_ROLE", role: "parallel", weight: 1.05, contextTag: "daily", lifeTag: "work_study", ageFit: ["teen", "20s", "30s", "40s"] },
+    { id: "TF_072", familyId: "TF_ADVICE_FIRST_CHECK", role: "discriminator", weight: 1.12, contextTag: "relationship", lifeTag: "relationship", ageFit: ["20s", "30s", "40s", "50s"] },
+    { id: "TF_073", familyId: "TF_LESS_TIRED_TODAY", role: "state", weight: 0.9, contextTag: "today", lifeTag: "rest_recovery", ageFit: ["20s", "30s", "40s", "50s"] },
+    { id: "TF_074", familyId: "TF_APOLOGY_SIGNAL", role: "discriminator", weight: 1.12, contextTag: "relationship", lifeTag: "relationship", ageFit: ["teen", "20s", "30s", "40s", "50s"] },
+    { id: "TF_075", familyId: "TF_GOOD_CHOICE_FEEL", role: "parallel", weight: 1.05, contextTag: "daily", lifeTag: "self_growth", ageFit: ["20s", "30s", "40s"] },
+    { id: "TF_076", familyId: "TF_DECLINE_BUSY", role: "forced_choice", weight: 1.2, contextTag: "situation", lifeTag: "unexpected", ageFit: ["20s", "30s", "40s", "50s"], allowMiddleCandidate: true },
+    { id: "TF_077", familyId: "TF_COLLEAGUE_ERROR", role: "discriminator", weight: 1.12, contextTag: "daily", lifeTag: "work_study", ageFit: ["20s", "30s", "40s", "50s"] },
+    { id: "TF_078", familyId: "TF_IMPORTANT_TALK_PREP", role: "parallel", weight: 1.05, contextTag: "relationship", lifeTag: "relationship", ageFit: ["teen", "20s", "30s", "40s", "50s"] },
+    { id: "TF_079", familyId: "TF_GOOD_LEADER_IMAGE", role: "anchor", weight: 1.35, contextTag: "daily", lifeTag: "self_growth", ageFit: ["teen", "20s", "30s", "40s"] },
+    { id: "TF_080", familyId: "TF_DAY_END_REGRET", role: "state", weight: 0.9, contextTag: "today", lifeTag: "emotion_check", ageFit: ["20s", "30s", "40s", "50s"] }
+  ],
+  JP: [
+    { id: "JP_065", familyId: "JP_TASKS_ADDED_FIRST", role: "state", weight: 0.9, contextTag: "today", lifeTag: "work_study", ageFit: ["teen", "20s", "30s", "40s"], allowMiddleCandidate: true },
+    { id: "JP_066", familyId: "JP_REST_DAY_STANDARD", role: "parallel", weight: 1.05, contextTag: "daily", lifeTag: "rest_recovery", ageFit: ["20s", "30s", "40s", "50s"] },
+    { id: "JP_067", familyId: "JP_PLACE_PICK_STYLE", role: "discriminator", weight: 1.12, contextTag: "relationship", lifeTag: "relationship", ageFit: ["teen", "20s", "30s", "40s"] },
+    { id: "JP_068", familyId: "JP_WEEK_START", role: "anchor", weight: 1.35, contextTag: "daily", lifeTag: "work_study", ageFit: ["teen", "20s", "30s", "40s", "50s"] },
+    { id: "JP_069", familyId: "JP_ROOM_MESS_REACT", role: "state", weight: 0.9, contextTag: "daily", lifeTag: "daily_choice", ageFit: ["20s", "30s", "40s", "50s"] },
+    { id: "JP_070", familyId: "JP_DEADLINE_FORCE", role: "discriminator", weight: 1.12, contextTag: "situation", lifeTag: "work_study", ageFit: ["teen", "20s", "30s", "40s"] },
+    { id: "JP_071", familyId: "JP_PLAN_B_RECOVERY", role: "forced_choice", weight: 1.2, contextTag: "situation", lifeTag: "unexpected", ageFit: ["20s", "30s", "40s", "50s"], allowMiddleCandidate: true },
+    { id: "JP_072", familyId: "JP_ONE_THING_SUCCESS", role: "parallel", weight: 1.05, contextTag: "today", lifeTag: "self_growth", ageFit: ["20s", "30s", "40s", "50s"] },
+    { id: "JP_073", familyId: "JP_PACKING_STYLE", role: "discriminator", weight: 1.12, contextTag: "daily", lifeTag: "daily_choice", ageFit: ["20s", "30s", "40s", "50s"] },
+    { id: "JP_074", familyId: "JP_EMPTY_SLOT_USE", role: "state", weight: 0.9, contextTag: "today", lifeTag: "rest_recovery", ageFit: ["20s", "30s", "40s", "50s"] },
+    { id: "JP_075", familyId: "JP_DECISION_OPEN", role: "discriminator", weight: 1.12, contextTag: "daily", lifeTag: "daily_choice", ageFit: ["teen", "20s", "30s", "40s"] },
+    { id: "JP_076", familyId: "JP_FUN_OFFER_CHECK", role: "forced_choice", weight: 1.2, contextTag: "situation", lifeTag: "unexpected", ageFit: ["teen", "20s", "30s", "40s"], allowMiddleCandidate: true },
+    { id: "JP_077", familyId: "JP_FOCUS_RESET", role: "parallel", weight: 1.05, contextTag: "daily", lifeTag: "work_study", ageFit: ["teen", "20s", "30s", "40s"] },
+    { id: "JP_078", familyId: "JP_SUCCESS_STANDARD_TODAY", role: "state", weight: 0.9, contextTag: "today", lifeTag: "self_growth", ageFit: ["20s", "30s", "40s", "50s"] },
+    { id: "JP_079", familyId: "JP_WAITING_TIME_USE", role: "parallel", weight: 1.05, contextTag: "situation", lifeTag: "unexpected", ageFit: ["teen", "20s", "30s", "40s", "50s"] },
+    { id: "JP_080", familyId: "JP_NEW_GOAL_START", role: "anchor", weight: 1.35, contextTag: "daily", lifeTag: "self_growth", ageFit: ["teen", "20s", "30s", "40s", "50s"] }
+  ]
+};
+
+Object.keys(FRESHNESS_QUESTION_BOOST).forEach((axis) => {
+  QUESTIONS_EXTENDED[axis].push(...FRESHNESS_QUESTION_BOOST[axis]);
+  QUESTIONS_EXTENDED._META[axis].push(...FRESHNESS_META_BOOST[axis]);
+});
+
 if (typeof window !== 'undefined') {
   window.QUESTIONS_EXTENDED = QUESTIONS_EXTENDED;
   window.QUESTIONS_META_EXTENDED = QUESTIONS_META_EXTENDED;

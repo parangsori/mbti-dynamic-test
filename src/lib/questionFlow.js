@@ -10,7 +10,11 @@ export const createEmptyScores = () => ({ E: 0, I: 0, S: 0, N: 0, T: 0, F: 0, J:
 export const createEmptyNeutralSignals = () => ({ EI: 0, SN: 0, TF: 0, JP: 0 });
 
 const DEFAULT_CONTEXT_TAG = 'daily';
+const DEFAULT_LIFE_TAG = 'daily_choice';
 const FRESH_CONTEXT_WEIGHT_BOOST = 4;
+const AGE_FIT_WEIGHT_BOOST = 1.28;
+const FRESH_LIFE_TAG_WEIGHT_BOOST = 1.22;
+const MAX_LIFE_TAG_PER_SESSION = 3;
 
 const CONTEXT_LABELS = {
   today: '오늘 컨디션',
@@ -21,6 +25,26 @@ const CONTEXT_LABELS = {
 };
 
 const CONTEXT_PRIORITY = ['relationship', 'today', 'situation', 'calibration', 'daily'];
+
+export const LIFE_TAG_LABELS = {
+  work_study: '일/학습 리듬',
+  relationship: '관계 온도',
+  rest_recovery: '회복 루틴',
+  self_growth: '성장 감각',
+  daily_choice: '일상 선택',
+  unexpected: '예상 밖 상황',
+  emotion_check: '감정 점검'
+};
+
+const LIFE_TAG_PRIORITY = [
+  'relationship',
+  'rest_recovery',
+  'work_study',
+  'emotion_check',
+  'unexpected',
+  'self_growth',
+  'daily_choice'
+];
 
 export const getQuestionContextTag = (question = {}) => {
   if (question.contextTag) return question.contextTag;
@@ -40,13 +64,50 @@ export const getQuestionContextVisual = (question = {}) => {
   };
 };
 
+export const getQuestionLifeTag = (question = {}) => {
+  if (question.lifeTag && LIFE_TAG_LABELS[question.lifeTag]) return question.lifeTag;
+  const contextTag = getQuestionContextTag(question);
+  if (contextTag === 'relationship') return 'relationship';
+  if (contextTag === 'today') return 'emotion_check';
+  if (contextTag === 'situation') return 'unexpected';
+  if (question.role === 'state') return 'emotion_check';
+  if (question.role === 'parallel') return 'self_growth';
+  return DEFAULT_LIFE_TAG;
+};
+
+const getRecentSessionIds = (session) => {
+  if (Array.isArray(session)) return session;
+  if (session?.ids && Array.isArray(session.ids)) return session.ids;
+  return [];
+};
+
+const getRecentSessionLifeTags = (session) => {
+  if (session?.lifeTags && Array.isArray(session.lifeTags)) return session.lifeTags;
+  return [];
+};
+
+export const createRecentSessionSnapshot = ({ questions = [], ids = [], ageGroup = '' } = {}) => {
+  const idSet = new Set(ids);
+  const selectedQuestions = questions.filter((question) => !idSet.size || idSet.has(question.id));
+
+  return {
+    ids: ids.length ? ids : selectedQuestions.map((question) => question.id),
+    lifeTags: selectedQuestions.map(getQuestionLifeTag).filter(Boolean),
+    ageGroup,
+    savedAt: new Date().toISOString()
+  };
+};
+
 export const summarizeQuestionContext = (baseQuestions = [], followupQuestions = []) => {
   const allQuestions = [...baseQuestions, ...followupQuestions].filter(Boolean);
   const counts = CONTEXT_PRIORITY.reduce((acc, tag) => ({ ...acc, [tag]: 0 }), {});
+  const lifeCounts = LIFE_TAG_PRIORITY.reduce((acc, tag) => ({ ...acc, [tag]: 0 }), {});
 
   allQuestions.forEach((question) => {
     const tag = getQuestionContextTag(question);
     counts[tag] = (counts[tag] || 0) + 1;
+    const lifeTag = getQuestionLifeTag(question);
+    lifeCounts[lifeTag] = (lifeCounts[lifeTag] || 0) + 1;
   });
 
   const topTag = Object.entries(counts)
@@ -55,11 +116,20 @@ export const summarizeQuestionContext = (baseQuestions = [], followupQuestions =
       if (countA !== countB) return countB - countA;
       return CONTEXT_PRIORITY.indexOf(tagA) - CONTEXT_PRIORITY.indexOf(tagB);
     })[0]?.[0] || DEFAULT_CONTEXT_TAG;
+  const topLifeTag = Object.entries(lifeCounts)
+    .filter(([, count]) => count > 0)
+    .sort(([tagA, countA], [tagB, countB]) => {
+      if (countA !== countB) return countB - countA;
+      return LIFE_TAG_PRIORITY.indexOf(tagA) - LIFE_TAG_PRIORITY.indexOf(tagB);
+    })[0]?.[0] || DEFAULT_LIFE_TAG;
 
   return {
     topTag,
     topLabel: CONTEXT_LABELS[topTag] || CONTEXT_LABELS[DEFAULT_CONTEXT_TAG],
+    topLifeTag,
+    topLifeLabel: LIFE_TAG_LABELS[topLifeTag] || LIFE_TAG_LABELS[DEFAULT_LIFE_TAG],
     counts,
+    lifeCounts,
     usedCalibration: (counts.calibration || 0) > 0,
     total: allQuestions.length
   };
@@ -121,38 +191,49 @@ const shuffle = (items) => [...items].sort(() => Math.random() - 0.5);
 
 const pickRandomSubset = (items, count) => shuffle(items).slice(0, count);
 
-const getSelectionWeight = (question) => {
+const getSelectionWeight = (question, { ageGroup = '', recentLifeTags = new Set() } = {}) => {
   const roleBoost = question.role === 'state' || question.role === 'parallel' ? 1.18 : 1;
   const middleBoost = question.allowMiddleCandidate ? 1.25 : 1;
   const freshnessBoost = question.contextTag ? FRESH_CONTEXT_WEIGHT_BOOST : 1;
-  return (question.weight || 1) * roleBoost * middleBoost * freshnessBoost;
+  const lifeTag = getQuestionLifeTag(question);
+  const lifeBoost = recentLifeTags.has(lifeTag) ? 1 : FRESH_LIFE_TAG_WEIGHT_BOOST;
+  const ageBoost = ageGroup && question.ageFit?.includes(ageGroup) ? AGE_FIT_WEIGHT_BOOST : 1;
+  return (question.weight || 1) * roleBoost * middleBoost * freshnessBoost * lifeBoost * ageBoost;
 };
 
-const pickWeightedQuestion = (pool, { recentIds, usedIds, usedFamilyIds }) => {
-  const usable = pool.filter((question) =>
+const pickWeightedQuestion = (pool, { recentIds, recentLifeTags, usedIds, usedFamilyIds, usedLifeTagCounts, ageGroup }) => {
+  const usableBase = pool.filter((question) =>
     !usedIds.has(question.id) &&
     !usedFamilyIds.has(question.familyId)
   );
-  if (!usable.length) return null;
+  const usable = usableBase.filter((question) => {
+    const lifeTag = getQuestionLifeTag(question);
+    return (usedLifeTagCounts[lifeTag] || 0) < MAX_LIFE_TAG_PER_SESSION;
+  });
+  const fallbackUsable = usable.length ? usable : usableBase;
+  if (!fallbackUsable.length) return null;
 
-  const fresh = usable.filter((question) => !recentIds.has(question.id));
-  const candidates = fresh.length > 0 ? fresh : usable;
-  const totalWeight = candidates.reduce((sum, question) => sum + getSelectionWeight(question), 0);
+  const fresh = fallbackUsable.filter((question) => !recentIds.has(question.id));
+  const freshLife = fresh.filter((question) => !recentLifeTags.has(getQuestionLifeTag(question)));
+  const candidates = freshLife.length > 0 ? freshLife : fresh.length > 0 ? fresh : fallbackUsable;
+  const totalWeight = candidates.reduce((sum, question) => sum + getSelectionWeight(question, { ageGroup, recentLifeTags }), 0);
   let cursor = Math.random() * totalWeight;
 
   for (const question of candidates) {
-    cursor -= getSelectionWeight(question);
+    cursor -= getSelectionWeight(question, { ageGroup, recentLifeTags });
     if (cursor <= 0) return question;
   }
 
   return candidates[0];
 };
 
-const addPickedQuestion = (question, selected, usedIds, usedFamilyIds) => {
+const addPickedQuestion = (question, selected, usedIds, usedFamilyIds, usedLifeTagCounts) => {
   if (!question) return false;
   selected.push(question);
   usedIds.add(question.id);
   usedFamilyIds.add(question.familyId);
+  const lifeTag = getQuestionLifeTag(question);
+  usedLifeTagCounts[lifeTag] = (usedLifeTagCounts[lifeTag] || 0) + 1;
   return true;
 };
 
@@ -209,7 +290,7 @@ const pickFollowupQuestion = (axisCode, recentIds, usedIds) => {
 };
 
 export const buildFollowupQuestions = (scores, recentSessions = [], currentIds = [], neutralSignals = {}) => {
-  const recentIds = new Set(recentSessions.flat());
+  const recentIds = new Set(recentSessions.flatMap(getRecentSessionIds));
   const usedIds = new Set(currentIds);
 
   return getFollowupAxes(scores, neutralSignals).map((axis) => {
@@ -251,12 +332,14 @@ export const sortQuestionsForTempo = (selected, recentIds = new Set()) => {
   return [...opening, ...remaining];
 };
 
-export const buildQuestionSession = (recentSessions = []) => {
-  const recentIds = new Set(recentSessions.flat());
+export const buildQuestionSession = (recentSessions = [], { ageGroup = '' } = {}) => {
+  const recentIds = new Set(recentSessions.flatMap(getRecentSessionIds));
+  const recentLifeTags = new Set(recentSessions.flatMap(getRecentSessionLifeTags));
   const axisKeys = ['EI', 'SN', 'TF', 'JP'];
   const selected = [];
   const usedFamilyIds = new Set();
   const usedIds = new Set();
+  const usedLifeTagCounts = {};
 
   axisKeys.forEach((axis) => {
     const basePool = QUESTIONS_DB[axis] || [];
@@ -274,6 +357,8 @@ export const buildQuestionSession = (recentSessions = []) => {
       role: meta[i]?.role,
       weight: meta[i]?.weight || 1,
       contextTag: meta[i]?.contextTag || q.contextTag,
+      lifeTag: meta[i]?.lifeTag || q.lifeTag,
+      ageFit: Array.isArray(meta[i]?.ageFit) ? meta[i].ageFit : q.ageFit,
       allowMiddleCandidate: meta[i]?.allowMiddleCandidate || false,
       _axis: axis
     }));
@@ -287,15 +372,25 @@ export const buildQuestionSession = (recentSessions = []) => {
     rolePools.forEach((rolePool) => {
       const question = pickWeightedQuestion(rolePool.length ? rolePool : enriched, {
         recentIds,
+        recentLifeTags,
         usedIds,
-        usedFamilyIds
+        usedFamilyIds,
+        usedLifeTagCounts,
+        ageGroup
       });
-      addPickedQuestion(question, selected, usedIds, usedFamilyIds);
+      addPickedQuestion(question, selected, usedIds, usedFamilyIds, usedLifeTagCounts);
     });
 
     while (selected.filter((question) => question._axis === axis).length < 3) {
-      const fallback = pickWeightedQuestion(enriched, { recentIds, usedIds, usedFamilyIds });
-      if (!addPickedQuestion(fallback, selected, usedIds, usedFamilyIds)) break;
+      const fallback = pickWeightedQuestion(enriched, {
+        recentIds,
+        recentLifeTags,
+        usedIds,
+        usedFamilyIds,
+        usedLifeTagCounts,
+        ageGroup
+      });
+      if (!addPickedQuestion(fallback, selected, usedIds, usedFamilyIds, usedLifeTagCounts)) break;
     }
   });
 

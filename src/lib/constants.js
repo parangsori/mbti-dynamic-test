@@ -19,6 +19,14 @@ export const COMPATIBILITY = {
 
 export const CHANGELOG = [
   {
+    version: 'v1.6.2',
+    date: '2026.05.18',
+    updates: [
+      '반복 테스트에서도 생활 맥락과 연령대에 맞는 문항이 더 섞이도록 문제은행과 신선도 로직을 보강',
+      '결과 화면에 오늘의 행동 힌트, 관계 힌트, 회복 힌트, 내일 다시 볼 포인트를 추가해 같은 MBTI 안에서도 오늘 차이를 더 잘 느끼도록 개선'
+    ]
+  },
+  {
     version: 'v1.6.1',
     date: '2026.05.14',
     updates: [

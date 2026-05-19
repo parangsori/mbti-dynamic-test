@@ -1,5 +1,6 @@
 import { BADGES, MBTI_RESULTS } from '../data/mbtiData.js';
 import { AXIS_META, COMPATIBILITY } from './constants.js';
+import { getDailyResultHints } from './personalization.js';
 
 export const getDisplayName = (name, fallback) => name.trim() || fallback;
 
@@ -726,6 +727,7 @@ export const buildResultViewModel = ({
   currentEntry,
   userName,
   defaultUserName,
+  ageGroup = '',
   neutralCount = 0,
   usedFollowup = false,
   questionContextSummary = null
@@ -764,6 +766,15 @@ export const buildResultViewModel = ({
     usedFollowup,
     neutralCount
   });
+  const dailyHints = getDailyResultHints({
+    ageGroup,
+    strongestAxis,
+    questionContextSummary,
+    boundaryAxes,
+    historyComparison,
+    historyInsights,
+    presentation
+  });
 
   return {
     mbti,
@@ -792,6 +803,7 @@ export const buildResultViewModel = ({
     shareHeadline,
     shareCardCopy,
     shareVibeStamp,
+    ...dailyHints,
     neutralReviewNote,
     questionContextInsight,
     topChangeChip: axisChanges[0]

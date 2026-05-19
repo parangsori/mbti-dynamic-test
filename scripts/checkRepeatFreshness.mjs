@@ -1,9 +1,15 @@
-import { buildQuestionSession } from '../src/lib/questionFlow.js';
+import {
+  buildQuestionSession,
+  createRecentSessionSnapshot,
+  getQuestionLifeTag
+} from '../src/lib/questionFlow.js';
 
 const SESSION_COUNT = 5;
 const EXPECTED_AXIS_COUNT = 3;
 const MAX_REPEAT_RATE = 0.18;
+const MIN_LIFE_TAGS_PER_SESSION = 3;
 const AXES = ['EI', 'SN', 'TF', 'JP'];
+const AGE_GROUPS = ['teen', '20s', '30s', '40s', '50s'];
 const PRESENTATION_STATES = ['streak', 'shift', 'boundary', 'clear', 'default'];
 const PRESENTATION_STATE_EXPECTED_MIN = 5;
 const SAMPLE_MBTIS = ['INFP', 'ENFP', 'ISTJ', 'ENTJ', 'ISFJ'];
@@ -15,6 +21,7 @@ const readSource = async (path) => {
 
 const getQuestionId = (question) => question.id || '';
 const getFamilyId = (question) => question.familyId || '';
+const hasAgeFit = (question, ageGroup) => Array.isArray(question.ageFit) && question.ageFit.includes(ageGroup);
 
 const countBy = (items, getKey) =>
   items.reduce((acc, item) => {
@@ -73,9 +80,14 @@ const recentSessions = [];
 const sessions = [];
 
 for (let i = 0; i < SESSION_COUNT; i += 1) {
-  const questions = buildQuestionSession(recentSessions);
+  const ageGroup = AGE_GROUPS[i % AGE_GROUPS.length];
+  const questions = buildQuestionSession(recentSessions, { ageGroup });
   sessions.push(questions);
-  recentSessions.unshift(questions.map(getQuestionId));
+  recentSessions.unshift(createRecentSessionSnapshot({
+    questions,
+    ids: questions.map(getQuestionId),
+    ageGroup
+  }));
 }
 
 const allQuestions = sessions.flat();
@@ -84,6 +96,22 @@ const repeatedFamiliesBySession = sessions.map((questions, index) => ({
   session: index + 1,
   duplicates: getDuplicateKeys(questions, getFamilyId)
 }));
+const lifeTagsBySession = sessions.map((questions, index) => {
+  const tags = questions.map(getQuestionLifeTag);
+  return {
+    session: index + 1,
+    counts: countBy(tags, (tag) => tag),
+    uniqueCount: new Set(tags).size
+  };
+});
+const ageFitBySession = sessions.map((questions, index) => {
+  const ageGroup = AGE_GROUPS[index % AGE_GROUPS.length];
+  return {
+    session: index + 1,
+    ageGroup,
+    count: questions.filter((question) => hasAgeFit(question, ageGroup)).length
+  };
+});
 
 const axisCountsBySession = sessions.map((questions, index) => ({
   session: index + 1,
@@ -109,6 +137,18 @@ repeatedFamiliesBySession.forEach(({ session, duplicates }) => {
   }
 });
 
+lifeTagsBySession.forEach(({ session, uniqueCount, counts }) => {
+  if (uniqueCount < MIN_LIFE_TAGS_PER_SESSION) {
+    failures.push(`session ${session}: lifeTag 종류가 ${MIN_LIFE_TAGS_PER_SESSION}개보다 적습니다. ${JSON.stringify(counts)}`);
+  }
+});
+
+ageFitBySession.forEach(({ session, ageGroup, count }) => {
+  if (count < 1) {
+    failures.push(`session ${session}: ${ageGroup} ageFit 문항이 반영되지 않았습니다.`);
+  }
+});
+
 if (repeatRate > MAX_REPEAT_RATE) {
   failures.push(`연속 ${SESSION_COUNT}회 문항 ID 반복률이 높습니다. repeatRate=${repeatRate}`);
 }
@@ -127,6 +167,8 @@ const summary = {
   repeatRate: Number(repeatRate.toFixed(3)),
   axisCountsBySession,
   repeatedFamiliesBySession,
+  lifeTagsBySession,
+  ageFitBySession,
   presentationVariantStats,
   passed: failures.length === 0,
   failures

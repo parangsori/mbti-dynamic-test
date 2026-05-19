@@ -226,6 +226,35 @@ function ResultEssenceCard({ info, summaryCopy, consistencyCopy, boundaryCopy, n
   );
 }
 
+function DailyInsightCard({ dailyAction, relationshipHint, recoveryHint, tomorrowCheckPoint, themeClasses }) {
+  const hints = [
+    { label: '지금 해볼 한 가지', value: dailyAction, tone: 'text-amber-100' },
+    { label: '사람들과의 거리', value: relationshipHint, tone: 'text-pink-100' },
+    { label: '쉬는 방식', value: recoveryHint, tone: 'text-emerald-100' },
+    { label: '다음에 비교할 점', value: tomorrowCheckPoint, tone: 'text-cyan-100' }
+  ].filter((item) => item.value);
+
+  return (
+    <div className="rounded-[1.45rem] border border-amber-300/20 bg-amber-300/[0.07] px-4 py-4">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <p className="text-[11px] font-black tracking-[0.18em] text-amber-100 uppercase">나를 위한 작은 한마디</p>
+          <p className="mt-1 text-[12px] leading-relaxed text-slate-200 break-keep">오늘 답변에서 보인 생활 리듬을 쉽게 풀어봤어요.</p>
+        </div>
+        <span className={`shrink-0 rounded-full border px-3 py-1 text-[10px] font-black ${themeClasses.chip}`}>Daily</span>
+      </div>
+      <div className="mt-4 divide-y divide-white/10">
+        {hints.map((hint) => (
+          <div key={hint.label} className="py-3 first:pt-0 last:pb-0">
+            <p className={`text-[11px] font-black tracking-[0.12em] uppercase ${hint.tone}`}>{hint.label}</p>
+            <p className="mt-1.5 text-[13px] leading-relaxed text-slate-100 break-keep">{hint.value}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function AxisCoordinateCard({ axisNarratives, themeClasses }) {
   return (
     <div className="rounded-[1.45rem] border border-white/10 bg-white/[0.04] px-4 py-4">
@@ -363,6 +392,10 @@ export default function ResultView({
     shareHeadline,
     shareCardCopy,
     shareVibeStamp,
+    dailyAction,
+    relationshipHint,
+    recoveryHint,
+    tomorrowCheckPoint,
     neutralReviewNote,
     questionContextInsight,
     topChangeChip
@@ -372,10 +405,11 @@ export default function ResultView({
     currentEntry: currentEntryRef.current,
     userName,
     defaultUserName,
+    ageGroup,
     neutralCount,
     usedFollowup,
     questionContextSummary
-  }), [defaultUserName, historyData, neutralCount, questionContextSummary, scores, usedFollowup, userName]);
+  }), [ageGroup, defaultUserName, historyData, neutralCount, questionContextSummary, scores, usedFollowup, userName]);
 
   const resolvedImageSrc = info.image ? IMAGE_BASE64[info.image] || info.image : '';
   const themeClasses = getThemeClasses(presentation.themeKey);
@@ -662,6 +696,14 @@ export default function ResultView({
               boundaryCopy={boundaryCopy}
               neutralReviewNote={neutralReviewNote}
               questionContextInsight={questionContextInsight}
+              themeClasses={themeClasses}
+            />
+
+            <DailyInsightCard
+              dailyAction={dailyAction}
+              relationshipHint={relationshipHint}
+              recoveryHint={recoveryHint}
+              tomorrowCheckPoint={tomorrowCheckPoint}
               themeClasses={themeClasses}
             />
 

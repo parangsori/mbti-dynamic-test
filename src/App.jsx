@@ -8,6 +8,7 @@ import {
   buildQuestionSession,
   createEmptyNeutralSignals,
   createEmptyScores,
+  createRecentSessionSnapshot,
   getFollowupTempoMessage,
   getQuestionContextVisual,
   getQuestionTempoMessage,
@@ -437,7 +438,7 @@ export default function App() {
     });
 
     const recentSessions = readRecentSessions();
-    const sessionQuestions = buildQuestionSession(recentSessions);
+    const sessionQuestions = buildQuestionSession(recentSessions, { ageGroup });
     const thisSession = sessionQuestions.map((question) => question.id);
 
     setQuestions(sessionQuestions);
@@ -534,7 +535,12 @@ export default function App() {
   const finishSession = (finalScores, finalSessionIds = sessionQuestionIds) => {
     const nextQuestionContextSummary = summarizeQuestionContext(questions, followupQuestions);
     setQuestionContextSummary(nextQuestionContextSummary);
-    writeRecentSessions([finalSessionIds, ...recentSessionsSnapshot].slice(0, 6));
+    const sessionSnapshot = createRecentSessionSnapshot({
+      questions: [...questions, ...followupQuestions],
+      ids: finalSessionIds,
+      ageGroup
+    });
+    writeRecentSessions([sessionSnapshot, ...recentSessionsSnapshot].slice(0, 6));
     writePendingResult({
       scores: finalScores,
       userName,
