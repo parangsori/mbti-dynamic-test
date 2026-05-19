@@ -767,6 +767,8 @@ export const buildResultViewModel = ({
     neutralCount
   });
   const dailyHints = getDailyResultHints({
+    mbti,
+    createdAt: currentEntry?.createdAt,
     ageGroup,
     strongestAxis,
     questionContextSummary,

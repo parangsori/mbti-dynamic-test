@@ -19,6 +19,14 @@ export const COMPATIBILITY = {
 
 export const CHANGELOG = [
   {
+    version: 'v1.6.6',
+    date: '2026.05.19',
+    updates: [
+      '결과 화면의 “나를 위한 작은 한마디”가 반복 테스트에서 거의 같게 보이지 않도록 문구 풀과 안정적인 변주 선택 로직을 보강',
+      '같은 MBTI가 반복되어도 연령대, 성향 축, 생활 맥락, 결과 생성 시점에 따라 행동·관계·회복·다음 비교 포인트가 더 다양하게 보이도록 개선'
+    ]
+  },
+  {
     version: 'v1.6.5',
     date: '2026.05.19',
     updates: [
