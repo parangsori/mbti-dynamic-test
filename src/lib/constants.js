@@ -19,6 +19,14 @@ export const COMPATIBILITY = {
 
 export const CHANGELOG = [
   {
+    version: 'v1.6.8',
+    date: '2026.05.19',
+    updates: [
+      '결과 화면의 “나를 위한 작은 한마디”가 같은 나이대에서도 비슷하게 반복되지 않도록 생활 맥락과 성향 축 기반 문구 풀을 확장',
+      'S/N/J/P 축의 행동·관계·회복 힌트를 보강하고 관계·회복 문구에 오늘 문항의 생활 맥락이 더 자연스럽게 섞이도록 개선'
+    ]
+  },
+  {
     version: 'v1.6.7',
     date: '2026.05.19',
     updates: [

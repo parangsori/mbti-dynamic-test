@@ -451,6 +451,80 @@ const HINT_VARIANTS = {
       '평범한 장면 안에서 성향이 드러난 날이에요. 오늘은 늘 하던 선택을 한 번만 다르게 봐도 좋습니다.'
     ]
   },
+  lifeRelationship: {
+    relationship: [
+      '상대의 마음을 맞히려 하기보다, 오늘은 내가 원하는 반응 속도를 먼저 정해도 좋아요.',
+      '대화가 길어질수록 결론보다 온도가 더 중요해질 수 있어요. 한 문장만 부드럽게 덧붙여보세요.',
+      '관계의 흐름이 크게 보인 날에는 가까워지는 것만큼 적당히 멈추는 감각도 도움이 됩니다.'
+    ],
+    rest_recovery: [
+      '지친 날의 관계는 친절함보다 여유가 먼저예요. 답을 늦게 해도 괜찮다는 기준을 세워보세요.',
+      '회복이 필요한 날에는 사람을 피한다기보다, 오늘 감당 가능한 거리만 남기는 쪽이 좋아요.',
+      '누군가를 챙기고 싶어도 내 충전 상태를 먼저 확인하면 관계가 덜 버거워집니다.'
+    ],
+    work_study: [
+      '일이나 공부 얘기에서는 정확한 공유가 관계의 피로를 줄여줄 수 있어요.',
+      '해야 할 일이 많을수록 부탁과 거절을 짧게 말하는 연습이 도움이 됩니다.',
+      '협업이나 과제 장면에서는 좋은 태도보다 가능한 범위를 분명히 말하는 게 더 다정할 수 있어요.'
+    ],
+    self_growth: [
+      '새로운 시도를 말할 때는 크게 선언하지 않아도 됩니다. 작은 실험이라고 말하면 부담이 줄어요.',
+      '관계 속에서 성장하려면 잘 보이는 것보다 솔직하게 조율하는 쪽이 오래 갑니다.',
+      '오늘 떠오른 방향은 누군가의 반응보다 내 마음이 계속 가는지 먼저 보는 게 좋아요.'
+    ],
+    unexpected: [
+      '예상 밖 상황에서는 바로 설명하기보다 잠깐 정리한 뒤 말하는 편이 오해를 줄입니다.',
+      '변수가 생겼을 때는 누가 맞는지보다 지금 무엇을 다시 맞출지가 더 중요할 수 있어요.',
+      '갑작스러운 흐름 앞에서는 한 박자 쉬고 반응해도 관계가 크게 무너지지 않습니다.'
+    ],
+    emotion_check: [
+      '감정이 크게 잡힌 날에는 상대의 의도보다 내가 어떤 지점에서 반응했는지 먼저 봐도 좋아요.',
+      '오늘은 좋은 사람처럼 보이는 것보다 내 마음을 너무 숨기지 않는 쪽이 더 건강합니다.',
+      '관계에서 마음이 쓰였다면 바로 결론 내리지 말고, 내 감정의 이름을 먼저 붙여보세요.'
+    ],
+    daily_choice: [
+      '사소한 답장 하나에도 오늘의 거리감이 묻어날 수 있어요. 너무 잘하려고 애쓰지 않아도 됩니다.',
+      '일상 관계에서는 큰 표현보다 꾸준히 편한 속도가 더 오래 남을 수 있어요.',
+      '오늘은 상대를 맞히기보다 내가 편하게 유지할 수 있는 반응을 고르는 쪽이 좋습니다.'
+    ]
+  },
+  lifeRecovery: {
+    relationship: [
+      '사람을 많이 살핀 날이라면 혼자 있는 시간을 벌칙이 아니라 정비 시간으로 둬도 좋아요.',
+      '관계 피로가 남았다면 대화를 복기하기보다 몸이 편해지는 루틴 하나를 먼저 고르세요.',
+      '오늘의 회복은 누군가와 더 이야기하는 것보다 조용히 내 편을 들어주는 시간에 가까울 수 있어요.'
+    ],
+    rest_recovery: [
+      '회복 문항이 크게 보인 날에는 쉬는 시간을 “나중에”로 미루지 않는 게 제일 중요합니다.',
+      '오늘은 휴식의 질보다 시작이 먼저예요. 짧게라도 끊어 쉬면 흐름이 달라질 수 있습니다.',
+      '쉼이 필요하다는 신호를 봤다면, 오늘은 생산성보다 회복 가능성을 우선해도 됩니다.'
+    ],
+    work_study: [
+      '해야 할 일이 많을수록 회복은 사치가 아니라 다음 집중을 위한 장치예요.',
+      '머리가 꽉 찬 날에는 더 밀어붙이기보다 작은 완료 하나 뒤에 짧게 쉬는 편이 낫습니다.',
+      '일이나 공부 리듬이 드러난 날에는 쉬는 구간까지 같이 설계해야 오래 갑니다.'
+    ],
+    self_growth: [
+      '성장하려는 마음이 큰 날일수록, 쉬는 시간도 실험의 일부로 봐도 좋아요.',
+      '새로운 시도 뒤에는 바로 평가하지 말고 흡수할 시간을 조금 남겨두세요.',
+      '오늘은 더 잘하기보다 내가 계속 해볼 수 있는 속도를 찾는 게 회복에 가깝습니다.'
+    ],
+    unexpected: [
+      '예상 밖 변수가 있었다면, 오늘 회복은 완벽한 마무리보다 다시 안정되는 쪽입니다.',
+      '뜻밖의 상황을 지나온 날에는 아무 일 없던 척하기보다 긴장을 푸는 루틴이 필요해요.',
+      '계획이 흔들린 날에는 마음도 같이 흔들릴 수 있어요. 오늘은 원래 속도로 돌아오는 데 집중해보세요.'
+    ],
+    emotion_check: [
+      '감정이 진하게 남았다면 분석보다 진정이 먼저일 수 있어요. 따뜻한 것 하나를 곁에 두세요.',
+      '마음의 알림이 켜진 날에는 자극을 더 넣기보다 조용히 낮추는 선택이 잘 맞습니다.',
+      '오늘 회복은 감정을 정답으로 만들기보다, 충분히 지나가게 두는 쪽에 가까워요.'
+    ],
+    daily_choice: [
+      '평범한 하루에도 피로는 쌓입니다. 오늘은 작은 쉼 하나를 일부러 끼워 넣어보세요.',
+      '큰 문제가 없어도 쉬어도 됩니다. 회복은 사건이 생긴 뒤에만 필요한 게 아니에요.',
+      '일상 선택이 많았던 날에는 아무것도 고르지 않는 시간도 꽤 좋은 회복입니다.'
+    ]
+  },
   axis: {
     E: {
       action: ['사람을 만나야 한다면 짧고 즐거운 연결부터 시작해보세요.', '오늘은 긴 만남보다 가벼운 연결 하나가 에너지를 살릴 수 있어요.', '말을 꺼내야 한다면 완벽한 타이밍보다 편한 첫마디가 더 좋습니다.'],
@@ -471,6 +545,26 @@ const HINT_VARIANTS = {
       action: ['마음을 너무 많이 읽느라 지치기 전에, 내 마음도 한 번 체크해보세요.', '상대 마음을 챙기기 전에 오늘 내 여유가 어느 정도인지 먼저 확인해보세요.', '다정함을 쓰는 날일수록 내 마음 잔량도 같이 봐야 오래 갑니다.'],
       relationship: ['다정함은 유지하되, 오늘 가능한 범위는 분명히 알려주는 게 좋아요.', '상대를 배려하는 만큼 내 기준도 부드럽게 알려주면 관계가 덜 지칩니다.', '마음을 챙기는 능력은 장점이에요. 오늘은 내 경계선도 같이 챙겨보세요.'],
       recovery: ['감정 온도가 높았다면 따뜻한 것 하나와 조용한 시간 하나를 챙겨보세요.', '마음이 바빴던 날이라면 감정을 설명하려 애쓰기보다 먼저 몸을 편하게 해주세요.', '회복은 누군가를 더 이해하는 것보다 나를 덜 몰아붙이는 데서 시작될 수 있어요.']
+    },
+    S: {
+      action: ['큰 계획보다 바로 보이는 한 단계를 처리하면 안정감이 올라와요.', '오늘은 추상적인 결론보다 눈앞의 단서 하나를 확인하는 쪽이 편할 수 있어요.', '머릿속 정리보다 주변의 작은 정리 하나가 먼저 힘을 줄 수 있습니다.'],
+      relationship: ['구체적으로 무엇이 필요했는지 물어보면 오해가 줄어듭니다.', '관계에서도 느낌만 추측하기보다 실제로 들은 말과 필요한 행동을 나눠보면 좋아요.', '상대의 분위기를 읽되, 확인할 수 있는 사실 하나를 함께 보면 덜 흔들립니다.'],
+      recovery: ['눈에 보이는 정리 하나가 마음 정리까지 데려올 수 있어요.', '오늘은 몸이 편해지는 익숙한 루틴이 생각보다 빠르게 안정감을 줄 수 있습니다.', '복잡한 생각보다 손으로 할 수 있는 작은 정리가 회복에 잘 맞을 수 있어요.']
+    },
+    N: {
+      action: ['떠오른 가능성을 하나만 메모해두세요. 오늘의 아이디어가 내일 길이 될 수 있어요.', '큰 그림이 먼저 보인 날에는 바로 결론 내리기보다 가능성 하나를 작게 남겨두세요.', '오늘 떠오른 연결고리를 놓치지 않게 짧은 메모로 붙잡아두면 좋아요.'],
+      relationship: ['상대의 말 뒤에 있는 맥락을 읽되, 확인 질문도 한 번 곁들이면 좋아요.', '관계에서는 의미를 깊게 읽는 힘이 있지만, 오늘은 상대에게 직접 확인하는 한마디도 도움이 됩니다.', '분위기 뒤의 이유를 상상했다면, 그중 하나만 부드럽게 물어보세요.'],
+      recovery: ['생각이 너무 많아졌다면, 오늘은 중요한 생각 한두 개만 적어두고 쉬어도 충분합니다.', '상상이 계속 뻗어간다면 닫아야 할 생각과 내일 이어갈 생각을 나눠보세요.', '오늘 회복은 생각을 멈추는 것보다, 생각이 머물 자리를 정해주는 쪽일 수 있어요.']
+    },
+    J: {
+      action: ['오늘은 목록을 다 끝내기보다 가장 중요한 체크 하나만 확실히 해도 좋아요.', '계획을 세우는 힘이 보인 날이에요. 다만 오늘은 여백 하나까지 일정에 넣어보세요.', '정리하고 싶은 마음이 강하다면, 끝낼 일보다 먼저 정할 기준 하나를 골라보세요.'],
+      relationship: ['계획이 바뀌어도 실패가 아니라 재정렬입니다. 캘린더와 짧은 평화협정을 맺어보세요.', '관계에서는 미리 정해둔 기대가 어긋날 수 있어요. 오늘은 변경 가능성도 함께 열어두면 덜 피곤합니다.', '상대가 예상과 다르게 움직여도 바로 평가하기보다 새 기준으로 다시 맞춰보세요.'],
+      recovery: ['쉬는 시간도 일정으로 인정하면 마음이 덜 조급해져요.', '회복을 즉흥에 맡기면 계속 밀릴 수 있어요. 오늘은 쉬는 시간도 작은 약속처럼 잡아보세요.', '정리가 잘 되는 날일수록, 쉬는 일도 완료해야 할 항목이 아니라 유지 장치로 봐주세요.']
+    },
+    P: {
+      action: ['흐름을 타되, 끝낼 기준 하나만 정해두면 오늘의 자유가 더 오래 갑니다.', '유연하게 움직이는 힘이 보인 날이에요. 다만 시작과 끝 중 하나만 정해두면 덜 흩어집니다.', '오늘은 즉흥성을 살리되, 놓치면 안 되는 작은 기준 하나만 주머니에 넣어두세요.'],
+      relationship: ['즉흥적으로 반응해도 좋지만, 중요한 약속은 한 번만 더 확인해보세요.', '관계에서도 편한 흐름이 장점이에요. 다만 상대가 기대하는 최소 기준은 확인하면 더 안정적입니다.', '갑자기 바꾸고 싶어진 마음이 있다면, 상대에게도 선택지를 남겨주는 방식이 좋습니다.'],
+      recovery: ['새로운 자극이 회복이 될 수 있어요. 다만 중간에 내 체력이 괜찮은지도 한 번 확인해보세요.', '오늘 회복은 익숙한 쉼보다 가벼운 전환에서 올 수 있어요. 대신 너무 멀리 가지 않아도 됩니다.', '흐름을 바꾸는 일이 쉬는 방식이 될 수 있어요. 작은 산책이나 다른 음악처럼 부담 없는 변화가 좋습니다.']
     }
   },
   age: {
@@ -525,6 +619,9 @@ const pickHint = (items, seed, salt = '') => {
   return items[Math.abs(saltedSeed) % items.length];
 };
 
+const mergeHintPools = (...pools) =>
+  pools.flatMap((pool) => Array.isArray(pool) ? pool : pool ? [pool] : []);
+
 export const getDailyResultHints = ({
   mbti = '',
   createdAt = '',
@@ -557,9 +654,23 @@ export const getDailyResultHints = ({
   const axisVariant = HINT_VARIANTS.axis[dominant] || {};
   const ageVariant = HINT_VARIANTS.age[ageGroup] || HINT_VARIANTS.age.common;
   const lifeActions = HINT_VARIANTS.lifeAction[topLifeTag] || HINT_VARIANTS.lifeAction.daily_choice;
-  const axisAction = pickHint(axisVariant.action, seed, 'axis-action') || axisHints.action || pickHint(ageVariant.action, seed, 'age-action') || ageHints.action;
-  const relationshipHint = pickHint(axisVariant.relationship, seed, 'axis-relationship') || axisHints.relationship || pickHint(ageVariant.relationship, seed, 'age-relationship') || ageHints.relationship;
-  const recoveryHint = pickHint(axisVariant.recovery, seed, 'axis-recovery') || axisHints.recovery || pickHint(ageVariant.recovery, seed, 'age-recovery') || ageHints.recovery;
+  const lifeRelationships = HINT_VARIANTS.lifeRelationship[topLifeTag] || HINT_VARIANTS.lifeRelationship.daily_choice;
+  const lifeRecoveries = HINT_VARIANTS.lifeRecovery[topLifeTag] || HINT_VARIANTS.lifeRecovery.daily_choice;
+  const axisAction = pickHint(
+    mergeHintPools(axisVariant.action, ageVariant.action, axisHints.action),
+    seed,
+    'axis-action'
+  ) || ageHints.action;
+  const relationshipHint = pickHint(
+    mergeHintPools(lifeRelationships, axisVariant.relationship, ageVariant.relationship, axisHints.relationship),
+    seed,
+    'relationship-mixed'
+  ) || ageHints.relationship;
+  const recoveryHint = pickHint(
+    mergeHintPools(lifeRecoveries, axisVariant.recovery, ageVariant.recovery, axisHints.recovery),
+    seed,
+    'recovery-mixed'
+  ) || ageHints.recovery;
 
   const actionLead = hasShift
     ? pickHint(HINT_VARIANTS.shiftLead, seed, 'shift-lead')
