@@ -19,6 +19,14 @@ export const COMPATIBILITY = {
 
 export const CHANGELOG = [
   {
+    version: 'v1.6.7',
+    date: '2026.05.19',
+    updates: [
+      '공유 카드 우측 상단의 싱크로율을 오늘의 무드 컬러가 퍼센트만큼 채워지는 원형 링 배지로 바꾸고 날짜·시간 표시는 AM/PM 글래스 캡슐로 정리',
+      '결과 화면 우측 상단 싱크로율에도 같은 원형 진행 링을 적용해 저장 이미지와 화면의 시각 언어를 맞춤'
+    ]
+  },
+  {
     version: 'v1.6.6',
     date: '2026.05.19',
     updates: [

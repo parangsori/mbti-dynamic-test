@@ -1,5 +1,6 @@
 import { useLayoutEffect, useRef, useState } from 'react';
 import ShareCardWatermark from './ShareCardWatermark.jsx';
+import SyncRateBadge from './SyncRateBadge.jsx';
 
 const SHARE_HOOK_SIZE_STEPS = [
   { fontSize: 60, lineHeight: 1.25 },
@@ -81,6 +82,33 @@ function AutoFitShareHook({ text }) {
   );
 }
 
+function ShareTimePill({ todayLabel, timeLabel, themeKey }) {
+  const timeRingTheme = {
+    spark: 'border-amber-200/80 shadow-[0_0_22px_rgba(251,191,36,0.28),inset_0_0_16px_rgba(251,113,133,0.22)]',
+    wave: 'border-teal-200/80 shadow-[0_0_22px_rgba(45,212,191,0.3),inset_0_0_16px_rgba(96,165,250,0.22)]',
+    neon: 'border-cyan-200/80 shadow-[0_0_22px_rgba(34,211,238,0.32),inset_0_0_16px_rgba(168,85,247,0.24)]',
+    steady: 'border-emerald-200/80 shadow-[0_0_22px_rgba(110,231,183,0.28),inset_0_0_16px_rgba(203,213,225,0.18)]',
+    'soft-shift': 'border-pink-200/80 shadow-[0_0_22px_rgba(249,168,212,0.28),inset_0_0_16px_rgba(129,140,248,0.22)]',
+    citrus: 'border-lime-200/80 shadow-[0_0_22px_rgba(190,242,100,0.26),inset_0_0_16px_rgba(45,212,191,0.2)]',
+    afterglow: 'border-rose-200/80 shadow-[0_0_22px_rgba(251,113,133,0.28),inset_0_0_16px_rgba(250,204,21,0.18)]',
+    studio: 'border-slate-100/80 shadow-[0_0_22px_rgba(226,232,240,0.2),inset_0_0_16px_rgba(56,189,248,0.2)]'
+  };
+
+  return (
+    <div className="flex min-h-[70px] min-w-[236px] items-center gap-3.5 rounded-[32px] border border-white/18 bg-slate-950/42 px-5 py-2.5 shadow-[0_18px_36px_rgba(2,6,23,0.32)] backdrop-blur-md">
+      <div className={`relative flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-full border-[3px] ${timeRingTheme[themeKey] || timeRingTheme.neon}`}>
+        <span className="relative h-1.5 w-1.5 rounded-full bg-white"></span>
+        <span className="absolute left-1/2 top-[8px] h-[11px] w-[3px] -translate-x-1/2 rounded-full bg-white"></span>
+        <span className="absolute left-1/2 top-[18px] h-[3px] w-[10px] rounded-full bg-white"></span>
+      </div>
+      <div className="flex h-full flex-col justify-center text-left">
+        <p className="text-[13px] font-black leading-none tracking-[-0.01em] text-white">{todayLabel}</p>
+        <p className="mt-2 text-[20px] font-black leading-none text-white tabular-nums">{timeLabel}</p>
+      </div>
+    </div>
+  );
+}
+
 export default function ShareCard({ context, getThemeClasses }) {
   const {
     displayName,
@@ -123,15 +151,9 @@ export default function ShareCard({ context, getThemeClasses }) {
               {info.nickname}
             </p>
           </div>
-          <div className="flex flex-col items-end gap-3">
-            <div className="rounded-[32px] border border-white/15 bg-white/10 px-7 py-5 text-right shadow-lg shadow-slate-950/30 backdrop-blur-sm">
-              <p className="text-[15px] font-semibold tracking-[0.14em] text-slate-200 uppercase">싱크로율</p>
-              <p className="mt-1 text-[42px] font-black text-white">{percent}%</p>
-            </div>
-            <div className="rounded-[28px] border border-white/10 bg-black/20 px-5 py-3 text-right">
-              <p className="text-[13px] font-bold tracking-[0.16em] text-slate-300 uppercase">{todayLabel}</p>
-              <p className="mt-1 text-[18px] font-black text-white">{timeLabel}</p>
-            </div>
+          <div className="flex min-w-[236px] flex-col items-end gap-3">
+            <SyncRateBadge percent={percent} size="share" themeKey={presentation?.themeKey} className="mr-12" />
+            <ShareTimePill todayLabel={todayLabel} timeLabel={timeLabel} themeKey={presentation?.themeKey} />
           </div>
         </div>
 
@@ -187,32 +209,32 @@ export default function ShareCard({ context, getThemeClasses }) {
           </div>
 
           <div className="flex flex-col">
-            <div className={`relative h-[690px] overflow-hidden rounded-[42px] border ${themeClasses.imageFrame} shadow-[0_24px_80px_rgba(2,6,23,0.5)]`}>
+            <div className={`relative h-[652px] overflow-hidden rounded-[42px] border ${themeClasses.imageFrame} shadow-[0_24px_80px_rgba(2,6,23,0.5)]`}>
               <div className={`absolute inset-x-10 top-12 h-20 rounded-full ${themeClasses.haloTop} blur-3xl`}></div>
               <div className={`absolute inset-x-12 bottom-28 h-20 rounded-full ${themeClasses.haloBottom} blur-3xl`}></div>
               <div className="absolute inset-0 border border-white/5 rounded-[42px]"></div>
 
-              <div className="relative z-10 grid h-full grid-rows-[72px_1fr_158px] px-8 pb-7 pt-7">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="inline-flex rounded-full border border-white/10 bg-white/[0.08] px-5 py-2 text-[15px] font-black tracking-[0.2em] text-slate-100 uppercase">
+              <div className="relative z-10 grid h-full grid-rows-[58px_388px_144px] px-8 pb-6 pt-6">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="inline-flex rounded-full border border-white/10 bg-white/[0.08] px-4 py-1.5 text-[14px] font-black tracking-[0.2em] text-slate-100 uppercase">
                     {mbti}
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5">
                     {presentation?.stateLabel && (
-                      <span className="rounded-full border border-white/15 bg-white/10 px-4 py-2 text-[14px] font-bold text-white shadow-sm backdrop-blur-sm">
+                      <span className="rounded-full border border-white/15 bg-white/10 px-3.5 py-1.5 text-[13px] font-bold text-white shadow-sm backdrop-blur-sm">
                         {presentation.stateLabel}
                       </span>
                     )}
-                    <div className={`flex items-center gap-2 rounded-full border px-5 py-2.5 text-[16px] font-black shadow-[0_12px_24px_rgba(15,23,42,0.28)] ${themeClasses.chip}`}>
-                      <span className={`inline-block h-2.5 w-2.5 rounded-full ${themeClasses.dot}`}></span>
+                    <div className={`flex items-center gap-2 rounded-full border px-4 py-2 text-[15px] font-black shadow-[0_12px_24px_rgba(15,23,42,0.28)] ${themeClasses.chip}`}>
+                      <span className={`inline-block h-2 w-2 rounded-full ${themeClasses.dot}`}></span>
                       {presentation?.themeLabel || '오늘 무드'}
                     </div>
                   </div>
                 </div>
 
-                <div className="flex items-start justify-center pt-1">
+                <div className="flex items-center justify-center">
                   {resolvedImageSrc && (
-                    <div className="flex h-[390px] w-[390px] items-center justify-center rounded-[34px] border border-white/70 bg-white px-7 pb-6 pt-5 shadow-[0_24px_48px_rgba(15,23,42,0.82)]">
+                    <div className="flex h-[374px] w-[374px] items-center justify-center rounded-[32px] border border-white/70 bg-white px-7 pb-6 pt-5 shadow-[0_24px_48px_rgba(15,23,42,0.82)]">
                       <img
                         src={resolvedImageSrc}
                         alt={mbti}
@@ -222,11 +244,11 @@ export default function ShareCard({ context, getThemeClasses }) {
                   )}
                 </div>
 
-                <div className="flex items-end pt-2">
-                  <div className="w-full rounded-[30px] border border-white/10 bg-black/35 px-6 py-5 backdrop-blur-sm">
-                    <p className="text-[14px] font-bold tracking-[0.22em] text-slate-500 uppercase">오늘의 무드</p>
-                    <p className="mt-3 text-[28px] font-black leading-[1.25] text-white break-keep">{info.nickname}</p>
-                    <p className="mt-2 text-[18px] font-semibold text-slate-200 break-keep">{shareCardCopy.boast}</p>
+                <div className="flex items-start pt-1">
+                  <div className="w-full rounded-[28px] border border-white/10 bg-black/35 px-6 py-4 backdrop-blur-sm">
+                    <p className="text-[13px] font-bold tracking-[0.22em] text-slate-500 uppercase">오늘의 무드</p>
+                    <p className="mt-2 text-[25px] font-black leading-[1.22] text-white break-keep">{info.nickname}</p>
+                    <p className="mt-2 text-[17px] font-semibold text-slate-200 break-keep">{shareCardCopy.boast}</p>
                   </div>
                 </div>
               </div>

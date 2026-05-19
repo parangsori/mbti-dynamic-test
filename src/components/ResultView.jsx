@@ -6,6 +6,7 @@ import {
   PRESENTATION_THEMES
 } from '../lib/resultAnalysis.js';
 import ShareCard from './ShareCard.jsx';
+import SyncRateBadge from './SyncRateBadge.jsx';
 import { getPersonalizedResultContext } from '../lib/personalization.js';
 import { useResultRecord } from '../hooks/useResultRecord.js';
 import { useResultShare } from '../hooks/useResultShare.js';
@@ -20,7 +21,7 @@ const getTodayLabel = () =>
   new Date().toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'short' });
 
 const getTimeLabel = () =>
-  new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
+  new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
 
 const getPrecisionBadge = ({ percent, neutralReviewNote, boundaryAxes }) => {
   if (neutralReviewNote) return '보정 질문으로 한 번 더 확인한 결과';
@@ -414,7 +415,6 @@ export default function ResultView({
   const resolvedImageSrc = info.image ? IMAGE_BASE64[info.image] || info.image : '';
   const themeClasses = getThemeClasses(presentation.themeKey);
   const precisionBadge = getPrecisionBadge({ percent, neutralReviewNote, boundaryAxes });
-  const syncRateClass = percent >= 100 ? 'text-[22px] min-[390px]:text-[26px]' : 'text-[24px] min-[390px]:text-[28px]';
   const todayLabel = getTodayLabel();
   const timeLabel = getTimeLabel();
 
@@ -629,11 +629,8 @@ export default function ResultView({
                 </div>
                 <p className="mt-3 inline-flex max-w-full rounded-full border border-white/10 bg-white/[0.05] px-3 py-2 text-[13px] font-bold text-slate-100 min-[390px]:px-4 min-[390px]:text-[14px]">{info.nickname}</p>
               </div>
-              <div className="flex w-[5.4rem] shrink-0 flex-col items-end gap-2 min-[390px]:w-[6rem]">
-                <div className={`w-full rounded-[1.15rem] border px-2.5 py-2 text-right shadow-[0_14px_28px_rgba(15,23,42,0.22)] min-[390px]:rounded-[1.3rem] min-[390px]:px-3 min-[390px]:py-2.5 ${themeClasses.chip}`}>
-                  <p className="text-[10px] font-black tracking-[0.2em] text-purple-100 uppercase">싱크로율</p>
-                  <p className={`mt-1 whitespace-nowrap font-black text-white tabular-nums ${syncRateClass}`}>{percent}%</p>
-                </div>
+              <div className="flex w-[5.55rem] shrink-0 flex-col items-end gap-2 min-[390px]:w-[6.1rem]">
+                <SyncRateBadge percent={percent} size="result" themeKey={presentation?.themeKey} />
                 <span className="w-full rounded-full border border-cyan-300/20 bg-cyan-300/[0.1] px-2 py-1.5 text-center text-[9px] font-black leading-snug text-cyan-100 break-keep min-[390px]:text-[10px]">{precisionBadge}</span>
               </div>
             </div>
