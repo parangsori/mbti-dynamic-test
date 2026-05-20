@@ -62,9 +62,22 @@ const retryImport = (loader, retries = 1) =>
     });
   });
 
-const lazyWithRetry = (loader, retries = 1) => lazy(() => retryImport(loader, retries));
+let resultViewPreloadPromise = null;
 
-const ResultView = lazyWithRetry(() => import('./components/ResultView.jsx'), 3);
+const loadResultViewModule = () => {
+  if (!resultViewPreloadPromise) {
+    resultViewPreloadPromise = retryImport(() => import('./components/ResultView.jsx'), 3).catch((error) => {
+      resultViewPreloadPromise = null;
+      throw error;
+    });
+  }
+
+  return resultViewPreloadPromise;
+};
+
+const preloadResultView = () => loadResultViewModule();
+
+const ResultView = lazy(loadResultViewModule);
 const RecoveryPrompt = lazy(() => import('./components/RecoveryPrompt.jsx'));
 const HistoryModal = lazy(() => import('./components/HistoryModal.jsx'));
 const VersionModal = lazy(() => import('./components/VersionModal.jsx'));
@@ -561,6 +574,12 @@ export default function App() {
     setResultBoundaryKey((value) => value + 1);
     trackEvent('analysis_view', {
       questionContextTop: nextQuestionContextSummary.topTag
+    });
+    preloadResultView().catch((error) => {
+      captureError(error, {
+        key: 'result_screen_preload_error',
+        stage: 'result_preload'
+      });
     });
     setStep('analysis');
   };
