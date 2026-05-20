@@ -1,5 +1,13 @@
 {
   "hints": {
-    "meta-theme-color": "off"
+    "meta-theme-color": "off",
+    "compat-api/html": [
+      "default",
+      {
+        "ignore": [
+          "meta[name=theme-color]"
+        ]
+      }
+    ]
   }
 }
