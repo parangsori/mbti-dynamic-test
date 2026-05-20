@@ -34,6 +34,10 @@ export const summarizeActivityReport = (
   const saveOrShare = saved + shared;
   const completionRate = starts > 0 ? Math.round((completions / starts) * 100) : 0;
   const recentErrors = errorRaw?.recent || [];
+  const latestError = recentErrors[0] || null;
+  const latestErrorDetail = latestError
+    ? [latestError.name, latestError.message].filter(Boolean).join(': ')
+    : '';
   const totalErrors = Object.values(errorRaw?.counts || {}).reduce((sum, value) => sum + value, 0);
   const hasErrors = totalErrors > 0;
 
@@ -69,7 +73,7 @@ export const summarizeActivityReport = (
     shared,
     copied,
     totalErrors,
-    latestError: recentErrors[0] || null,
+    latestError,
     localNote: '이 리포트는 지금 쓰는 브라우저 기준으로 저장돼요.',
     headline,
     subline,
@@ -87,7 +91,7 @@ export const summarizeActivityReport = (
       ? '다시 해보면 이 축부터 달라질 수 있어요.'
       : '최근엔 거의 같은 결이 이어졌어요.',
     systemNote: hasErrors
-      ? `최근 브라우저 기준 오류 흔적 ${totalErrors}건이 남아 있어요. 가장 최근은 ${recentErrors[0]?.context?.stage || recentErrors[0]?.context?.source || '처리 단계'}에서 발생했어요.`
+      ? `최근 브라우저 기준 오류 흔적 ${totalErrors}건이 남아 있어요. 가장 최근은 ${latestError?.context?.stage || latestError?.context?.source || '처리 단계'}에서 발생했어요.${latestErrorDetail ? ` (${latestErrorDetail})` : ''}`
       : '최근 브라우저 기준 오류 흔적은 없어요. 결과 저장과 기록 흐름이 비교적 안정적으로 유지되고 있어요.'
   };
 };

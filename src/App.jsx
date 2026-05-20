@@ -64,7 +64,7 @@ const retryImport = (loader, retries = 1) =>
 
 const lazyWithRetry = (loader, retries = 1) => lazy(() => retryImport(loader, retries));
 
-const ResultView = lazyWithRetry(() => import('./components/ResultView.jsx'));
+const ResultView = lazyWithRetry(() => import('./components/ResultView.jsx'), 3);
 const RecoveryPrompt = lazy(() => import('./components/RecoveryPrompt.jsx'));
 const HistoryModal = lazy(() => import('./components/HistoryModal.jsx'));
 const VersionModal = lazy(() => import('./components/VersionModal.jsx'));
