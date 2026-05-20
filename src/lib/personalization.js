@@ -619,6 +619,11 @@ const pickHint = (items, seed, salt = '') => {
   return items[Math.abs(saltedSeed) % items.length];
 };
 
+const resolveHint = (hint, ...args) => {
+  if (typeof hint === 'function') return hint(...args);
+  return typeof hint === 'string' ? hint : '';
+};
+
 const mergeHintPools = (...pools) =>
   pools.flatMap((pool) => Array.isArray(pool) ? pool : pool ? [pool] : []);
 
@@ -675,11 +680,14 @@ export const getDailyResultHints = ({
   const actionLead = hasShift
     ? pickHint(HINT_VARIANTS.shiftLead, seed, 'shift-lead')
     : stableCount >= 2
-      ? pickHint(HINT_VARIANTS.stableLead, seed, 'stable-lead')(lifeHint.label)
+      ? resolveHint(pickHint(HINT_VARIANTS.stableLead, seed, 'stable-lead'), lifeHint.label) || lifeHint.action
       : pickHint(lifeActions, seed, 'life-action') || lifeHint.action;
 
   const tomorrowCheckPoint = hasBoundary
-    ? pickHint(HINT_VARIANTS.boundaryTomorrow, seed, 'boundary-tomorrow')(boundaryAxes.map((axis) => `${axis.left}/${axis.right}`).join(', '))
+    ? resolveHint(
+      pickHint(HINT_VARIANTS.boundaryTomorrow, seed, 'boundary-tomorrow'),
+      boundaryAxes.map((axis) => `${axis.left}/${axis.right}`).join(', ')
+    ) || ageHints.tomorrow
     : presentation?.state === 'streak'
       ? pickHint(HINT_VARIANTS.streakTomorrow, seed, 'streak-tomorrow')
       : pickHint(ageVariant.tomorrow, seed, 'age-tomorrow') || ageHints.tomorrow;
