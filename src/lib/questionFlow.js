@@ -19,7 +19,7 @@ const AGE_FIT_MIN_PER_AXIS = 1;
 
 const AGE_MISMATCH_PATTERNS = {
   child: /퇴근|직장|동료|회사|신규 사업|소개팅|데이트|상사|회의/,
-  teen: /퇴근|직장|동료|회사|신규 사업|소개팅|데이트|상사/
+  teen: /퇴근|직장|동료|회사|신규 사업|소개팅|데이트|상사|회식|술 한잔|펍/
 };
 
 const CONTEXT_LABELS = {

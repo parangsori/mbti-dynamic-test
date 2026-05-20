@@ -923,7 +923,7 @@ export const QUESTIONS_EXTENDED = {
     {
       q: "내가 더 못 견디는 TV 프로그램은?",
       options: [
-        { text: "논리도 없고 개연성도 억망인 막장 드라마", type: "T", micro: "부정 ⚖️" },
+        { text: "논리도 없고 개연성도 엉망인 막장 드라마", type: "T", micro: "부정 ⚖️" },
         { text: "서로 배신하고 상처 주는 가혹한 서바이벌", type: "F", micro: "비참 🌿" }
       ]
     },
