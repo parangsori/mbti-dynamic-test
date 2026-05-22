@@ -250,6 +250,7 @@
 - 2026-05-19: 결과 화면의 `나를 위한 작은 한마디`가 반복 테스트에서 거의 같게 보인다는 피드백을 반영해, 연령대/성향 축/생활 맥락/생성 시점 기반으로 행동·관계·회복·다음 비교 문구가 안정적으로 변주되는 v1.6.6 로직을 추가했다.
 - 2026-05-19: 공유 카드 디자인 피드백을 반영해 우측 상단 싱크로율을 오늘의 무드 컬러가 퍼센트만큼 채워지는 원형 링 배지로 바꾸고 날짜·시간 AM/PM 글래스 캡슐을 정리했으며, 결과 화면 우측 상단 싱크로율에도 같은 v1.6.7 진행 링 디자인을 적용했다.
 - 2026-05-19: 같은 나이대에서 `나를 위한 작은 한마디`가 비슷하게 느껴지는 문제를 줄이기 위해 v1.6.8에서 S/N/J/P 축 문구를 보강하고, 관계·회복 힌트에 오늘 문항의 생활 맥락이 더 섞이도록 했다.
+- 2026-05-22: 메인 사용자 서비스의 운영 canonical 도메인을 `https://todaymbti.com`으로 전환 준비했다. 앱의 OG/Twitter 절대 URL과 공유 fallback URL은 새 도메인을 기준으로 정리하고, dev QA는 기존 Vercel preview URL을 `VITE_PUBLIC_SERVICE_URL`로 유지한다. `todaymbti.com`과 `www.todaymbti.com`은 Vercel 프로젝트 `mbti-dynamic-test`에 추가했고, 구매처 네임서버가 `ns1.whoisdomain.kr`~`ns4.whoisdomain.kr`에 남아 있어 Vercel DNS 위임(`ns1.vercel-dns.com`, `ns2.vercel-dns.com`) 후 Valid Configuration/SSL 상태를 다시 확인해야 한다.
 
 ### 다음 채팅에서 먼저 확인할 체크포인트
 

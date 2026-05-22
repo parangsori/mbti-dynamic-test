@@ -1,5 +1,5 @@
 export const SERVICE_NAME = '오늘의 MBTI';
-export const SERVICE_URL = (import.meta.env.VITE_PUBLIC_SERVICE_URL || (typeof window !== 'undefined' ? window.location.origin : 'https://mbti-dynamic-test.vercel.app')).replace(/\/+$/, '');
+export const SERVICE_URL = (import.meta.env.VITE_PUBLIC_SERVICE_URL || (typeof window !== 'undefined' ? window.location.origin : 'https://todaymbti.com')).replace(/\/+$/, '');
 
 /**
  * 텔레그램 인앱 브라우저 감지
