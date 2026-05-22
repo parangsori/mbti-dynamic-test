@@ -27,6 +27,8 @@ import {
   readRecentSessions,
   readUserName,
   prepareHomeScreenMigrationUrl,
+  createHomeScreenMigrationText,
+  importHomeScreenMigrationText,
   trackEvent,
   writeActiveSession,
   writePendingResult,
@@ -287,6 +289,7 @@ export default function App() {
   const [installPromptEvent, setInstallPromptEvent] = useState(null);
   const [homeScreenTipHidden, setHomeScreenTipHidden] = useState(readHomeScreenTipHidden);
   const [homeScreenTipSessionHidden, setHomeScreenTipSessionHidden] = useState(false);
+  const [homeScreenMigrationStatus, setHomeScreenMigrationStatus] = useState('');
   const [resultBoundaryKey, setResultBoundaryKey] = useState(0);
 
   useEffect(() => {
@@ -433,6 +436,48 @@ export default function App() {
   const handlePrepareHomeScreenMigration = () => {
     const prepared = prepareHomeScreenMigrationUrl();
     trackEvent('home_screen_migration_url_prepare', { prepared });
+  };
+
+  const handleCopyHomeScreenMigration = async () => {
+    const text = createHomeScreenMigrationText();
+    if (!text || !navigator.clipboard?.writeText) {
+      setHomeScreenMigrationStatus('copy_failed');
+      trackEvent('home_screen_migration_copy', { status: 'failed' });
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(text);
+      setHomeScreenMigrationStatus('copied');
+      trackEvent('home_screen_migration_copy', { status: 'copied' });
+    } catch {
+      setHomeScreenMigrationStatus('copy_failed');
+      trackEvent('home_screen_migration_copy', { status: 'failed' });
+    }
+  };
+
+  const handleImportHomeScreenMigration = async () => {
+    if (!navigator.clipboard?.readText) {
+      setHomeScreenMigrationStatus('import_failed');
+      trackEvent('home_screen_migration_import', { status: 'failed', reason: 'clipboard_unavailable' });
+      return;
+    }
+
+    try {
+      const text = await navigator.clipboard.readText();
+      const imported = importHomeScreenMigrationText(text);
+      setHomeScreenMigrationStatus(imported ? 'imported' : 'import_failed');
+      trackEvent('home_screen_migration_import', { status: imported ? 'imported' : 'failed' });
+      if (imported) {
+        setUserName(readUserName());
+        setBirthDate(readProfile().birthDate || null);
+        setGender(readProfile().gender || '');
+        setHistoryData(readHistory());
+      }
+    } catch {
+      setHomeScreenMigrationStatus('import_failed');
+      trackEvent('home_screen_migration_import', { status: 'failed', reason: 'read_error' });
+    }
   };
 
   const openHistoryModal = () => {
@@ -684,6 +729,9 @@ export default function App() {
               canInstallApp={Boolean(installPromptEvent)}
               onInstallApp={handleInstallApp}
               onPrepareHomeScreenMigration={handlePrepareHomeScreenMigration}
+              onCopyHomeScreenMigration={handleCopyHomeScreenMigration}
+              onImportHomeScreenMigration={handleImportHomeScreenMigration}
+              homeScreenMigrationStatus={homeScreenMigrationStatus}
               onDismissHomeScreenTip={handleDismissHomeScreenTip}
               onHideHomeScreenTipForever={handleHideHomeScreenTipForever}
             />

@@ -6,6 +6,9 @@ function HomeScreenTipCard({
   canInstallApp,
   onInstallApp,
   onPrepareHomeScreenMigration,
+  onCopyHomeScreenMigration,
+  onImportHomeScreenMigration,
+  migrationStatus,
   onDismiss,
   onHideForever
 }) {
@@ -36,6 +39,30 @@ function HomeScreenTipCard({
             <p>iPhone: Safari 공유 버튼을 누른 뒤 홈 화면에 추가를 선택해요.</p>
             <p>Android: Chrome 메뉴에서 앱 설치 또는 홈 화면에 추가를 선택해요.</p>
           </div>
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={onCopyHomeScreenMigration}
+              className="rounded-2xl border border-white/10 bg-white/[0.06] px-2 py-2 text-[11px] font-black text-slate-100 transition hover:bg-white/[0.1]"
+            >
+              기록 복사
+            </button>
+            <button
+              type="button"
+              onClick={onImportHomeScreenMigration}
+              className="rounded-2xl border border-cyan-200/20 bg-cyan-300/[0.12] px-2 py-2 text-[11px] font-black text-cyan-50 transition hover:bg-cyan-300/[0.18]"
+            >
+              기록 가져오기
+            </button>
+          </div>
+          {migrationStatus && (
+            <p className="mt-2 text-center text-[11px] font-bold text-cyan-100/85 break-keep">
+              {migrationStatus === 'copied' && '기록을 복사했어요. 홈화면 앱에서 기록 가져오기를 눌러주세요.'}
+              {migrationStatus === 'imported' && '기록을 가져왔어요. 이제 이어서 사용할 수 있어요.'}
+              {migrationStatus === 'copy_failed' && '복사에 실패했어요. Safari 권한을 확인해주세요.'}
+              {migrationStatus === 'import_failed' && '가져오지 못했어요. Safari에서 먼저 기록 복사를 눌러주세요.'}
+            </p>
+          )}
         </div>
       )}
 
@@ -83,6 +110,9 @@ export default function StartView({
   canInstallApp,
   onInstallApp,
   onPrepareHomeScreenMigration,
+  onCopyHomeScreenMigration,
+  onImportHomeScreenMigration,
+  homeScreenMigrationStatus,
   onDismissHomeScreenTip,
   onHideHomeScreenTipForever
 }) {
@@ -123,6 +153,9 @@ export default function StartView({
           canInstallApp={canInstallApp}
           onInstallApp={onInstallApp}
           onPrepareHomeScreenMigration={onPrepareHomeScreenMigration}
+          onCopyHomeScreenMigration={onCopyHomeScreenMigration}
+          onImportHomeScreenMigration={onImportHomeScreenMigration}
+          migrationStatus={homeScreenMigrationStatus}
           onDismiss={onDismissHomeScreenTip}
           onHideForever={onHideHomeScreenTipForever}
         />

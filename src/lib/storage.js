@@ -343,7 +343,7 @@ export const handlePublicDomainMigration = () => {
   return false;
 };
 
-export const prepareHomeScreenMigrationUrl = () => {
+const buildDomainMigrationHash = () => {
   if (!canUseBrowserStorage()) return false;
 
   const { host, pathname, search, hash } = window.location;
@@ -353,6 +353,36 @@ export const prepareHomeScreenMigrationUrl = () => {
   if (!Object.keys(payload.values).length) return false;
 
   const nextHash = `${MIGRATION_HASH_PREFIX.slice(1)}${encodeMigrationPayload(payload)}`;
-  window.history.replaceState(null, '', `${pathname}${search}#${nextHash}`);
+  return { pathname, search, nextHash };
+};
+
+export const prepareHomeScreenMigrationUrl = () => {
+  const migration = buildDomainMigrationHash();
+  if (!migration) return false;
+
+  window.history.replaceState(null, '', `${migration.pathname}${migration.search}#${migration.nextHash}`);
   return true;
+};
+
+export const createHomeScreenMigrationText = () => {
+  const migration = buildDomainMigrationHash();
+  if (!migration) return '';
+
+  return `${PUBLIC_SERVICE_ORIGIN}/${migration.search}#${migration.nextHash}`;
+};
+
+export const importHomeScreenMigrationText = (text) => {
+  if (!canUseBrowserStorage() || typeof text !== 'string') return false;
+
+  const marker = 'migrate=';
+  const index = text.indexOf(marker);
+  if (index < 0) return false;
+
+  try {
+    const encoded = text.slice(index + marker.length).trim().split(/\s/)[0];
+    const payload = decodeMigrationPayload(encoded);
+    return importDomainMigrationPayload(payload);
+  } catch {
+    return false;
+  }
 };
