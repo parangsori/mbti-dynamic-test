@@ -9,20 +9,20 @@ export default function ShareCardWatermark({ size = 'large' }) {
   const isLarge = size === 'large';
 
   return (
-    <div className={`flex items-center justify-between w-full ${isLarge ? 'mt-6 px-2' : 'mt-3 px-1'}`}>
-      <div className="flex items-center gap-3">
-        <div className={`overflow-hidden rounded-xl border border-white/15 bg-white/10 p-1 shadow-[0_12px_28px_rgba(15,23,42,0.28)] ${isLarge ? 'h-10 w-10' : 'h-7 w-7'}`}>
-          <img src="/service-icon-1024.png" alt="오늘의 MBTI" className="h-full w-full rounded-[0.55rem] object-cover" />
+    <div className={`flex items-center justify-between w-full ${isLarge ? 'mt-5 px-2' : 'mt-3 px-1'}`}>
+      <div className={`flex min-w-0 items-center ${isLarge ? 'gap-4' : 'gap-3'}`}>
+        <div className={`shrink-0 overflow-hidden rounded-2xl border border-white/15 bg-white/10 p-1.5 shadow-[0_14px_30px_rgba(15,23,42,0.3)] ${isLarge ? 'h-[52px] w-[52px]' : 'h-8 w-8'}`}>
+          <img src="/service-icon-1024.png" alt="오늘의 MBTI" className="h-full w-full rounded-xl object-cover" />
         </div>
-        <div>
-          <p className={`font-black text-white ${isLarge ? 'text-[16px]' : 'text-[11px]'}`}>{SERVICE_NAME}</p>
-          <p className={`text-slate-400 ${isLarge ? 'text-[13px]' : 'text-[9px]'}`}>{SERVICE_URL.replace('https://', '')}</p>
+        <div className="min-w-0">
+          <p className={`font-black leading-none text-white ${isLarge ? 'text-[24px]' : 'text-[12px]'}`}>{SERVICE_NAME}</p>
+          <p className={`mt-2 font-semibold leading-none text-slate-300 ${isLarge ? 'text-[17px]' : 'text-[10px]'}`}>{SERVICE_URL.replace('https://', '')}</p>
         </div>
       </div>
-      <div className={`rounded-xl bg-white p-1.5 ${isLarge ? 'w-[72px] h-[72px]' : 'w-[48px] h-[48px]'}`}>
+      <div className={`shrink-0 rounded-2xl bg-white p-1.5 shadow-[0_14px_30px_rgba(15,23,42,0.28)] ${isLarge ? 'h-[72px] w-[72px]' : 'h-[48px] w-[48px]'}`}>
         <QRCodeSVG
           value={SERVICE_URL}
-          size={isLarge ? 60 : 36}
+          size={isLarge ? 60 : 32}
           bgColor="#ffffff"
           fgColor="#0f172a"
           level="M"
