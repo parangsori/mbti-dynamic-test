@@ -95,9 +95,14 @@ export default function StartView({
             <img src="/service-icon.svg" alt="오늘의 MBTI 서비스 아이콘" className="h-full w-full rounded-[1.3rem] object-cover" />
           </div>
         </div>
-        <span className="rounded-full border border-white/10 bg-white/[0.06] px-4 py-1.5 text-[12px] font-black tracking-[0.18em] text-cyan-100 uppercase shadow-[0_12px_28px_rgba(15,23,42,0.22)]">
-          오늘의 MBTI
-        </span>
+        <div className="flex flex-col items-center gap-1">
+          <span className="rounded-full border border-white/10 bg-white/[0.06] px-4 py-1.5 text-[12px] font-black tracking-[0.18em] text-cyan-100 uppercase shadow-[0_12px_28px_rgba(15,23,42,0.22)]">
+            오늘의 MBTI
+          </span>
+          <span className="text-[11px] font-semibold tracking-[0.12em] text-slate-500">
+            todaymbti.com
+          </span>
+        </div>
       </div>
       <h1 className="mb-3 text-center text-[2.05rem] font-black leading-[1.12] text-white min-[390px]:text-[2.35rem]">
         지금 내 결은 어느 쪽이 더 강할까?
