@@ -342,3 +342,17 @@ export const handlePublicDomainMigration = () => {
   window.history.replaceState(null, '', `${pathname}${search}`);
   return false;
 };
+
+export const prepareHomeScreenMigrationUrl = () => {
+  if (!canUseBrowserStorage()) return false;
+
+  const { host, pathname, search, hash } = window.location;
+  if (host !== new URL(PUBLIC_SERVICE_ORIGIN).host || hash.startsWith(MIGRATION_HASH_PREFIX)) return false;
+
+  const payload = collectDomainMigrationPayload();
+  if (!Object.keys(payload.values).length) return false;
+
+  const nextHash = `${MIGRATION_HASH_PREFIX.slice(1)}${encodeMigrationPayload(payload)}`;
+  window.history.replaceState(null, '', `${pathname}${search}#${nextHash}`);
+  return true;
+};

@@ -26,6 +26,7 @@ import {
   readProfile,
   readRecentSessions,
   readUserName,
+  prepareHomeScreenMigrationUrl,
   trackEvent,
   writeActiveSession,
   writePendingResult,
@@ -415,6 +416,7 @@ export default function App() {
 
   const handleInstallApp = async () => {
     if (!installPromptEvent) return;
+    prepareHomeScreenMigrationUrl();
     installPromptEvent.prompt();
     const choice = await installPromptEvent.userChoice;
     setInstallPromptEvent(null);
@@ -426,6 +428,11 @@ export default function App() {
       setHomeScreenTipHidden(true);
     }
     setHomeScreenTipSessionHidden(true);
+  };
+
+  const handlePrepareHomeScreenMigration = () => {
+    const prepared = prepareHomeScreenMigrationUrl();
+    trackEvent('home_screen_migration_url_prepare', { prepared });
   };
 
   const openHistoryModal = () => {
@@ -676,6 +683,7 @@ export default function App() {
               showHomeScreenTip={showHomeScreenTip}
               canInstallApp={Boolean(installPromptEvent)}
               onInstallApp={handleInstallApp}
+              onPrepareHomeScreenMigration={handlePrepareHomeScreenMigration}
               onDismissHomeScreenTip={handleDismissHomeScreenTip}
               onHideHomeScreenTipForever={handleHideHomeScreenTipForever}
             />

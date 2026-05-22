@@ -5,10 +5,15 @@ import ProfileInput from './ProfileInput.jsx';
 function HomeScreenTipCard({
   canInstallApp,
   onInstallApp,
+  onPrepareHomeScreenMigration,
   onDismiss,
   onHideForever
 }) {
   const [expanded, setExpanded] = useState(false);
+  const handleGuideClick = () => {
+    if (!canInstallApp) onPrepareHomeScreenMigration?.();
+    setExpanded((value) => !value);
+  };
 
   return (
     <div className="mb-5 w-full rounded-[1.4rem] border border-cyan-300/20 bg-cyan-300/[0.08] px-4 py-4 shadow-[0_18px_45px_rgba(8,47,73,0.22)]">
@@ -37,7 +42,7 @@ function HomeScreenTipCard({
       <div className="mt-3 grid grid-cols-[minmax(0,1fr)_auto] gap-2">
         <button
           type="button"
-          onClick={canInstallApp ? onInstallApp : () => setExpanded((value) => !value)}
+          onClick={canInstallApp ? onInstallApp : handleGuideClick}
           className="rounded-2xl border border-cyan-200/20 bg-cyan-300/[0.14] px-3 py-2.5 text-[12px] font-black text-cyan-50 transition hover:bg-cyan-300/[0.2]"
         >
           {canInstallApp ? '앱처럼 추가하기' : expanded ? '방법 접기' : '추가 방법 보기'}
@@ -77,6 +82,7 @@ export default function StartView({
   showHomeScreenTip,
   canInstallApp,
   onInstallApp,
+  onPrepareHomeScreenMigration,
   onDismissHomeScreenTip,
   onHideHomeScreenTipForever
 }) {
@@ -116,6 +122,7 @@ export default function StartView({
         <HomeScreenTipCard
           canInstallApp={canInstallApp}
           onInstallApp={onInstallApp}
+          onPrepareHomeScreenMigration={onPrepareHomeScreenMigration}
           onDismiss={onDismissHomeScreenTip}
           onHideForever={onHideHomeScreenTipForever}
         />
