@@ -7,6 +7,7 @@ import {
 } from '../lib/resultAnalysis.js';
 import ShareCard from './ShareCard.jsx';
 import SyncRateBadge from './SyncRateBadge.jsx';
+import ServiceCopyright from './ServiceCopyright.jsx';
 import { getPersonalizedResultContext } from '../lib/personalization.js';
 import { useResultRecord } from '../hooks/useResultRecord.js';
 import { useResultShare } from '../hooks/useResultShare.js';
@@ -809,6 +810,8 @@ export default function ResultView({
           </DetailSection>
         ))}
       </div>
+
+      <ServiceCopyright className="mt-8 pb-8" />
 
       {showMoodLegend && (
         <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}>

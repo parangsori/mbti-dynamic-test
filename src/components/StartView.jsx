@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import ProfileInput from './ProfileInput.jsx';
+import ServiceCopyright from './ServiceCopyright.jsx';
 
 function HomeScreenTipCard({
   isStandalone,
@@ -239,6 +240,7 @@ export default function StartView({
           Version {versionLabel}
         </button>
       )}
+      <ServiceCopyright className="mt-4" />
     </motion.div>
   );
 }
