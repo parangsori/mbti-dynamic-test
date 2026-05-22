@@ -19,6 +19,15 @@ export const COMPATIBILITY = {
 
 export const CHANGELOG = [
   {
+    version: 'v1.6.9',
+    date: '2026.05.22',
+    updates: [
+      '공식 서비스 도메인을 todaymbti.com으로 정리하고 기존 Vercel 주소에서 들어온 사용자도 새 도메인으로 이어지도록 개선',
+      'iPhone 홈화면 앱처럼 별도 저장소로 열리는 환경에서도 기존 브라우저 기록을 이어받을 수 있도록 기록 이전 흐름을 보강',
+      '홈화면 실행 지표와 공식 서비스 저작권 표시를 추가해 운영 확인과 원본 서비스 식별을 강화'
+    ]
+  },
+  {
     version: 'v1.6.8',
     date: '2026.05.19',
     updates: [
