@@ -11,6 +11,16 @@ export const STORAGE_KEYS = {
   profile: 'mbti_user_profile'
 };
 
+const LEGACY_PUBLIC_HOST = 'mbti-dynamic-test.vercel.app';
+const PUBLIC_SERVICE_ORIGIN = 'https://todaymbti.com';
+const MIGRATION_HASH_PREFIX = '#migrate=';
+const MIGRATION_META_KEY = 'mbti_domain_migration';
+const EXTRA_LOCAL_KEYS = [
+  'mbti_font_scale',
+  'mbti_high_contrast',
+  'mbti_home_screen_tip_hidden'
+];
+
 export const readJson = (key, fallback) => {
   try {
     const raw = localStorage.getItem(key);
@@ -160,4 +170,175 @@ export const trackEvent = (name, payload = {}) => {
   } catch {
     // client analytics should never block the core flow
   }
+};
+
+const canUseBrowserStorage = () => {
+  try {
+    return typeof window !== 'undefined' && Boolean(window.localStorage);
+  } catch {
+    return false;
+  }
+};
+
+const encodeMigrationPayload = (payload) => {
+  const json = JSON.stringify(payload);
+  const bytes = new TextEncoder().encode(json);
+  let binary = '';
+  bytes.forEach((byte) => {
+    binary += String.fromCharCode(byte);
+  });
+  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+};
+
+const decodeMigrationPayload = (value) => {
+  const base64 = value.replace(/-/g, '+').replace(/_/g, '/').padEnd(Math.ceil(value.length / 4) * 4, '=');
+  const binary = atob(base64);
+  const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
+  return JSON.parse(new TextDecoder().decode(bytes));
+};
+
+const readRawLocalValue = (key) => {
+  try {
+    return localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+};
+
+const writeRawLocalValue = (key, value) => {
+  if (typeof value !== 'string') return false;
+  try {
+    localStorage.setItem(key, value);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+const collectDomainMigrationPayload = () => {
+  const values = {};
+  [...Object.values(STORAGE_KEYS), ...EXTRA_LOCAL_KEYS].forEach((key) => {
+    const value = readRawLocalValue(key);
+    if (value !== null) values[key] = value;
+  });
+
+  return {
+    version: 1,
+    sourceHost: window.location.host,
+    exportedAt: new Date().toISOString(),
+    values
+  };
+};
+
+const mergeHistoryForMigration = (incomingRaw) => {
+  const incoming = (() => {
+    try {
+      const parsed = JSON.parse(incomingRaw);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  })();
+  if (!incoming.length) return false;
+
+  const existing = readHistory();
+  const seen = new Set();
+  const merged = [...existing, ...incoming].filter((entry) => {
+    const key = getHistoryEntryKey(entry);
+    if (!key || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  }).slice(0, 7);
+
+  return writeHistory(merged);
+};
+
+const mergeRecentSessionsForMigration = (incomingRaw) => {
+  const incoming = (() => {
+    try {
+      const parsed = JSON.parse(incomingRaw);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  })();
+  if (!incoming.length) return false;
+
+  const existing = readRecentSessions();
+  const seen = new Set();
+  const merged = [...existing, ...incoming].filter((session) => {
+    const key = session?.sessionId || session?.savedAt || JSON.stringify(session);
+    if (!key || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  }).slice(0, 8);
+
+  return writeRecentSessions(merged);
+};
+
+const importDomainMigrationPayload = (payload) => {
+  if (!payload?.values || typeof payload.values !== 'object') return false;
+
+  let imported = false;
+  Object.entries(payload.values).forEach(([key, value]) => {
+    if (key === STORAGE_KEYS.history) {
+      imported = mergeHistoryForMigration(value) || imported;
+      return;
+    }
+
+    if (key === STORAGE_KEYS.recentIds) {
+      imported = mergeRecentSessionsForMigration(value) || imported;
+      return;
+    }
+
+    const shouldPreserveExisting = [
+      STORAGE_KEYS.username,
+      STORAGE_KEYS.profile,
+      STORAGE_KEYS.activeSession,
+      STORAGE_KEYS.pendingResult,
+      'mbti_font_scale',
+      'mbti_high_contrast'
+    ].includes(key);
+
+    if (shouldPreserveExisting && readRawLocalValue(key) !== null) return;
+    imported = writeRawLocalValue(key, value) || imported;
+  });
+
+  writeJson(MIGRATION_META_KEY, {
+    importedAt: new Date().toISOString(),
+    sourceHost: payload.sourceHost || LEGACY_PUBLIC_HOST,
+    exportedAt: payload.exportedAt || ''
+  });
+
+  return imported;
+};
+
+export const handlePublicDomainMigration = () => {
+  if (!canUseBrowserStorage()) return false;
+
+  const { host, pathname, search, hash } = window.location;
+
+  if (host === LEGACY_PUBLIC_HOST) {
+    const payload = collectDomainMigrationPayload();
+    const target = new URL(`${pathname}${search}`, PUBLIC_SERVICE_ORIGIN);
+    if (Object.keys(payload.values).length) {
+      target.hash = `${MIGRATION_HASH_PREFIX.slice(1)}${encodeMigrationPayload(payload)}`;
+    }
+    window.location.replace(target.toString());
+    return true;
+  }
+
+  if (host !== new URL(PUBLIC_SERVICE_ORIGIN).host || !hash.startsWith(MIGRATION_HASH_PREFIX)) {
+    return false;
+  }
+
+  try {
+    const payload = decodeMigrationPayload(hash.slice(MIGRATION_HASH_PREFIX.length));
+    importDomainMigrationPayload(payload);
+  } catch {
+    // A malformed migration hash should not block the app from loading.
+  }
+
+  window.history.replaceState(null, '', `${pathname}${search}`);
+  return false;
 };
