@@ -26,7 +26,6 @@ import {
   readProfile,
   readRecentSessions,
   readUserName,
-  prepareHomeScreenMigrationUrl,
   createHomeScreenMigrationText,
   importHomeScreenMigrationText,
   trackEvent,
@@ -235,6 +234,37 @@ const readHomeScreenTipHidden = () => {
   }
 };
 
+const copyTextToClipboard = async (text) => {
+  if (!text) return false;
+
+  if (navigator.clipboard?.writeText) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch {
+      // Fall back below for Safari/iOS contexts that block the async clipboard API.
+    }
+  }
+
+  try {
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.setAttribute('readonly', '');
+    textarea.style.position = 'fixed';
+    textarea.style.top = '-1000px';
+    textarea.style.left = '-1000px';
+    document.body.appendChild(textarea);
+    textarea.focus();
+    textarea.select();
+    textarea.setSelectionRange(0, textarea.value.length);
+    const copied = document.execCommand('copy');
+    document.body.removeChild(textarea);
+    return copied;
+  } catch {
+    return false;
+  }
+};
+
 export default function App() {
   const [step, setStep] = useState('start');
   const [userName, setUserName] = useState(readUserName());
@@ -419,7 +449,6 @@ export default function App() {
 
   const handleInstallApp = async () => {
     if (!installPromptEvent) return;
-    prepareHomeScreenMigrationUrl();
     installPromptEvent.prompt();
     const choice = await installPromptEvent.userChoice;
     setInstallPromptEvent(null);
@@ -433,38 +462,47 @@ export default function App() {
     setHomeScreenTipSessionHidden(true);
   };
 
-  const handlePrepareHomeScreenMigration = () => {
-    const prepared = prepareHomeScreenMigrationUrl();
-    trackEvent('home_screen_migration_url_prepare', { prepared });
-  };
-
   const handleCopyHomeScreenMigration = async () => {
     const text = createHomeScreenMigrationText();
-    if (!text || !navigator.clipboard?.writeText) {
+    if (!text) {
       setHomeScreenMigrationStatus('copy_failed');
-      trackEvent('home_screen_migration_copy', { status: 'failed' });
+      trackEvent('home_screen_migration_copy', { status: 'failed', reason: 'empty_payload' });
       return;
     }
 
-    try {
-      await navigator.clipboard.writeText(text);
+    const copied = await copyTextToClipboard(text);
+    if (copied) {
       setHomeScreenMigrationStatus('copied');
       trackEvent('home_screen_migration_copy', { status: 'copied' });
-    } catch {
-      setHomeScreenMigrationStatus('copy_failed');
-      trackEvent('home_screen_migration_copy', { status: 'failed' });
+      return;
     }
+
+    setHomeScreenMigrationStatus('copy_failed');
+    trackEvent('home_screen_migration_copy', { status: 'failed', reason: 'copy_blocked' });
   };
 
   const handleImportHomeScreenMigration = async () => {
-    if (!navigator.clipboard?.readText) {
+    let text = '';
+
+    if (navigator.clipboard?.readText) {
+      try {
+        text = await navigator.clipboard.readText();
+      } catch {
+        text = '';
+      }
+    }
+
+    if (!text) {
+      text = window.prompt('Safari에서 복사한 기록을 여기에 붙여넣어 주세요.') || '';
+    }
+
+    if (!text) {
       setHomeScreenMigrationStatus('import_failed');
-      trackEvent('home_screen_migration_import', { status: 'failed', reason: 'clipboard_unavailable' });
+      trackEvent('home_screen_migration_import', { status: 'failed', reason: 'empty_clipboard' });
       return;
     }
 
     try {
-      const text = await navigator.clipboard.readText();
       const imported = importHomeScreenMigrationText(text);
       setHomeScreenMigrationStatus(imported ? 'imported' : 'import_failed');
       trackEvent('home_screen_migration_import', { status: imported ? 'imported' : 'failed' });
@@ -692,7 +730,6 @@ export default function App() {
 
   const showHomeScreenTip =
     step === 'start' &&
-    (!isStandalone || localStorage.getItem(HOME_SCREEN_TIP_HIDDEN_KEY) === 'false') &&
     !homeScreenTipHidden &&
     !homeScreenTipSessionHidden;
 
@@ -726,9 +763,9 @@ export default function App() {
               onOpenVersion={openVersionModal}
               versionLabel={CHANGELOG[0].version}
               showHomeScreenTip={showHomeScreenTip}
+              isStandalone={isStandalone}
               canInstallApp={Boolean(installPromptEvent)}
               onInstallApp={handleInstallApp}
-              onPrepareHomeScreenMigration={handlePrepareHomeScreenMigration}
               onCopyHomeScreenMigration={handleCopyHomeScreenMigration}
               onImportHomeScreenMigration={handleImportHomeScreenMigration}
               homeScreenMigrationStatus={homeScreenMigrationStatus}

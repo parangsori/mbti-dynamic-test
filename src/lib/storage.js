@@ -346,22 +346,14 @@ export const handlePublicDomainMigration = () => {
 const buildDomainMigrationHash = () => {
   if (!canUseBrowserStorage()) return false;
 
-  const { host, pathname, search, hash } = window.location;
-  if (host !== new URL(PUBLIC_SERVICE_ORIGIN).host || hash.startsWith(MIGRATION_HASH_PREFIX)) return false;
+  const { host, pathname, search } = window.location;
+  if (host !== new URL(PUBLIC_SERVICE_ORIGIN).host) return false;
 
   const payload = collectDomainMigrationPayload();
   if (!Object.keys(payload.values).length) return false;
 
   const nextHash = `${MIGRATION_HASH_PREFIX.slice(1)}${encodeMigrationPayload(payload)}`;
   return { pathname, search, nextHash };
-};
-
-export const prepareHomeScreenMigrationUrl = () => {
-  const migration = buildDomainMigrationHash();
-  if (!migration) return false;
-
-  window.history.replaceState(null, '', `${migration.pathname}${migration.search}#${migration.nextHash}`);
-  return true;
 };
 
 export const createHomeScreenMigrationText = () => {

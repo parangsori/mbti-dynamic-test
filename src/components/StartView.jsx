@@ -3,9 +3,9 @@ import { motion } from 'framer-motion';
 import ProfileInput from './ProfileInput.jsx';
 
 function HomeScreenTipCard({
+  isStandalone,
   canInstallApp,
   onInstallApp,
-  onPrepareHomeScreenMigration,
   onCopyHomeScreenMigration,
   onImportHomeScreenMigration,
   migrationStatus,
@@ -14,9 +14,15 @@ function HomeScreenTipCard({
 }) {
   const [expanded, setExpanded] = useState(false);
   const handleGuideClick = () => {
-    if (!canInstallApp) onPrepareHomeScreenMigration?.();
     setExpanded((value) => !value);
   };
+  const primaryCopy = isStandalone
+    ? 'Safari에서 복사한 기록을 홈화면 앱으로 가져올 수 있어요.'
+    : '홈화면에 추가하기 전에 기록을 복사하면 앱에서도 이어서 사용할 수 있어요.';
+  const title = isStandalone ? '기록을 이어받을 수 있어요' : '홈화면에 추가하면 더 편해요';
+  const guideCopy = isStandalone
+    ? 'Safari에서 todaymbti.com을 연 뒤 기록 복사를 먼저 눌러주세요.'
+    : '기록 복사를 누른 뒤 홈화면에 추가하고, 홈화면 앱에서 기록 가져오기를 누르면 이어집니다.';
 
   return (
     <div className="mb-5 w-full rounded-[1.4rem] border border-cyan-300/20 bg-cyan-300/[0.08] px-4 py-4 shadow-[0_18px_45px_rgba(8,47,73,0.22)]">
@@ -25,9 +31,9 @@ function HomeScreenTipCard({
           <img src="/service-icon.svg" alt="" className="h-full w-full rounded-lg object-cover" />
         </div>
         <div className="min-w-0 flex-1">
-          <p className="text-[13px] font-black text-white break-keep">홈화면에 추가하면 더 편해요</p>
+          <p className="text-[13px] font-black text-white break-keep">{title}</p>
           <p className="mt-1 text-[12px] leading-relaxed text-cyan-50/90 break-keep">
-            오늘의 MBTI를 앱처럼 바로 열고, 오늘의 성향 흐름을 빠르게 확인할 수 있어요.
+            {primaryCopy}
           </p>
         </div>
       </div>
@@ -36,24 +42,32 @@ function HomeScreenTipCard({
         <div className="mt-3 rounded-2xl border border-white/10 bg-black/20 px-3 py-3">
           <p className="text-[11px] font-black tracking-[0.14em] text-cyan-100 uppercase">추가 방법</p>
           <div className="mt-2 space-y-1.5 text-[12px] leading-relaxed text-slate-200 break-keep">
-            <p>iPhone: Safari 공유 버튼을 누른 뒤 홈 화면에 추가를 선택해요.</p>
-            <p>Android: Chrome 메뉴에서 앱 설치 또는 홈 화면에 추가를 선택해요.</p>
+            {!isStandalone && (
+              <>
+                <p>iPhone: Safari 공유 버튼을 누른 뒤 홈 화면에 추가를 선택해요.</p>
+                <p>Android: Chrome 메뉴에서 앱 설치 또는 홈 화면에 추가를 선택해요.</p>
+              </>
+            )}
+            <p>{guideCopy}</p>
           </div>
-          <div className="mt-3 grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              onClick={onCopyHomeScreenMigration}
-              className="rounded-2xl border border-white/10 bg-white/[0.06] px-2 py-2 text-[11px] font-black text-slate-100 transition hover:bg-white/[0.1]"
-            >
-              기록 복사
-            </button>
-            <button
-              type="button"
-              onClick={onImportHomeScreenMigration}
-              className="rounded-2xl border border-cyan-200/20 bg-cyan-300/[0.12] px-2 py-2 text-[11px] font-black text-cyan-50 transition hover:bg-cyan-300/[0.18]"
-            >
-              기록 가져오기
-            </button>
+          <div className="mt-3">
+            {isStandalone ? (
+              <button
+                type="button"
+                onClick={onImportHomeScreenMigration}
+                className="w-full rounded-2xl border border-cyan-200/20 bg-cyan-300/[0.12] px-3 py-2.5 text-[12px] font-black text-cyan-50 transition hover:bg-cyan-300/[0.18]"
+              >
+                복사한 기록 가져오기
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={onCopyHomeScreenMigration}
+                className="w-full rounded-2xl border border-cyan-200/20 bg-cyan-300/[0.12] px-3 py-2.5 text-[12px] font-black text-cyan-50 transition hover:bg-cyan-300/[0.18]"
+              >
+                홈화면용 기록 복사
+              </button>
+            )}
           </div>
           {migrationStatus && (
             <p className="mt-2 text-center text-[11px] font-bold text-cyan-100/85 break-keep">
@@ -107,9 +121,9 @@ export default function StartView({
   onOpenVersion,
   versionLabel,
   showHomeScreenTip,
+  isStandalone,
   canInstallApp,
   onInstallApp,
-  onPrepareHomeScreenMigration,
   onCopyHomeScreenMigration,
   onImportHomeScreenMigration,
   homeScreenMigrationStatus,
@@ -150,9 +164,9 @@ export default function StartView({
       </p>
       {showHomeScreenTip && (
         <HomeScreenTipCard
+          isStandalone={isStandalone}
           canInstallApp={canInstallApp}
           onInstallApp={onInstallApp}
-          onPrepareHomeScreenMigration={onPrepareHomeScreenMigration}
           onCopyHomeScreenMigration={onCopyHomeScreenMigration}
           onImportHomeScreenMigration={onImportHomeScreenMigration}
           migrationStatus={homeScreenMigrationStatus}
