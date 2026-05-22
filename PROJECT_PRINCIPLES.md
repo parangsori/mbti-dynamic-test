@@ -252,6 +252,7 @@
 - 2026-05-19: 같은 나이대에서 `나를 위한 작은 한마디`가 비슷하게 느껴지는 문제를 줄이기 위해 v1.6.8에서 S/N/J/P 축 문구를 보강하고, 관계·회복 힌트에 오늘 문항의 생활 맥락이 더 섞이도록 했다.
 - 2026-05-22: 메인 사용자 서비스의 운영 canonical 도메인을 `https://todaymbti.com`으로 전환 준비했다. 앱의 OG/Twitter 절대 URL과 공유 fallback URL은 새 도메인을 기준으로 정리하고, dev QA는 기존 Vercel preview URL을 `VITE_PUBLIC_SERVICE_URL`로 유지한다. `todaymbti.com`과 `www.todaymbti.com`은 Vercel 프로젝트 `mbti-dynamic-test`에 추가했고, 구매처 네임서버가 `ns1.whoisdomain.kr`~`ns4.whoisdomain.kr`에 남아 있어 Vercel DNS 위임(`ns1.vercel-dns.com`, `ns2.vercel-dns.com`) 후 Valid Configuration/SSL 상태를 다시 확인해야 한다.
 - 2026-05-22: 기존 운영 주소 `https://mbti-dynamic-test.vercel.app`로 접속한 반복 사용자가 도메인 변경 때문에 첫 방문자로 보이지 않도록 클라이언트 도메인 이전을 추가했다. 기존 주소에서는 `localStorage`의 기록, 이름, 프로필, 진행/결과 복구, 최근 문항, 접근성 설정을 hash fragment로 `https://todaymbti.com`에 1회 전달하고, 새 도메인은 기존 데이터와 병합한 뒤 hash를 제거한다.
+- 2026-05-22: iPhone Safari 홈화면 추가 사용자는 `appinstalled` 이벤트만으로 집계되지 않을 수 있어, standalone 실행 시 `home_screen_standalone_open` 이벤트를 추가하고 admin 대시보드에 홈화면 실행/실행자 지표를 표시하도록 했다. 이 지표가 홈화면 아이콘 기반 실제 재방문 신호에 더 가깝다.
 
 ### 다음 채팅에서 먼저 확인할 체크포인트
 

@@ -11,7 +11,8 @@ const POSTHOG_EVENTS = [
   'result_image_share',
   'result_image_save',
   'home_screen_install_prompt',
-  'home_screen_app_installed'
+  'home_screen_app_installed',
+  'home_screen_standalone_open'
 ];
 
 const RANGE_DAYS = {
@@ -305,6 +306,8 @@ const buildMetrics = ({ range, counts, daily }) => {
   const shares = shareCopies + imageShares + imageSaves;
   const installPrompts = counts.home_screen_install_prompt?.total || 0;
   const installs = counts.home_screen_app_installed?.total || 0;
+  const standaloneOpens = counts.home_screen_standalone_open?.total || 0;
+  const standaloneActors = counts.home_screen_standalone_open?.actors || 0;
 
   return {
     range,
@@ -320,7 +323,10 @@ const buildMetrics = ({ range, counts, daily }) => {
       shareRate: percent(shares, completions),
       installPrompts,
       installs,
-      installRate: percent(installs, installPrompts)
+      installRate: percent(installs, installPrompts),
+      standaloneOpens,
+      standaloneActors,
+      standaloneOpenRate: percent(standaloneActors, counts.$pageview?.actors || pageviews)
     },
     funnel: [
       { key: 'pageview', label: '방문', count: pageviews, rateFromPrevious: 100 },
@@ -339,7 +345,9 @@ const buildMetrics = ({ range, counts, daily }) => {
     install: {
       prompts: installPrompts,
       accepted: installs,
-      rate: percent(installs, installPrompts)
+      rate: percent(installs, installPrompts),
+      standaloneOpens,
+      standaloneActors
     },
     daily,
     notes: buildNotes({ starts, completions, shares, installs, reach3, reach6, reach9 })

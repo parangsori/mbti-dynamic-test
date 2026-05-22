@@ -342,6 +342,14 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    if (!isStandaloneDisplay()) return;
+    trackEvent('home_screen_standalone_open', {
+      mode: window.navigator?.standalone === true ? 'ios_standalone' : 'standalone',
+      host: window.location.host
+    });
+  }, []);
+
+  useEffect(() => {
     const handleBeforeInstallPrompt = (event) => {
       event.preventDefault();
       setInstallPromptEvent(event);

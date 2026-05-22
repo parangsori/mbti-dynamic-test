@@ -278,6 +278,7 @@ export default function App() {
             <MetricCard label="시작" value={formatNumber(summary.starts)} caption="테스트 시작" tone="blue" />
             <MetricCard label="완료율" value={`${summary.completionRate || 0}%`} caption={`${formatNumber(summary.completions)}회 완료`} tone="green" />
             <MetricCard label="공유율" value={`${summary.shareRate || 0}%`} caption={`${formatNumber(summary.shares)}회 공유/저장`} tone="pink" />
+            <MetricCard label="홈화면 실행" value={formatNumber(summary.standaloneOpens)} caption={`${formatNumber(summary.standaloneActors)}명 기준`} tone="blue" />
           </section>
 
           <Funnel items={metrics.funnel} />
@@ -308,6 +309,8 @@ export default function App() {
                 <div><dt>설치 안내</dt><dd>{formatNumber(metrics.install?.prompts)}</dd></div>
                 <div><dt>설치 완료</dt><dd>{formatNumber(metrics.install?.accepted)}</dd></div>
                 <div><dt>수락률</dt><dd>{metrics.install?.rate || 0}%</dd></div>
+                <div><dt>홈화면 실행</dt><dd>{formatNumber(metrics.install?.standaloneOpens)}</dd></div>
+                <div><dt>실행자</dt><dd>{formatNumber(metrics.install?.standaloneActors)}</dd></div>
               </dl>
             </section>
           </section>
