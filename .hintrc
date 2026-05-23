@@ -2,7 +2,7 @@
   "hints": {
     "meta-theme-color": "off",
     "compat-api/html": [
-      "default",
+      "warning",
       {
         "ignore": [
           "meta[name=theme-color]"
