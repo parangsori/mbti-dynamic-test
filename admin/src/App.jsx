@@ -57,7 +57,7 @@ function Funnel({ items = [] }) {
       <div className="panel-title">
         <div>
           <p>성장 퍼널</p>
-          <h2>어디까지 이어지는지</h2>
+          <h2>방문자가 핵심 행동까지 이어지는지</h2>
         </div>
       </div>
 
@@ -73,11 +73,40 @@ function Funnel({ items = [] }) {
               <div className="bar-track">
                 <div className="bar-fill" style={{ width: `${width}%` }} />
               </div>
-              <p>{item.rateFromPrevious}% 이전 단계 대비</p>
+              <p>{item.caption || `${item.rateFromPrevious}% 이전 단계 대비`}</p>
             </div>
           );
         })}
       </div>
+    </section>
+  );
+}
+
+function InsightList({ eyebrow, title, items = [], getPrimary, getSecondary, emptyText }) {
+  return (
+    <section className="panel compact">
+      <div className="panel-title">
+        <div>
+          <p>{eyebrow}</p>
+          <h2>{title}</h2>
+        </div>
+      </div>
+
+      {items.length === 0 ? (
+        <p className="empty-text">{emptyText}</p>
+      ) : (
+        <div className="insight-list">
+          {items.map((item, index) => (
+            <div className="insight-row" key={`${getPrimary(item)}-${index}`}>
+              <div>
+                <strong>{getPrimary(item)}</strong>
+                <span>{getSecondary(item)}</span>
+              </div>
+              <em>{formatNumber(item.total)}</em>
+            </div>
+          ))}
+        </div>
+      )}
     </section>
   );
 }
@@ -274,11 +303,12 @@ export default function App() {
       {metrics && (
         <>
           <section className="summary-grid">
-            <MetricCard label="방문" value={formatNumber(summary.pageviews)} caption={`${formatNumber(summary.visitors)}명 기준`} />
-            <MetricCard label="시작" value={formatNumber(summary.starts)} caption="테스트 시작" tone="blue" />
+            <MetricCard label="방문자" value={formatNumber(summary.visitors)} caption={`${formatNumber(summary.pageviews)} 페이지뷰`} />
+            <MetricCard label="시작률" value={`${summary.visitors ? Math.round((summary.startActors / summary.visitors) * 100) : 0}%`} caption={`${formatNumber(summary.starts)}회 시작`} tone="blue" />
             <MetricCard label="완료율" value={`${summary.completionRate || 0}%`} caption={`${formatNumber(summary.completions)}회 완료`} tone="green" />
             <MetricCard label="공유율" value={`${summary.shareRate || 0}%`} caption={`${formatNumber(summary.shares)}회 공유/저장`} tone="pink" />
             <MetricCard label="홈화면 실행" value={formatNumber(summary.standaloneOpens)} caption={`${formatNumber(summary.standaloneActors)}명 기준`} tone="blue" />
+            <MetricCard label="오류" value={formatNumber(summary.clientErrors)} caption={`${formatNumber(summary.clientErrorActors)}명 영향`} tone={summary.clientErrors ? 'red' : 'green'} />
           </section>
 
           <Funnel items={metrics.funnel} />
@@ -313,6 +343,59 @@ export default function App() {
                 <div><dt>실행자</dt><dd>{formatNumber(metrics.install?.standaloneActors)}</dd></div>
               </dl>
             </section>
+          </section>
+
+          <section className="split-grid">
+            <InsightList
+              eyebrow="위치"
+              title="어디서 들어오는지"
+              items={metrics.acquisition?.locations || []}
+              emptyText="아직 위치 집계 데이터가 없습니다."
+              getPrimary={(item) => item.city && item.city !== '알 수 없음' ? `${item.city}, ${item.country}` : item.country}
+              getSecondary={(item) => `${formatNumber(item.actors)}명 기준`}
+            />
+            <InsightList
+              eyebrow="기기"
+              title="어떤 환경에서 쓰는지"
+              items={metrics.acquisition?.devices || []}
+              emptyText="아직 기기 집계 데이터가 없습니다."
+              getPrimary={(item) => item.deviceType}
+              getSecondary={(item) => `${item.browser} · ${item.os} · ${formatNumber(item.actors)}명`}
+            />
+          </section>
+
+          <section className="split-grid">
+            <InsightList
+              eyebrow="유입"
+              title="어디서 발견되는지"
+              items={metrics.acquisition?.referrers || []}
+              emptyText="아직 유입 출처 데이터가 없습니다."
+              getPrimary={(item) => item.source}
+              getSecondary={(item) => `${formatNumber(item.actors)}명 기준`}
+            />
+            <InsightList
+              eyebrow="오류"
+              title="사용자가 겪는 문제"
+              items={metrics.errors?.items || []}
+              emptyText="수집된 클라이언트 오류 이벤트가 없습니다."
+              getPrimary={(item) => item.errorKey}
+              getSecondary={(item) => `${item.source} · ${formatNumber(item.actors)}명 영향`}
+            />
+          </section>
+
+          <section className="panel compact">
+            <div className="panel-title">
+              <div>
+                <p>결과 백업</p>
+                <h2>Supabase 동기화 상태</h2>
+              </div>
+            </div>
+            <dl className="stat-list stat-list-grid">
+              <div><dt>성공</dt><dd>{formatNumber(metrics.sync?.success)}</dd></div>
+              <div><dt>실패</dt><dd>{formatNumber(metrics.sync?.failures)}</dd></div>
+              <div><dt>미설정/스킵</dt><dd>{formatNumber(metrics.sync?.skipped)}</dd></div>
+              <div><dt>성공률</dt><dd>{metrics.sync?.successRate || 0}%</dd></div>
+            </dl>
           </section>
 
           <DailyPulse daily={metrics.daily} />

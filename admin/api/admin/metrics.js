@@ -3,16 +3,18 @@ import { createHash, timingSafeEqual, webcrypto } from 'node:crypto';
 const POSTHOG_EVENTS = [
   '$pageview',
   'start_click',
-  'question_reach_3',
-  'question_reach_6',
-  'question_reach_9',
   'complete_test',
+  'result_view',
   'share_copy',
   'result_image_share',
   'result_image_save',
   'home_screen_install_prompt',
   'home_screen_app_installed',
-  'home_screen_standalone_open'
+  'home_screen_standalone_open',
+  'client_error',
+  'result_server_sync_success',
+  'result_server_sync_fail',
+  'result_server_sync_skipped'
 ];
 
 const RANGE_DAYS = {
@@ -246,6 +248,65 @@ GROUP BY day, event
 ORDER BY day ASC
 `;
 
+const posthogPropertySql = (property) =>
+  `coalesce(nullIf(toString(properties['${property.replace(/'/g, "''")}']), ''), '알 수 없음')`;
+
+const buildLocationQuery = (days) => `
+SELECT
+  ${posthogPropertySql('$geoip_country_name')} AS country,
+  ${posthogPropertySql('$geoip_city_name')} AS city,
+  count() AS total,
+  count(DISTINCT distinct_id) AS actors
+FROM events
+${kstDateWindowSql(days)}
+  AND event = '$pageview'
+GROUP BY country, city
+ORDER BY total DESC
+LIMIT 8
+`;
+
+const buildDeviceQuery = (days) => `
+SELECT
+  ${posthogPropertySql('$device_type')} AS deviceType,
+  ${posthogPropertySql('$browser')} AS browser,
+  ${posthogPropertySql('$os')} AS os,
+  count() AS total,
+  count(DISTINCT distinct_id) AS actors
+FROM events
+${kstDateWindowSql(days)}
+  AND event = '$pageview'
+GROUP BY deviceType, browser, os
+ORDER BY total DESC
+LIMIT 8
+`;
+
+const buildReferrerQuery = (days) => `
+SELECT
+  ${posthogPropertySql('$referring_domain')} AS source,
+  count() AS total,
+  count(DISTINCT distinct_id) AS actors
+FROM events
+${kstDateWindowSql(days)}
+  AND event = '$pageview'
+GROUP BY source
+ORDER BY total DESC
+LIMIT 8
+`;
+
+const buildErrorQuery = (days) => `
+SELECT
+  coalesce(nullIf(toString(properties['error_key']), ''), 'unknown_error') AS errorKey,
+  coalesce(nullIf(toString(properties['error_source']), ''), 'app') AS source,
+  count() AS total,
+  count(DISTINCT distinct_id) AS actors
+FROM events
+${kstDateWindowSql(days)}
+  AND event = 'client_error'
+GROUP BY errorKey, source
+ORDER BY total DESC
+LIMIT 8
+`;
+
 const rowsToCounts = (rows = []) =>
   rows.reduce((acc, row) => {
     const [event, total, actors] = row;
@@ -263,43 +324,77 @@ const rowsToDaily = (rows = []) =>
     count: Number(total) || 0
   }));
 
+const rowsToLocations = (rows = []) =>
+  rows.map(([country, city, total, actors]) => ({
+    country: country || '알 수 없음',
+    city: city || '알 수 없음',
+    total: Number(total) || 0,
+    actors: Number(actors) || 0
+  }));
+
+const rowsToDevices = (rows = []) =>
+  rows.map(([deviceType, browser, os, total, actors]) => ({
+    deviceType: deviceType || '알 수 없음',
+    browser: browser || '알 수 없음',
+    os: os || '알 수 없음',
+    total: Number(total) || 0,
+    actors: Number(actors) || 0
+  }));
+
+const rowsToReferrers = (rows = []) =>
+  rows.map(([source, total, actors]) => ({
+    source: source && source !== '알 수 없음' ? source : '직접/알 수 없음',
+    total: Number(total) || 0,
+    actors: Number(actors) || 0
+  }));
+
+const rowsToErrors = (rows = []) =>
+  rows.map(([errorKey, source, total, actors]) => ({
+    errorKey: errorKey || 'unknown_error',
+    source: source || 'app',
+    total: Number(total) || 0,
+    actors: Number(actors) || 0
+  }));
+
 const percent = (value, base) => (base > 0 ? Math.round((value / base) * 100) : 0);
 
-const buildNotes = ({ starts, completions, shares, installs, reach3, reach6, reach9 }) => {
+const buildNotes = ({ starts, completions, shares, installs, standaloneActors, errorTotal, serverSyncFailures }) => {
   const notes = [];
   if (starts === 0) {
-    notes.push('아직 시작 이벤트가 적어서 퍼널 판단은 더 쌓인 뒤 보는 게 좋아요.');
+    notes.push('아직 시작 이벤트가 적어서 유입 품질 판단은 더 쌓인 뒤 보는 게 좋아요.');
   } else if (percent(completions, starts) >= 70) {
     notes.push('시작 대비 완료율이 안정적입니다. 다음 판단은 공유와 재방문 쪽이 좋아요.');
   } else {
-    notes.push('시작 후 완료까지의 흐름에 이탈이 있습니다. 질문 진행 구간별 차이를 먼저 확인해보세요.');
-  }
-
-  if (starts > 0 && reach3 > 0 && reach6 < reach3 * 0.7) {
-    notes.push('3문항 이후 6문항 도달 비율이 낮습니다. 초반 질문 피로도나 스와이프 이해도를 점검할 만합니다.');
-  } else if (reach6 > 0 && reach9 < reach6 * 0.7) {
-    notes.push('중반 이후 이탈이 보입니다. 보정 질문 전까지의 진행 호흡을 확인해보세요.');
+    notes.push('시작 후 완료까지의 흐름에 이탈이 있습니다. 질문 진행 구간보다 첫 화면 기대와 결과 가치 전달을 먼저 점검해보세요.');
   }
 
   if (completions > 0 && shares === 0) {
     notes.push('완료는 있지만 공유/저장이 거의 없습니다. 결과 카드 문구나 공유 버튼 노출을 점검해보세요.');
   }
 
-  if (installs > 0) {
-    notes.push('홈화면 설치 이벤트가 잡히고 있습니다. 설치 이후 재방문 지표를 같이 보는 단계로 확장할 수 있습니다.');
+  if (installs > 0 || standaloneActors > 0) {
+    notes.push('홈화면 설치/실행 신호가 잡히고 있습니다. 재방문 기반 사용자를 별도로 관찰할 수 있습니다.');
+  }
+
+  if (errorTotal > 0) {
+    notes.push('클라이언트 오류 이벤트가 잡혔습니다. 오류 유형과 영향 사용자를 먼저 확인해주세요.');
+  }
+
+  if (serverSyncFailures > 0) {
+    notes.push('결과 백업 동기화 실패 이벤트가 있습니다. Supabase 환경과 네트워크 실패율을 같이 보세요.');
   }
 
   return notes;
 };
 
-const buildMetrics = ({ range, counts, daily }) => {
+const buildMetrics = ({ range, counts, daily, locations, devices, referrers, errors }) => {
   const pageviews = counts.$pageview?.total || 0;
   const visitors = counts.$pageview?.actors || 0;
   const starts = counts.start_click?.total || 0;
+  const startActors = counts.start_click?.actors || 0;
   const completions = counts.complete_test?.total || 0;
-  const reach3 = counts.question_reach_3?.total || 0;
-  const reach6 = counts.question_reach_6?.total || 0;
-  const reach9 = counts.question_reach_9?.total || 0;
+  const completionActors = counts.complete_test?.actors || 0;
+  const resultViews = counts.result_view?.total || 0;
   const shareCopies = counts.share_copy?.total || 0;
   const imageShares = counts.result_image_share?.total || 0;
   const imageSaves = counts.result_image_save?.total || 0;
@@ -308,6 +403,12 @@ const buildMetrics = ({ range, counts, daily }) => {
   const installs = counts.home_screen_app_installed?.total || 0;
   const standaloneOpens = counts.home_screen_standalone_open?.total || 0;
   const standaloneActors = counts.home_screen_standalone_open?.actors || 0;
+  const clientErrors = counts.client_error?.total || 0;
+  const clientErrorActors = counts.client_error?.actors || 0;
+  const serverSyncSuccess = counts.result_server_sync_success?.total || 0;
+  const serverSyncFailures = counts.result_server_sync_fail?.total || 0;
+  const serverSyncSkipped = counts.result_server_sync_skipped?.total || 0;
+  const syncAttempts = serverSyncSuccess + serverSyncFailures;
 
   return {
     range,
@@ -317,7 +418,10 @@ const buildMetrics = ({ range, counts, daily }) => {
       pageviews,
       visitors,
       starts,
+      startActors,
       completions,
+      completionActors,
+      resultViews,
       completionRate: percent(completions, starts),
       shares,
       shareRate: percent(shares, completions),
@@ -326,16 +430,17 @@ const buildMetrics = ({ range, counts, daily }) => {
       installRate: percent(installs, installPrompts),
       standaloneOpens,
       standaloneActors,
-      standaloneOpenRate: percent(standaloneActors, counts.$pageview?.actors || pageviews)
+      standaloneOpenRate: percent(standaloneActors, counts.$pageview?.actors || pageviews),
+      clientErrors,
+      clientErrorActors,
+      serverSyncFailures
     },
     funnel: [
-      { key: 'pageview', label: '방문', count: pageviews, rateFromPrevious: 100 },
-      { key: 'start_click', label: '시작', count: starts, rateFromPrevious: percent(starts, pageviews) },
-      { key: 'question_reach_3', label: '3문항', count: reach3, rateFromPrevious: percent(reach3, starts) },
-      { key: 'question_reach_6', label: '6문항', count: reach6, rateFromPrevious: percent(reach6, reach3) },
-      { key: 'question_reach_9', label: '9문항', count: reach9, rateFromPrevious: percent(reach9, reach6) },
-      { key: 'complete_test', label: '완료', count: completions, rateFromPrevious: percent(completions, reach9 || starts) },
-      { key: 'share', label: '공유/저장', count: shares, rateFromPrevious: percent(shares, completions) }
+      { key: 'visitors', label: '방문자', count: visitors, rateFromPrevious: 100, caption: `${pageviews} 페이지뷰` },
+      { key: 'start_click', label: '시작자', count: counts.start_click?.actors || 0, rateFromPrevious: percent(counts.start_click?.actors || 0, visitors) },
+      { key: 'complete_test', label: '완료자', count: counts.complete_test?.actors || 0, rateFromPrevious: percent(counts.complete_test?.actors || 0, counts.start_click?.actors || starts) },
+      { key: 'share', label: '공유/저장 사용자', count: Math.max(counts.share_copy?.actors || 0, counts.result_image_share?.actors || 0, counts.result_image_save?.actors || 0), rateFromPrevious: percent(Math.max(counts.share_copy?.actors || 0, counts.result_image_share?.actors || 0, counts.result_image_save?.actors || 0), counts.complete_test?.actors || completions) },
+      { key: 'standalone', label: '홈화면 실행자', count: standaloneActors, rateFromPrevious: percent(standaloneActors, visitors) }
     ],
     sharing: {
       copies: shareCopies,
@@ -349,8 +454,24 @@ const buildMetrics = ({ range, counts, daily }) => {
       standaloneOpens,
       standaloneActors
     },
+    sync: {
+      success: serverSyncSuccess,
+      failures: serverSyncFailures,
+      skipped: serverSyncSkipped,
+      successRate: percent(serverSyncSuccess, syncAttempts)
+    },
+    errors: {
+      total: clientErrors,
+      actors: clientErrorActors,
+      items: errors
+    },
+    acquisition: {
+      locations,
+      devices,
+      referrers
+    },
     daily,
-    notes: buildNotes({ starts, completions, shares, installs, reach3, reach6, reach9 })
+    notes: buildNotes({ starts, completions, shares, installs, standaloneActors, errorTotal: clientErrors, serverSyncFailures })
   };
 };
 
@@ -373,15 +494,23 @@ export default async function handler(req, res) {
   const days = RANGE_DAYS[range];
 
   try {
-    const [eventCounts, dailyCounts] = await Promise.all([
+    const [eventCounts, dailyCounts, locationCounts, deviceCounts, referrerCounts, errorCounts] = await Promise.all([
       runPostHogQuery(buildEventCountQuery(days)),
-      runPostHogQuery(buildDailyQuery(days))
+      runPostHogQuery(buildDailyQuery(days)),
+      runPostHogQuery(buildLocationQuery(days)),
+      runPostHogQuery(buildDeviceQuery(days)),
+      runPostHogQuery(buildReferrerQuery(days)),
+      runPostHogQuery(buildErrorQuery(days))
     ]);
 
     const metrics = buildMetrics({
       range,
       counts: rowsToCounts(eventCounts.results),
-      daily: rowsToDaily(dailyCounts.results)
+      daily: rowsToDaily(dailyCounts.results),
+      locations: rowsToLocations(locationCounts.results),
+      devices: rowsToDevices(deviceCounts.results),
+      referrers: rowsToReferrers(referrerCounts.results),
+      errors: rowsToErrors(errorCounts.results)
     });
 
     return json(res, 200, metrics);

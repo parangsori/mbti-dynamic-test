@@ -2,6 +2,7 @@ import { capturePostHogEvent } from './posthog.js';
 
 const LOCAL_ERROR_KEY = 'mbti_error_stats';
 const MAX_RECENT_ITEMS = 30;
+const MAX_EVENT_TEXT_LENGTH = 120;
 
 const safeNow = () => new Date().toISOString();
 
@@ -24,6 +25,7 @@ const writeLocalJson = (key, value) => {
 
 const canUseNavigator = () => typeof navigator !== 'undefined';
 const canUseWindow = () => typeof window !== 'undefined';
+const truncateText = (value) => String(value || '').slice(0, MAX_EVENT_TEXT_LENGTH);
 
 const sendPayload = (endpoint, payload) => {
   if (!endpoint || !canUseNavigator()) return;
@@ -126,6 +128,16 @@ export const captureError = (error, context = {}) => {
   ].slice(0, MAX_RECENT_ITEMS);
 
   writeLocalJson(LOCAL_ERROR_KEY, { counts, recent });
+
+  capturePostHogEvent('client_error', {
+    error_key: truncateText(key),
+    error_name: truncateText(details.name),
+    error_source: truncateText(context.source || context.stage || 'app'),
+    error_stage: truncateText(context.stage || ''),
+    error_reason: truncateText(context.reason || ''),
+    local_error_count: counts[key] || 1,
+    path: canUseWindow() ? window.location.pathname : ''
+  });
 
   if (canUseWindow()) {
     try {
