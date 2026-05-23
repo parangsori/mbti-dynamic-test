@@ -19,6 +19,14 @@ export const COMPATIBILITY = {
 
 export const CHANGELOG = [
   {
+    version: 'v1.6.10',
+    date: '2026.05.23',
+    updates: [
+      '문항별 답변 위치를 세션마다 섞어 위/아래 선택 패턴만으로 특정 결과가 고정되는 문제를 완화',
+      '선택지 표시 순서가 바뀌어도 기존 점수 계산과 세션 복구 흐름은 유지되도록 안정화'
+    ]
+  },
+  {
     version: 'v1.6.9',
     date: '2026.05.22',
     updates: [
