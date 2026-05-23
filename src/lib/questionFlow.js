@@ -213,6 +213,15 @@ const shuffle = (items) => [...items].sort(() => Math.random() - 0.5);
 
 const pickRandomSubset = (items, count) => shuffle(items).slice(0, count);
 
+const randomizeQuestionOptions = (question) => {
+  if (!Array.isArray(question?.options) || question.options.length < 2) return question;
+
+  return {
+    ...question,
+    options: shuffle(question.options)
+  };
+};
+
 const getSelectionWeight = (question, { ageGroup = '', recentLifeTags = new Set() } = {}) => {
   const roleBoost = question.role === 'state' || question.role === 'parallel' ? 1.18 : 1;
   const middleBoost = question.allowMiddleCandidate ? 1.25 : 1;
@@ -357,7 +366,7 @@ export const buildFollowupQuestions = (scores, recentSessions = [], currentIds =
     const question = pickFollowupQuestion(axis.code, recentIds, usedIds);
     if (question) usedIds.add(question.id);
     return question
-      ? {
+      ? randomizeQuestionOptions({
           ...question,
           _axis: axis.code,
           trigger: {
@@ -366,7 +375,7 @@ export const buildFollowupQuestions = (scores, recentSessions = [], currentIds =
             dominantType: axis.dominantType,
             neutralCount: axis.neutralCount
           }
-        }
+        })
       : null;
   }).filter(Boolean);
 };
@@ -494,10 +503,10 @@ export const buildQuestionSession = (recentSessions = [], { ageGroup = '' } = {}
       if (idx < 3) openingMiddleSlots += 1;
     }
 
-    return {
+    return randomizeQuestionOptions({
       ...question,
       allowMiddle: canAllowMiddle
-    };
+    });
   });
 };
 
