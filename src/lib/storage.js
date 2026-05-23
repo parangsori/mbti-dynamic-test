@@ -13,6 +13,8 @@ export const STORAGE_KEYS = {
 
 const LEGACY_PUBLIC_HOST = 'mbti-dynamic-test.vercel.app';
 const PUBLIC_SERVICE_ORIGIN = 'https://todaymbti.com';
+const PUBLIC_CANONICAL_HOST = new URL(PUBLIC_SERVICE_ORIGIN).host;
+const PUBLIC_ALIAS_HOSTS = [LEGACY_PUBLIC_HOST, `www.${PUBLIC_CANONICAL_HOST}`];
 const MIGRATION_HASH_PREFIX = '#migrate=';
 const MIGRATION_META_KEY = 'mbti_domain_migration';
 const EXTRA_LOCAL_KEYS = [
@@ -316,9 +318,9 @@ const importDomainMigrationPayload = (payload) => {
 export const handlePublicDomainMigration = () => {
   if (!canUseBrowserStorage()) return false;
 
-  const { host, pathname, search, hash } = window.location;
+  const { hostname, pathname, search, hash } = window.location;
 
-  if (host === LEGACY_PUBLIC_HOST) {
+  if (PUBLIC_ALIAS_HOSTS.includes(hostname)) {
     const payload = collectDomainMigrationPayload();
     const target = new URL(`${pathname}${search}`, PUBLIC_SERVICE_ORIGIN);
     if (Object.keys(payload.values).length) {
@@ -328,7 +330,7 @@ export const handlePublicDomainMigration = () => {
     return true;
   }
 
-  if (host !== new URL(PUBLIC_SERVICE_ORIGIN).host || !hash.startsWith(MIGRATION_HASH_PREFIX)) {
+  if (hostname !== PUBLIC_CANONICAL_HOST || !hash.startsWith(MIGRATION_HASH_PREFIX)) {
     return false;
   }
 
@@ -346,8 +348,8 @@ export const handlePublicDomainMigration = () => {
 const buildDomainMigrationHash = () => {
   if (!canUseBrowserStorage()) return false;
 
-  const { host, pathname, search } = window.location;
-  if (host !== new URL(PUBLIC_SERVICE_ORIGIN).host) return false;
+  const { hostname, pathname, search } = window.location;
+  if (hostname !== PUBLIC_CANONICAL_HOST) return false;
 
   const payload = collectDomainMigrationPayload();
   if (!Object.keys(payload.values).length) return false;
