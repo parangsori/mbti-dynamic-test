@@ -22,6 +22,18 @@ const EXTRA_LOCAL_KEYS = [
   'mbti_high_contrast',
   'mbti_home_screen_tip_hidden'
 ];
+const ALLOWED_MIGRATION_KEYS = new Set([...Object.values(STORAGE_KEYS), ...EXTRA_LOCAL_KEYS]);
+const PRESERVE_EXISTING_MIGRATION_KEYS = new Set([
+  STORAGE_KEYS.username,
+  STORAGE_KEYS.profile,
+  STORAGE_KEYS.activeSession,
+  STORAGE_KEYS.pendingResult,
+  'mbti_font_scale',
+  'mbti_high_contrast'
+]);
+const MAX_MIGRATION_VALUE_LENGTH = 250_000;
+const MAX_MIGRATION_TOTAL_LENGTH = 750_000;
+const MAX_MIGRATION_META_LENGTH = 200;
 
 export const readJson = (key, fallback) => {
   try {
@@ -217,6 +229,17 @@ const writeRawLocalValue = (key, value) => {
   }
 };
 
+const isAllowedMigrationEntry = (key, value, acceptedBytes) =>
+  ALLOWED_MIGRATION_KEYS.has(key) &&
+  typeof value === 'string' &&
+  value.length <= MAX_MIGRATION_VALUE_LENGTH &&
+  acceptedBytes + value.length <= MAX_MIGRATION_TOTAL_LENGTH;
+
+const normalizeMigrationMetaText = (value, fallback = '') => {
+  if (typeof value !== 'string') return fallback;
+  return value.slice(0, MAX_MIGRATION_META_LENGTH);
+};
+
 const collectDomainMigrationPayload = () => {
   const values = {};
   [...Object.values(STORAGE_KEYS), ...EXTRA_LOCAL_KEYS].forEach((key) => {
@@ -282,7 +305,11 @@ const importDomainMigrationPayload = (payload) => {
   if (!payload?.values || typeof payload.values !== 'object') return false;
 
   let imported = false;
+  let acceptedBytes = 0;
   Object.entries(payload.values).forEach(([key, value]) => {
+    if (!isAllowedMigrationEntry(key, value, acceptedBytes)) return;
+    acceptedBytes += value.length;
+
     if (key === STORAGE_KEYS.history) {
       imported = mergeHistoryForMigration(value) || imported;
       return;
@@ -293,23 +320,14 @@ const importDomainMigrationPayload = (payload) => {
       return;
     }
 
-    const shouldPreserveExisting = [
-      STORAGE_KEYS.username,
-      STORAGE_KEYS.profile,
-      STORAGE_KEYS.activeSession,
-      STORAGE_KEYS.pendingResult,
-      'mbti_font_scale',
-      'mbti_high_contrast'
-    ].includes(key);
-
-    if (shouldPreserveExisting && readRawLocalValue(key) !== null) return;
+    if (PRESERVE_EXISTING_MIGRATION_KEYS.has(key) && readRawLocalValue(key) !== null) return;
     imported = writeRawLocalValue(key, value) || imported;
   });
 
   writeJson(MIGRATION_META_KEY, {
     importedAt: new Date().toISOString(),
-    sourceHost: payload.sourceHost || LEGACY_PUBLIC_HOST,
-    exportedAt: payload.exportedAt || ''
+    sourceHost: normalizeMigrationMetaText(payload.sourceHost, LEGACY_PUBLIC_HOST),
+    exportedAt: normalizeMigrationMetaText(payload.exportedAt)
   });
 
   return imported;
