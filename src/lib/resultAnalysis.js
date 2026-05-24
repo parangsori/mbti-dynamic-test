@@ -146,6 +146,36 @@ export const getTrendAnalysis = (currentSpectrum, previousAxes) => {
   };
 };
 
+export const getTodayDifferenceCopy = ({
+  mbti,
+  strongestAxis,
+  questionContextSummary,
+  historyComparison,
+  historyInsights,
+  boundaryAxes,
+  presentation
+}) => {
+  const axisPair = strongestAxis?.pair || `${strongestAxis?.left || ''}/${strongestAxis?.right || ''}`;
+  const axisLabel = strongestAxis?.dominantLabel || strongestAxis?.dominantType || '성향';
+  const lifeLabel = questionContextSummary?.topLifeLabel || questionContextSummary?.topLabel || '오늘 문항';
+  const hasShift = historyComparison?.title?.includes('달라졌어요');
+
+  if (hasShift) {
+    return `오늘은 ${lifeLabel} 장면에서 ${axisLabel} 흐름이 더 도드라지며 ${mbti} 쪽으로 다르게 기울었어요.`;
+  }
+
+  if (historyInsights?.stableCount >= 2 || presentation?.state === 'streak') {
+    return `같은 ${mbti}가 이어져도 오늘은 ${lifeLabel} 문항과 ${axisPair} 축 강도가 달라져 다른 결로 읽혀요.`;
+  }
+
+  if (boundaryAxes?.length) {
+    const boundaryLabel = boundaryAxes.map((axis) => `${axis.left}/${axis.right}`).join(', ');
+    return `오늘은 ${lifeLabel} 맥락은 보이지만 ${boundaryLabel} 축이 유연해서 컨디션에 따라 다르게 느껴질 수 있어요.`;
+  }
+
+  return `오늘은 ${lifeLabel} 문항에서 ${axisLabel} 흐름이 가장 선명해져 ${mbti} 결과의 분위기를 만들었어요.`;
+};
+
 export const getEffectiveHistory = (currentEntry, historyData) => {
   if (!currentEntry) return historyData;
   if (!historyData.length) return [currentEntry];
@@ -755,6 +785,15 @@ export const buildResultViewModel = ({
     createdAt: currentEntry?.createdAt
   });
   const { shareMoodLine, shareHeadline, shareCardCopy, shareVibeStamp } = getShareCardCopy(mbti, spectrum, badges, info, percent, presentation);
+  const todayDifferenceCopy = getTodayDifferenceCopy({
+    mbti,
+    strongestAxis,
+    questionContextSummary,
+    historyComparison,
+    historyInsights,
+    boundaryAxes,
+    presentation
+  });
   const neutralReviewNote = neutralCount > 0
     ? usedFollowup
       ? '애매했던 축은 추가 질문으로 다시 확인했어요.'
@@ -788,6 +827,7 @@ export const buildResultViewModel = ({
     axisNarratives,
     strongestAxis,
     summaryCopy: getResultSummary(mbti, spectrum, percent),
+    todayDifferenceCopy,
     consistencyCopy: getConsistencyCopy(percent, boundaryAxes),
     boundaryCopy: getBoundaryCopy(boundaryAxes),
     compCopy: getCompatibilityCopy(mbti),
