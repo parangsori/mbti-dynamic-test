@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { toHistoryAxisSnapshot } from '../lib/resultAnalysis.js';
+import { toHistoryAxisSnapshot } from '../lib/historyAnalysis.js';
 import { getHistoryEntryKey, patchHistoryEntry, writeHistory } from '../lib/storage.js';
 import { syncResultEntry } from '../lib/resultSync.js';
 

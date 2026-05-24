@@ -19,6 +19,14 @@ export const COMPATIBILITY = {
 
 export const CHANGELOG = [
   {
+    version: 'v1.6.12',
+    date: '2026.05.24',
+    updates: [
+      '초기 앱 번들에서 결과 분석용 대형 모듈이 불필요하게 함께 로드되지 않도록 히스토리 비교 로직을 분리',
+      '서비스 동작은 유지하면서 Vite 대형 청크 경고를 해소해 첫 화면 로딩 부담을 줄임'
+    ]
+  },
+  {
     version: 'v1.6.11',
     date: '2026.05.24',
     updates: [
