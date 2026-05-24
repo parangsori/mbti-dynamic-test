@@ -14,6 +14,13 @@ const AGE_GROUPS = ['teen', '20s', '30s', '40s', '50s'];
 const PRESENTATION_STATES = ['streak', 'shift', 'boundary', 'clear', 'default'];
 const PRESENTATION_STATE_EXPECTED_MIN = 5;
 const SAMPLE_MBTIS = ['INFP', 'ENFP', 'ISTJ', 'ENTJ', 'ISFJ'];
+const AGE_TONE_RISK_PATTERNS = {
+  teen: /퇴근|직장|회사|상사|회식|술 한잔|펍|신규 사업|소개팅|데이트/,
+  '20s': /어린이|친구들과 놀면|학교 숙제/,
+  '30s': /어린이|학교 숙제/,
+  '40s': /ㄱㄱ|스퍼트|불도저|중독|폭발|노년|어르신/,
+  '50s': /ㄱㄱ|스퍼트|불도저|중독|폭발|노년|어르신|품격/
+};
 
 const readSource = async (path) => {
   const { readFile } = await import('node:fs/promises');
@@ -23,6 +30,10 @@ const readSource = async (path) => {
 const getQuestionId = (question) => question.id || '';
 const getFamilyId = (question) => question.familyId || '';
 const hasAgeFit = (question, ageGroup) => Array.isArray(question.ageFit) && question.ageFit.includes(ageGroup);
+const getQuestionTextBundle = (question = {}) => [
+  question.q,
+  ...(question.options || []).flatMap((option) => [option.text, option.micro])
+].filter(Boolean).join(' ');
 
 const countBy = (items, getKey) =>
   items.reduce((acc, item) => {
@@ -113,6 +124,20 @@ const ageFitBySession = sessions.map((questions, index) => {
     count: questions.filter((question) => hasAgeFit(question, ageGroup)).length
   };
 });
+const ageToneRisksBySession = sessions.map((questions, index) => {
+  const ageGroup = AGE_GROUPS[index % AGE_GROUPS.length];
+  const pattern = AGE_TONE_RISK_PATTERNS[ageGroup];
+  return {
+    session: index + 1,
+    ageGroup,
+    risks: pattern
+      ? questions
+        .map((question) => ({ id: getQuestionId(question), text: getQuestionTextBundle(question) }))
+        .filter((item) => pattern.test(item.text))
+        .map(({ id }) => id)
+      : []
+  };
+});
 
 const axisCountsBySession = sessions.map((questions, index) => ({
   session: index + 1,
@@ -150,6 +175,12 @@ ageFitBySession.forEach(({ session, ageGroup, count }) => {
   }
 });
 
+ageToneRisksBySession.forEach(({ session, ageGroup, risks }) => {
+  if (risks.length > 0) {
+    failures.push(`session ${session}: ${ageGroup} 톤/생활맥락 리스크 문항이 포함되었습니다. ${risks.join(', ')}`);
+  }
+});
+
 if (repeatRate > MAX_REPEAT_RATE) {
   failures.push(`연속 ${SESSION_COUNT}회 문항 ID 반복률이 높습니다. repeatRate=${repeatRate}`);
 }
@@ -170,6 +201,7 @@ const summary = {
   repeatedFamiliesBySession,
   lifeTagsBySession,
   ageFitBySession,
+  ageToneRisksBySession,
   presentationVariantStats,
   passed: failures.length === 0,
   failures

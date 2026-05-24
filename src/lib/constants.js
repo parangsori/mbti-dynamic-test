@@ -19,6 +19,14 @@ export const COMPATIBILITY = {
 
 export const CHANGELOG = [
   {
+    version: 'v1.6.11',
+    date: '2026.05.24',
+    updates: [
+      '10대부터 50대 이상까지 연령대별 생활 맥락이 더 자연스럽게 섞이도록 반복 문항 신선도 가중치와 톤 점검을 보강',
+      '같은 MBTI가 반복되어도 오늘 강했던 축, 최근 흐름, 문항 생활 맥락을 함께 보여줘 결과 화면에서 오늘의 차이를 더 잘 느끼도록 개선'
+    ]
+  },
+  {
     version: 'v1.6.10',
     date: '2026.05.23',
     updates: [

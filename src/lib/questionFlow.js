@@ -13,6 +13,7 @@ const DEFAULT_CONTEXT_TAG = 'daily';
 const DEFAULT_LIFE_TAG = 'daily_choice';
 const FRESH_CONTEXT_WEIGHT_BOOST = 4;
 const AGE_FIT_WEIGHT_BOOST = 2.15;
+const AGE_LIFE_STAGE_WEIGHT_BOOST = 1.14;
 const FRESH_LIFE_TAG_WEIGHT_BOOST = 1.22;
 const MAX_LIFE_TAG_PER_SESSION = 3;
 const AGE_FIT_MIN_PER_AXIS = 1;
@@ -20,6 +21,14 @@ const AGE_FIT_MIN_PER_AXIS = 1;
 const AGE_MISMATCH_PATTERNS = {
   child: /퇴근|직장|동료|회사|신규 사업|소개팅|데이트|상사|회의/,
   teen: /퇴근|직장|동료|회사|신규 사업|소개팅|데이트|상사|회식|술 한잔|펍/
+};
+
+const AGE_LIFE_STAGE_PRIORITIES = {
+  teen: ['relationship', 'emotion_check', 'work_study', 'daily_choice'],
+  '20s': ['self_growth', 'relationship', 'work_study', 'rest_recovery'],
+  '30s': ['work_study', 'relationship', 'rest_recovery', 'daily_choice'],
+  '40s': ['relationship', 'rest_recovery', 'work_study', 'daily_choice'],
+  '50s': ['rest_recovery', 'relationship', 'daily_choice', 'emotion_check']
 };
 
 const CONTEXT_LABELS = {
@@ -229,7 +238,8 @@ const getSelectionWeight = (question, { ageGroup = '', recentLifeTags = new Set(
   const lifeTag = getQuestionLifeTag(question);
   const lifeBoost = recentLifeTags.has(lifeTag) ? 1 : FRESH_LIFE_TAG_WEIGHT_BOOST;
   const ageBoost = ageGroup && question.ageFit?.includes(ageGroup) ? AGE_FIT_WEIGHT_BOOST : 1;
-  return (question.weight || 1) * roleBoost * middleBoost * freshnessBoost * lifeBoost * ageBoost;
+  const lifeStageBoost = AGE_LIFE_STAGE_PRIORITIES[ageGroup]?.includes(lifeTag) ? AGE_LIFE_STAGE_WEIGHT_BOOST : 1;
+  return (question.weight || 1) * roleBoost * middleBoost * freshnessBoost * lifeBoost * ageBoost * lifeStageBoost;
 };
 
 const pickWeightedQuestion = (pool, { recentIds, recentLifeTags, usedIds, usedFamilyIds, usedLifeTagCounts, ageGroup }) => {

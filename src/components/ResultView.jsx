@@ -132,8 +132,8 @@ const RESULT_THEME_CLASSES = {
 
 const getThemeClasses = (themeKey) => RESULT_THEME_CLASSES[themeKey] || RESULT_THEME_CLASSES.neon;
 
-const getDetailPreview = ({ section, summaryCopy, consistencyCopy, historyComparison, trendAnalysis, historyInsights }) => {
-  if (section === 'why') return consistencyCopy || summaryCopy;
+const getDetailPreview = ({ section, summaryCopy, todayDifferenceCopy, consistencyCopy, historyComparison, trendAnalysis, historyInsights }) => {
+  if (section === 'why') return todayDifferenceCopy || consistencyCopy || summaryCopy;
   if (section === 'axes') return trendAnalysis?.title || '축별 밸런스와 우세 흐름을 자세히 볼 수 있어요.';
   if (section === 'history') {
     return (historyComparison?.title || historyInsights?.recentCount)
@@ -181,7 +181,7 @@ function MiniResultCard({ title, value, description, tone = 'green' }) {
   );
 }
 
-function MoodPointCard({ presentation, themeClasses }) {
+function MoodPointCard({ presentation, todayDifferenceCopy, themeClasses }) {
   return (
     <div className={`mt-4 w-full rounded-[1.45rem] border px-4 py-4 ${themeClasses.panel}`}>
       <div className="flex items-center justify-between gap-3">
@@ -192,13 +192,15 @@ function MoodPointCard({ presentation, themeClasses }) {
       </div>
       <p className="mt-3 text-[18px] font-black leading-[1.22] text-white break-keep">{presentation.hook}</p>
       <p className="mt-2 text-[12px] leading-relaxed text-slate-100 break-keep">{presentation.detail}</p>
+      {todayDifferenceCopy && <p className="mt-2 text-[12px] leading-relaxed text-slate-200 break-keep">{todayDifferenceCopy}</p>}
     </div>
   );
 }
 
-function ResultEssenceCard({ info, summaryCopy, consistencyCopy, boundaryCopy, neutralReviewNote, questionContextInsight, themeClasses }) {
+function ResultEssenceCard({ info, summaryCopy, todayDifferenceCopy, consistencyCopy, boundaryCopy, neutralReviewNote, questionContextInsight, themeClasses }) {
   const insightRows = [
     summaryCopy,
+    todayDifferenceCopy,
     consistencyCopy,
     neutralReviewNote || questionContextInsight || boundaryCopy
   ].filter(Boolean).slice(0, 3);
@@ -377,6 +379,7 @@ export default function ResultView({
     axisNarratives,
     strongestAxis,
     summaryCopy,
+    todayDifferenceCopy,
     consistencyCopy,
     boundaryCopy,
     compCopy,
@@ -485,6 +488,7 @@ export default function ResultView({
         <div className="rounded-2xl border border-cyan-300/20 bg-cyan-300/[0.08] px-4 py-4">
           <p className="text-[12px] font-black tracking-[0.18em] text-cyan-100 uppercase">오늘 핵심 해석</p>
           <p className="mt-2 text-[14px] leading-relaxed text-white break-keep">{summaryCopy}</p>
+          {todayDifferenceCopy && <p className="mt-2 text-[13px] leading-relaxed text-cyan-50/90 break-keep">{todayDifferenceCopy}</p>}
         </div>
         <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-4">
           <p className="text-[12px] font-black tracking-[0.18em] text-slate-400 uppercase">결과 또렷함</p>
@@ -666,7 +670,11 @@ export default function ResultView({
               </div>
             )}
 
-            <MoodPointCard presentation={presentation} themeClasses={themeClasses} />
+            <MoodPointCard
+              presentation={presentation}
+              todayDifferenceCopy={todayDifferenceCopy}
+              themeClasses={themeClasses}
+            />
           </div>
 
           <div className="mt-5 flex w-full flex-col gap-4 rounded-[1.8rem] border border-white/10 bg-[linear-gradient(180deg,rgba(10,16,29,0.94),rgba(15,23,42,0.88))] p-5 shadow-[0_22px_70px_rgba(2,6,23,0.38)]">
@@ -690,6 +698,7 @@ export default function ResultView({
             <ResultEssenceCard
               info={info}
               summaryCopy={summaryCopy}
+              todayDifferenceCopy={todayDifferenceCopy}
               consistencyCopy={consistencyCopy}
               boundaryCopy={boundaryCopy}
               neutralReviewNote={neutralReviewNote}
@@ -798,6 +807,7 @@ export default function ResultView({
             preview={getDetailPreview({
               section: section.key,
               summaryCopy,
+              todayDifferenceCopy,
               consistencyCopy,
               historyComparison,
               trendAnalysis,
