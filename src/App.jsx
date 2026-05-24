@@ -36,7 +36,7 @@ import {
   writeUserName
 } from './lib/storage.js';
 import { captureError, installGlobalErrorHandlers } from './lib/observability.js';
-import { getHistoryComparison, getHistoryEntryNote, getHistoryInsights } from './lib/resultAnalysis.js';
+import { getHistoryComparison, getHistoryEntryNote, getHistoryInsights } from './lib/historyAnalysis.js';
 import { useSessionFlow } from './hooks/useSessionFlow.js';
 // Accessibility helpers are loaded inline to avoid dual-import warning
 const loadAccessibilitySettings = () => {
