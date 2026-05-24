@@ -253,6 +253,7 @@
 - 2026-05-22: 메인 사용자 서비스의 운영 canonical 도메인을 `https://todaymbti.com`으로 전환 준비했다. 앱의 OG/Twitter 절대 URL과 공유 fallback URL은 새 도메인을 기준으로 정리하고, dev QA는 기존 Vercel preview URL을 `VITE_PUBLIC_SERVICE_URL`로 유지한다. `todaymbti.com`과 `www.todaymbti.com`은 Vercel 프로젝트 `mbti-dynamic-test`에 추가했고, 구매처 네임서버가 `ns1.whoisdomain.kr`~`ns4.whoisdomain.kr`에 남아 있어 Vercel DNS 위임(`ns1.vercel-dns.com`, `ns2.vercel-dns.com`) 후 Valid Configuration/SSL 상태를 다시 확인해야 한다.
 - 2026-05-22: 기존 운영 주소 `https://mbti-dynamic-test.vercel.app`로 접속한 반복 사용자가 도메인 변경 때문에 첫 방문자로 보이지 않도록 클라이언트 도메인 이전을 추가했다. 기존 주소에서는 `localStorage`의 기록, 이름, 프로필, 진행/결과 복구, 최근 문항, 접근성 설정을 hash fragment로 `https://todaymbti.com`에 1회 전달하고, 새 도메인은 기존 데이터와 병합한 뒤 hash를 제거한다.
 - 2026-05-22: iPhone Safari 홈화면 추가 사용자는 `appinstalled` 이벤트만으로 집계되지 않을 수 있어, standalone 실행 시 `home_screen_standalone_open` 이벤트를 추가하고 admin 대시보드에 홈화면 실행/실행자 지표를 표시하도록 했다. 이 지표가 홈화면 아이콘 기반 실제 재방문 신호에 더 가깝다.
+- 2026-05-24: 고정 dev QA 도메인을 `https://dev-mbti.beatblue.net`으로 설정했다. Cloudflare DNS의 `dev-mbti` 레코드는 Proxied 상태이며 Cloudflare Access가 먼저 보호하고, Access 허용 정책은 `beatblue.joo@gmail.com` 기준으로 관리한다. Vercel 프로젝트 `mbti-dynamic-test`의 해당 도메인은 `gitBranch: dev`로 연결되어 새 dev 커밋마다 최신 dev Preview를 따라가야 하며, Preview(dev) 환경변수 `VITE_PUBLIC_SERVICE_URL`도 같은 URL로 설정했다. 비인증 요청은 Cloudflare Access 로그인으로 `302` 리다이렉트되는 것이 정상이고, 운영 `https://todaymbti.com`은 별도 main/production 기준으로 유지한다.
 
 ### 다음 채팅에서 먼저 확인할 체크포인트
 
@@ -264,6 +265,7 @@
 - 홈화면에 추가한 앱 모드는 브라우저 새로고침 UI가 없으므로, 상단 당겨서 새로고침과 로딩/오류 복구 화면의 앱 내부 새로고침 버튼을 유지한다.
 - admin/운영 대시보드 요청이면 `admin/README.md`와 `admin/DEPLOYMENT_CHECKLIST.md`를 함께 확인하고, Cloudflare Access와 Vercel 환경변수 상태를 먼저 점검한다.
 - admin 도메인 문제는 Cloudflare DNS `admin` CNAME target, Proxy 상태, Vercel domain 상태, Access application 정책 순서로 확인한다.
+- dev 실서비스 QA는 고정 주소 `https://dev-mbti.beatblue.net`을 우선 사용한다. 접속 불가 또는 오래된 배포가 보이면 Cloudflare Access 정책, Cloudflare DNS `dev-mbti` Proxy 상태, Vercel domain의 `gitBranch: dev`, Preview(dev) `VITE_PUBLIC_SERVICE_URL` 순서로 점검한다.
 
 ### 운영 로그 갱신 원칙
 
