@@ -174,7 +174,7 @@ const authorize = async (req) => {
   return { ok: false, status: 503, code: 'admin_auth_not_configured' };
 };
 
-const getRange = (rawRange) => (RANGE_DAYS[rawRange] ? rawRange : '7d');
+const getRange = (rawRange) => (RANGE_DAYS[rawRange] ? rawRange : '1d');
 
 const runPostHogQuery = async (query) => {
   const apiKey = process.env.POSTHOG_PERSONAL_API_KEY;

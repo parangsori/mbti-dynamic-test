@@ -175,7 +175,7 @@ function TokenFallback({ tokenInput, setTokenInput, onSave }) {
 }
 
 export default function App() {
-  const [range, setRange] = useState('7d');
+  const [range, setRange] = useState('1d');
   const [metrics, setMetrics] = useState(null);
   const [status, setStatus] = useState('idle');
   const [error, setError] = useState('');
