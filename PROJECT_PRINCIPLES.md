@@ -254,6 +254,7 @@
 - 2026-05-22: 기존 운영 주소 `https://mbti-dynamic-test.vercel.app`로 접속한 반복 사용자가 도메인 변경 때문에 첫 방문자로 보이지 않도록 클라이언트 도메인 이전을 추가했다. 기존 주소에서는 `localStorage`의 기록, 이름, 프로필, 진행/결과 복구, 최근 문항, 접근성 설정을 hash fragment로 `https://todaymbti.com`에 1회 전달하고, 새 도메인은 기존 데이터와 병합한 뒤 hash를 제거한다.
 - 2026-05-22: iPhone Safari 홈화면 추가 사용자는 `appinstalled` 이벤트만으로 집계되지 않을 수 있어, standalone 실행 시 `home_screen_standalone_open` 이벤트를 추가하고 admin 대시보드에 홈화면 실행/실행자 지표를 표시하도록 했다. 이 지표가 홈화면 아이콘 기반 실제 재방문 신호에 더 가깝다.
 - 2026-05-24: 고정 dev QA 도메인을 `https://dev-mbti.beatblue.net`으로 설정했다. Cloudflare DNS의 `dev-mbti` 레코드는 Proxied 상태이며 Cloudflare Access가 먼저 보호하고, Access 허용 정책은 `beatblue.joo@gmail.com` 기준으로 관리한다. Vercel 프로젝트 `mbti-dynamic-test`의 해당 도메인은 `gitBranch: dev`로 연결되어 새 dev 커밋마다 최신 dev Preview를 따라가야 하며, Preview(dev) 환경변수 `VITE_PUBLIC_SERVICE_URL`도 같은 URL로 설정했다. 비인증 요청은 Cloudflare Access 로그인으로 `302` 리다이렉트되는 것이 정상이고, 운영 `https://todaymbti.com`은 별도 main/production 기준으로 유지한다.
+- 2026-05-28: 결과 카드 저장/공유가 브라우저별 Web Share/파일 저장 지원 차이로 실제 완료 여부를 보장하지 못하는 문제를 줄이기 위해, 이미지 공유·파일 선택 저장·텍스트만 공유·다운로드 fallback·실패 상태를 분리했다. 자동 다운로드 fallback은 더 이상 "저장 완료"로 표시하지 않고 다운로드 목록/파일 앱 확인 안내로 처리하며, admin 대시보드에서도 관련 이벤트를 나눠 본다.
 
 ### 다음 채팅에서 먼저 확인할 체크포인트
 

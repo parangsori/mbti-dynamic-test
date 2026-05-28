@@ -745,8 +745,14 @@ export default function ResultView({
                 ? '이미지 준비 중...'
                 : saveImageState === 'shared'
                   ? '공유 시트 열림'
-                  : saveImageState === 'saved'
-                    ? '결과 카드 저장 완료'
+                : saveImageState === 'saved'
+                  ? '결과 카드 저장 완료'
+                  : saveImageState === 'download_started'
+                    ? '다운로드 시작됨'
+                    : saveImageState === 'text_shared'
+                      ? '텍스트 공유 완료'
+                      : saveImageState === 'failed'
+                        ? '다시 시도해 주세요'
                     : '결과 카드 공유/저장'}
             </button>
             <div className="grid grid-cols-2 gap-3">

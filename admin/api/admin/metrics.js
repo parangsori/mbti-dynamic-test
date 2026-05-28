@@ -8,6 +8,9 @@ const POSTHOG_EVENTS = [
   'share_copy',
   'result_image_share',
   'result_image_save',
+  'result_image_download_fallback',
+  'result_image_text_share',
+  'result_image_save_fail',
   'home_screen_install_prompt',
   'home_screen_app_installed',
   'home_screen_standalone_open',
@@ -243,7 +246,7 @@ SELECT
   count() AS total
 FROM events
 ${kstDateWindowSql(days)}
-  AND event IN ('$pageview', 'start_click', 'complete_test', 'share_copy', 'result_image_share', 'result_image_save')
+  AND event IN ('$pageview', 'start_click', 'complete_test', 'share_copy', 'result_image_share', 'result_image_save', 'result_image_download_fallback', 'result_image_text_share', 'result_image_save_fail')
 GROUP BY day, event
 ORDER BY day ASC
 `;
@@ -358,7 +361,7 @@ const rowsToErrors = (rows = []) =>
 
 const percent = (value, base) => (base > 0 ? Math.round((value / base) * 100) : 0);
 
-const buildNotes = ({ starts, completions, shares, installs, standaloneActors, errorTotal, serverSyncFailures }) => {
+const buildNotes = ({ starts, completions, shares, installs, standaloneActors, errorTotal, serverSyncFailures, imageSaveFailures }) => {
   const notes = [];
   if (starts === 0) {
     notes.push('아직 시작 이벤트가 적어서 유입 품질 판단은 더 쌓인 뒤 보는 게 좋아요.');
@@ -384,6 +387,10 @@ const buildNotes = ({ starts, completions, shares, installs, standaloneActors, e
     notes.push('결과 백업 동기화 실패 이벤트가 있습니다. Supabase 환경과 네트워크 실패율을 같이 보세요.');
   }
 
+  if (imageSaveFailures > 0) {
+    notes.push('결과 카드 저장/공유 실패 이벤트가 있습니다. 브라우저별 공유 API 지원 여부를 먼저 확인해주세요.');
+  }
+
   return notes;
 };
 
@@ -398,7 +405,16 @@ const buildMetrics = ({ range, counts, daily, locations, devices, referrers, err
   const shareCopies = counts.share_copy?.total || 0;
   const imageShares = counts.result_image_share?.total || 0;
   const imageSaves = counts.result_image_save?.total || 0;
-  const shares = shareCopies + imageShares + imageSaves;
+  const downloadFallbacks = counts.result_image_download_fallback?.total || 0;
+  const textShares = counts.result_image_text_share?.total || 0;
+  const imageSaveFailures = counts.result_image_save_fail?.total || 0;
+  const shares = shareCopies + imageShares + imageSaves + textShares;
+  const shareActors = Math.max(
+    counts.share_copy?.actors || 0,
+    counts.result_image_share?.actors || 0,
+    counts.result_image_save?.actors || 0,
+    counts.result_image_text_share?.actors || 0
+  );
   const installPrompts = counts.home_screen_install_prompt?.total || 0;
   const installs = counts.home_screen_app_installed?.total || 0;
   const standaloneOpens = counts.home_screen_standalone_open?.total || 0;
@@ -439,13 +455,16 @@ const buildMetrics = ({ range, counts, daily, locations, devices, referrers, err
       { key: 'visitors', label: '방문자', count: visitors, rateFromPrevious: 100, caption: `${pageviews} 페이지뷰` },
       { key: 'start_click', label: '시작자', count: counts.start_click?.actors || 0, rateFromPrevious: percent(counts.start_click?.actors || 0, visitors) },
       { key: 'complete_test', label: '완료자', count: counts.complete_test?.actors || 0, rateFromPrevious: percent(counts.complete_test?.actors || 0, counts.start_click?.actors || starts) },
-      { key: 'share', label: '공유/저장 사용자', count: Math.max(counts.share_copy?.actors || 0, counts.result_image_share?.actors || 0, counts.result_image_save?.actors || 0), rateFromPrevious: percent(Math.max(counts.share_copy?.actors || 0, counts.result_image_share?.actors || 0, counts.result_image_save?.actors || 0), counts.complete_test?.actors || completions) },
+      { key: 'share', label: '공유/저장 사용자', count: shareActors, rateFromPrevious: percent(shareActors, counts.complete_test?.actors || completions) },
       { key: 'standalone', label: '홈화면 실행자', count: standaloneActors, rateFromPrevious: percent(standaloneActors, visitors) }
     ],
     sharing: {
       copies: shareCopies,
       imageShares,
-      imageSaves
+      imageSaves,
+      downloadFallbacks,
+      textShares,
+      imageSaveFailures
     },
     install: {
       prompts: installPrompts,
@@ -471,7 +490,7 @@ const buildMetrics = ({ range, counts, daily, locations, devices, referrers, err
       referrers
     },
     daily,
-    notes: buildNotes({ starts, completions, shares, installs, standaloneActors, errorTotal: clientErrors, serverSyncFailures })
+    notes: buildNotes({ starts, completions, shares, installs, standaloneActors, errorTotal: clientErrors, serverSyncFailures, imageSaveFailures })
   };
 };
 

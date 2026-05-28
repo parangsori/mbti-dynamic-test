@@ -11,6 +11,9 @@ const DEFAULT_COUNTS = {
   question_reach_9: 0,
   result_image_save: 0,
   result_image_share: 0,
+  result_image_download_fallback: 0,
+  result_image_text_share: 0,
+  result_image_save_fail: 0,
   history_open: 0,
   share_copy: 0
 };
@@ -30,8 +33,10 @@ export const summarizeActivityReport = (
   const progressTouches = counts.question_reach_3 + counts.question_reach_6 + counts.question_reach_9;
   const saved = counts.result_image_save;
   const shared = counts.result_image_share;
+  const textShared = counts.result_image_text_share;
+  const downloadFallbacks = counts.result_image_download_fallback;
   const copied = counts.share_copy;
-  const saveOrShare = saved + shared;
+  const saveOrShare = saved + shared + textShared + downloadFallbacks;
   const completionRate = starts > 0 ? Math.round((completions / starts) * 100) : 0;
   const recentErrors = errorRaw?.recent || [];
   const latestError = recentErrors[0] || null;
