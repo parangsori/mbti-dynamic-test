@@ -14,6 +14,10 @@ const AGE_GROUPS = ['teen', '20s', '30s', '40s', '50s'];
 const PRESENTATION_STATES = ['streak', 'shift', 'boundary', 'clear', 'default'];
 const PRESENTATION_STATE_EXPECTED_MIN = 5;
 const SAMPLE_MBTIS = ['INFP', 'ENFP', 'ISTJ', 'ENTJ', 'ISFJ'];
+const STRESS_SESSION_COUNT = 20;
+const STRESS_AGE_GROUP = '30s';
+const MAX_STRESS_SINGLE_QUESTION_REPEAT = 5;
+const MAX_STRESS_REPEAT_RATE = 0.32;
 const AGE_TONE_RISK_PATTERNS = {
   teen: /퇴근|직장|회사|상사|회식|술 한잔|펍|신규 사업|소개팅|데이트/,
   '20s': /어린이|친구들과 놀면|학교 숙제/,
@@ -147,6 +151,27 @@ const axisCountsBySession = sessions.map((questions, index) => ({
 const repeatRate = allQuestions.length > 0 ? repeatedIds.length / allQuestions.length : 0;
 const presentationVariantStats = await getPresentationVariantStats();
 
+const stressRecentSessions = [];
+const stressSessions = [];
+
+for (let i = 0; i < STRESS_SESSION_COUNT; i += 1) {
+  const questions = buildQuestionSession(stressRecentSessions, { ageGroup: STRESS_AGE_GROUP });
+  stressSessions.push(questions);
+  stressRecentSessions.unshift(createRecentSessionSnapshot({
+    questions,
+    ids: questions.map(getQuestionId),
+    ageGroup: STRESS_AGE_GROUP
+  }));
+  stressRecentSessions.splice(12);
+}
+
+const stressAllQuestions = stressSessions.flat();
+const stressRepeatedIds = getDuplicateKeys(stressAllQuestions, getQuestionId)
+  .sort((a, b) => b.count - a.count);
+const stressRepeatRate = stressAllQuestions.length > 0
+  ? (stressAllQuestions.length - new Set(stressAllQuestions.map(getQuestionId)).size) / stressAllQuestions.length
+  : 0;
+
 const failures = [];
 
 axisCountsBySession.forEach(({ session, counts }) => {
@@ -185,6 +210,15 @@ if (repeatRate > MAX_REPEAT_RATE) {
   failures.push(`연속 ${SESSION_COUNT}회 문항 ID 반복률이 높습니다. repeatRate=${repeatRate}`);
 }
 
+if (stressRepeatRate > MAX_STRESS_REPEAT_RATE) {
+  failures.push(`같은 연령대 ${STRESS_SESSION_COUNT}회 반복 문항 ID 반복률이 높습니다. repeatRate=${stressRepeatRate}`);
+}
+
+const overRepeatedStressIds = stressRepeatedIds.filter(({ count }) => count > MAX_STRESS_SINGLE_QUESTION_REPEAT);
+if (overRepeatedStressIds.length > 0) {
+  failures.push(`같은 연령대 반복에서 특정 문항이 과다 반복됩니다. ${JSON.stringify(overRepeatedStressIds.slice(0, 5))}`);
+}
+
 Object.entries(presentationVariantStats).forEach(([state, stats]) => {
   if (stats.count < PRESENTATION_STATE_EXPECTED_MIN) {
     failures.push(`${state} presentation 변주가 ${PRESENTATION_STATE_EXPECTED_MIN}개보다 적습니다. actual=${stats.count}`);
@@ -202,6 +236,13 @@ const summary = {
   lifeTagsBySession,
   ageFitBySession,
   ageToneRisksBySession,
+  stressRepeat: {
+    ageGroup: STRESS_AGE_GROUP,
+    sessionCount: STRESS_SESSION_COUNT,
+    uniqueQuestionIds: new Set(stressAllQuestions.map(getQuestionId)).size,
+    repeatRate: Number(stressRepeatRate.toFixed(3)),
+    topRepeatedIds: stressRepeatedIds.slice(0, 8)
+  },
   presentationVariantStats,
   passed: failures.length === 0,
   failures

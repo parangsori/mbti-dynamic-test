@@ -296,7 +296,7 @@ const mergeRecentSessionsForMigration = (incomingRaw) => {
     if (!key || seen.has(key)) return false;
     seen.add(key);
     return true;
-  }).slice(0, 8);
+  }).slice(0, 12);
 
   return writeRecentSessions(merged);
 };

@@ -74,22 +74,22 @@ export const QUESTIONS_META = {
     { id: "TF_018", familyId: "TF_blind_date",  role: "anchor",        weight: 1.4 }, // idx 17
   ],
   JP: [
-    { id: "JP_001", familyId: "JP_travel_prep", role: "anchor",        weight: 1.4 }, // idx 0
-    { id: "JP_002", familyId: "JP_appointment", role: "anchor",        weight: 1.4 }, // idx 1
+    { id: "JP_001", familyId: "JP_travel_prep", role: "anchor",        weight: 1.4, ageFit: ["teen", "20s", "30s", "40s", "50s"] }, // idx 0
+    { id: "JP_002", familyId: "JP_appointment", role: "anchor",        weight: 1.4, ageFit: ["teen", "20s", "30s", "40s", "50s"] }, // idx 1
     { id: "JP_003", familyId: "JP_desk",        role: "discriminator", weight: 1.1 }, // idx 2
     { id: "JP_004", familyId: "JP_plan_fail",   role: "discriminator", weight: 1.1 }, // idx 3
-    { id: "JP_005", familyId: "JP_alarm",       role: "anchor",        weight: 1.4 }, // idx 4
+    { id: "JP_005", familyId: "JP_alarm",       role: "anchor",        weight: 1.4, ageFit: ["teen", "20s", "30s", "40s", "50s"] }, // idx 4
     { id: "JP_006", familyId: "JP_train",       role: "state",         weight: 0.8 }, // idx 5
     { id: "JP_007", familyId: "JP_cancel",      role: "consistency",   weight: 1.0 }, // idx 6
     { id: "JP_008", familyId: "JP_battery",     role: "state",         weight: 0.8 }, // idx 7
     { id: "JP_009", familyId: "JP_mart",        role: "discriminator", weight: 1.1 }, // idx 8
-    { id: "JP_010", familyId: "JP_task",        role: "anchor",        weight: 1.4 }, // idx 9
+    { id: "JP_010", familyId: "JP_task",        role: "anchor",        weight: 1.4, ageFit: ["teen", "20s", "30s", "40s", "50s"] }, // idx 9
     { id: "JP_011", familyId: "JP_kitchen",     role: "discriminator", weight: 1.1 }, // idx 10
     { id: "JP_012", familyId: "JP_problem",     role: "consistency",   weight: 1.0 }, // idx 11
     { id: "JP_013", familyId: "JP_date",        role: "discriminator", weight: 1.1 }, // idx 12
     { id: "JP_014", familyId: "JP_bookshelf",   role: "state",         weight: 0.8 }, // idx 13
     { id: "JP_015", familyId: "JP_desktop",     role: "discriminator", weight: 1.1 }, // idx 14
-    { id: "JP_016", familyId: "JP_goal",        role: "anchor",        weight: 1.4 }, // idx 15
+    { id: "JP_016", familyId: "JP_goal",        role: "anchor",        weight: 1.4, ageFit: ["teen", "20s", "30s", "40s", "50s"] }, // idx 15
     { id: "JP_017", familyId: "JP_exit_check",  role: "consistency",   weight: 1.0 }, // idx 16
     { id: "JP_018", familyId: "JP_restaurant",  role: "state",         weight: 0.8 }, // idx 17
   ]

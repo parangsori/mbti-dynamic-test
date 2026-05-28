@@ -1701,7 +1701,7 @@ const FRESHNESS_META_BOOST = {
     { id: "JP_065", familyId: "JP_TASKS_ADDED_FIRST", role: "state", weight: 0.9, contextTag: "today", lifeTag: "work_study", ageFit: ["teen", "20s", "30s", "40s"], allowMiddleCandidate: true },
     { id: "JP_066", familyId: "JP_REST_DAY_STANDARD", role: "parallel", weight: 1.05, contextTag: "daily", lifeTag: "rest_recovery", ageFit: ["20s", "30s", "40s", "50s"] },
     { id: "JP_067", familyId: "JP_PLACE_PICK_STYLE", role: "discriminator", weight: 1.12, contextTag: "relationship", lifeTag: "relationship", ageFit: ["teen", "20s", "30s", "40s"] },
-    { id: "JP_068", familyId: "JP_WEEK_START", role: "anchor", weight: 1.35, contextTag: "daily", lifeTag: "work_study", ageFit: ["teen", "20s", "30s", "40s", "50s"] },
+    { id: "JP_068", familyId: "JP_WEEK_START", role: "anchor", weight: 0.35, contextTag: "daily", lifeTag: "work_study" },
     { id: "JP_069", familyId: "JP_ROOM_MESS_REACT", role: "state", weight: 0.9, contextTag: "daily", lifeTag: "daily_choice", ageFit: ["20s", "30s", "40s", "50s"] },
     { id: "JP_070", familyId: "JP_DEADLINE_FORCE", role: "discriminator", weight: 1.12, contextTag: "situation", lifeTag: "work_study", ageFit: ["teen", "20s", "30s", "40s"] },
     { id: "JP_071", familyId: "JP_PLAN_B_RECOVERY", role: "forced_choice", weight: 1.2, contextTag: "situation", lifeTag: "unexpected", ageFit: ["20s", "30s", "40s", "50s"], allowMiddleCandidate: true },
@@ -1713,7 +1713,7 @@ const FRESHNESS_META_BOOST = {
     { id: "JP_077", familyId: "JP_FOCUS_RESET", role: "parallel", weight: 1.05, contextTag: "daily", lifeTag: "work_study", ageFit: ["teen", "20s", "30s", "40s"] },
     { id: "JP_078", familyId: "JP_SUCCESS_STANDARD_TODAY", role: "state", weight: 0.9, contextTag: "today", lifeTag: "self_growth", ageFit: ["20s", "30s", "40s", "50s"] },
     { id: "JP_079", familyId: "JP_WAITING_TIME_USE", role: "parallel", weight: 1.05, contextTag: "situation", lifeTag: "unexpected", ageFit: ["teen", "20s", "30s", "40s", "50s"] },
-    { id: "JP_080", familyId: "JP_NEW_GOAL_START", role: "anchor", weight: 1.35, contextTag: "daily", lifeTag: "self_growth", ageFit: ["teen", "20s", "30s", "40s", "50s"] }
+    { id: "JP_080", familyId: "JP_NEW_GOAL_START", role: "anchor", weight: 0.35, contextTag: "daily", lifeTag: "self_growth" }
   ]
 };
 

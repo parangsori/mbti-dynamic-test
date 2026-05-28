@@ -651,7 +651,7 @@ export default function App() {
       ids: finalSessionIds,
       ageGroup
     });
-    writeRecentSessions([sessionSnapshot, ...recentSessionsSnapshot].slice(0, 6));
+    writeRecentSessions([sessionSnapshot, ...recentSessionsSnapshot].slice(0, 12));
     writePendingResult({
       scores: finalScores,
       userName,

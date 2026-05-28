@@ -112,6 +112,11 @@ const getRecentSessionIds = (session) => {
   return [];
 };
 
+const getRecentSessionFamilyIds = (session) => {
+  if (session?.familyIds && Array.isArray(session.familyIds)) return session.familyIds;
+  return [];
+};
+
 const getRecentSessionLifeTags = (session) => {
   if (session?.lifeTags && Array.isArray(session.lifeTags)) return session.lifeTags;
   return [];
@@ -123,6 +128,7 @@ export const createRecentSessionSnapshot = ({ questions = [], ids = [], ageGroup
 
   return {
     ids: ids.length ? ids : selectedQuestions.map((question) => question.id),
+    familyIds: selectedQuestions.map((question) => question.familyId).filter(Boolean),
     lifeTags: selectedQuestions.map(getQuestionLifeTag).filter(Boolean),
     ageGroup,
     savedAt: new Date().toISOString()
@@ -242,7 +248,7 @@ const getSelectionWeight = (question, { ageGroup = '', recentLifeTags = new Set(
   return (question.weight || 1) * roleBoost * middleBoost * freshnessBoost * lifeBoost * ageBoost * lifeStageBoost;
 };
 
-const pickWeightedQuestion = (pool, { recentIds, recentLifeTags, usedIds, usedFamilyIds, usedLifeTagCounts, ageGroup }) => {
+const pickWeightedQuestion = (pool, { recentIds, recentFamilyIds = new Set(), recentLifeTags, usedIds, usedFamilyIds, usedLifeTagCounts, ageGroup }) => {
   const usableBase = pool.filter((question) =>
     !usedIds.has(question.id) &&
     !usedFamilyIds.has(question.familyId) &&
@@ -252,7 +258,15 @@ const pickWeightedQuestion = (pool, { recentIds, recentLifeTags, usedIds, usedFa
     const lifeTag = getQuestionLifeTag(question);
     return (usedLifeTagCounts[lifeTag] || 0) < MAX_LIFE_TAG_PER_SESSION;
   });
-  const fallbackUsable = usable.length ? usable : usableBase;
+  const nonRecentFamilyUsable = usable.filter((question) => !recentFamilyIds.has(question.familyId));
+  const nonRecentFamilyBase = usableBase.filter((question) => !recentFamilyIds.has(question.familyId));
+  const fallbackUsable = nonRecentFamilyUsable.length
+    ? nonRecentFamilyUsable
+    : nonRecentFamilyBase.length
+      ? nonRecentFamilyBase
+      : usable.length
+        ? usable
+        : usableBase;
   if (!fallbackUsable.length) return null;
 
   const fresh = fallbackUsable.filter((question) => !recentIds.has(question.id));
@@ -290,15 +304,21 @@ const removePickedQuestion = (question, selected, usedIds, usedFamilyIds, usedLi
   return true;
 };
 
-const ensureAgeFitForAxis = ({ axis, enriched, selected, usedIds, usedFamilyIds, usedLifeTagCounts, recentIds, recentLifeTags, ageGroup }) => {
+const ensureAgeFitForAxis = ({ axis, enriched, selected, usedIds, usedFamilyIds, usedLifeTagCounts, recentIds, recentFamilyIds, recentLifeTags, ageGroup }) => {
   if (!ageGroup) return;
   const axisSelected = selected.filter((question) => question._axis === axis);
   const ageFitCount = axisSelected.filter((question) => isAgeFit(question, ageGroup)).length;
   if (ageFitCount >= AGE_FIT_MIN_PER_AXIS) return;
 
-  const ageFitPool = enriched.filter((question) => isAgeFit(question, ageGroup));
+  const freshAgeFitPool = enriched.filter((question) =>
+    isAgeFit(question, ageGroup) &&
+    !recentIds.has(question.id) &&
+    !recentFamilyIds.has(question.familyId)
+  );
+  const ageFitPool = freshAgeFitPool.length ? freshAgeFitPool : enriched.filter((question) => isAgeFit(question, ageGroup));
   const replacement = pickWeightedQuestion(ageFitPool, {
     recentIds,
+    recentFamilyIds,
     recentLifeTags,
     usedIds,
     usedFamilyIds,
@@ -426,6 +446,7 @@ const applyQuestionAgeVariant = (question, ageGroup = '') => {
 
 export const buildQuestionSession = (recentSessions = [], { ageGroup = '' } = {}) => {
   const recentIds = new Set(recentSessions.flatMap(getRecentSessionIds));
+  const recentFamilyIds = new Set(recentSessions.flatMap(getRecentSessionFamilyIds));
   const recentLifeTags = new Set(recentSessions.flatMap(getRecentSessionLifeTags));
   const axisKeys = ['EI', 'SN', 'TF', 'JP'];
   const selected = [];
@@ -464,6 +485,7 @@ export const buildQuestionSession = (recentSessions = [], { ageGroup = '' } = {}
     rolePools.forEach((rolePool) => {
       const question = pickWeightedQuestion(rolePool.length ? rolePool : enriched, {
         recentIds,
+        recentFamilyIds,
         recentLifeTags,
         usedIds,
         usedFamilyIds,
@@ -476,6 +498,7 @@ export const buildQuestionSession = (recentSessions = [], { ageGroup = '' } = {}
     while (selected.filter((question) => question._axis === axis).length < 3) {
       const fallback = pickWeightedQuestion(enriched, {
         recentIds,
+        recentFamilyIds,
         recentLifeTags,
         usedIds,
         usedFamilyIds,
@@ -493,6 +516,7 @@ export const buildQuestionSession = (recentSessions = [], { ageGroup = '' } = {}
       usedFamilyIds,
       usedLifeTagCounts,
       recentIds,
+      recentFamilyIds,
       recentLifeTags,
       ageGroup
     });
