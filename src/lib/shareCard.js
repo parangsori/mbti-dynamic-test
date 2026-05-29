@@ -9,6 +9,11 @@ export const isTelegramWebView = () => {
   return /telegram/i.test(ua) || /TelegramBot/i.test(ua) || typeof window.TelegramWebviewProxy !== 'undefined';
 };
 
+export const isAndroidDevice = () => {
+  if (typeof navigator === 'undefined') return false;
+  return /android/i.test(navigator.userAgent || '');
+};
+
 export const renderShareCardCanvas = async (target) => {
   if (!target) throw new Error('공유 카드 대상이 없습니다.');
   const { default: html2canvas } = await import('html2canvas');
@@ -50,10 +55,20 @@ export const downloadBlob = (blob, filename) => {
 export const getShareCapabilities = (file = null) => {
   const hasNavigatorShare = typeof navigator !== 'undefined' && typeof navigator.share === 'function';
   const hasCanShare = typeof navigator !== 'undefined' && typeof navigator.canShare === 'function';
+  const shareFilePayload = file ? { files: [file] } : null;
+  const shareFileWithLinkPayload = file ? { files: [file], url: SERVICE_URL } : null;
   const canShareFile = (() => {
     if (!file || !hasNavigatorShare || !hasCanShare) return false;
     try {
-      return navigator.canShare({ files: [file] });
+      return navigator.canShare(shareFilePayload);
+    } catch {
+      return false;
+    }
+  })();
+  const canShareFileWithLink = (() => {
+    if (!file || !hasNavigatorShare || !hasCanShare) return false;
+    try {
+      return navigator.canShare(shareFileWithLinkPayload);
     } catch {
       return false;
     }
@@ -71,60 +86,42 @@ export const getShareCapabilities = (file = null) => {
     hasNavigatorShare,
     hasCanShare,
     canShareFile,
+    canShareFileWithLink,
     hasSaveFilePicker,
     displayMode,
-    isTelegram: isTelegramWebView()
+    isTelegram: isTelegramWebView(),
+    isAndroid: isAndroidDevice()
   };
 };
 
-/**
- * 공유 또는 저장 로직
- * - files 지원 환경: 이미지 + 텍스트 공유
- * - files 미지원 환경: 텍스트 공유, 저장 선택기, 다운로드 fallback 순으로 시도
- * - 자동 다운로드는 실제 저장 완료를 확인할 수 없으므로 download_started로만 반환
- *
- * 핵심: url 파라미터를 사용하지 않고 text에 URL을 직접 포함.
- * 카카오톡은 text + url을 합칠 때 자동으로 줄바꿈을 삽입하므로,
- * url 파라미터를 별도로 전달하면 텍스트 끝에 빈 줄이 생김.
- */
-export const shareOrSaveBlob = async ({ blob, filename, title, text }) => {
-  const file = typeof File !== 'undefined'
+export const shareBlobWithLink = async ({ blob, filename, title, text }) => {
+  const file = blob && typeof File !== 'undefined'
     ? new File([blob], filename, { type: 'image/png' })
     : null;
   const capabilities = getShareCapabilities(file);
+  const linkShareText = text ? text.trim().replace(/[\s\n]+$/, '') : SERVICE_NAME;
 
-  // text에 boast + URL 포함, 후행 공백/개행 완전 제거
-  const shareText = (text ? `${text.trim()}\n${SERVICE_URL}` : SERVICE_URL).replace(/[\s\n]+$/, '');
-
-  // 1차 시도: files(이미지) 포함 공유
-  if (file && capabilities.canShareFile) {
-    try {
-      await navigator.share({
-        title,
-        text: shareText,
-        files: [file]
-      });
-      return { status: 'file_shared', capabilities };
-    } catch (err) {
-      if (err.name === 'AbortError') return { status: 'cancelled', capabilities };
-    }
+  if (!file || !capabilities.hasNavigatorShare || !capabilities.canShareFileWithLink) {
+    return { status: 'share_unavailable', capabilities };
   }
 
-  // 2차 시도: files 없이 텍스트만 공유 (files 자체 미지원 환경)
-  if (capabilities.hasNavigatorShare) {
-    try {
-      await navigator.share({
-        title,
-        text: shareText
-      });
-      return { status: 'text_shared', capabilities };
-    } catch (err) {
-      if (err.name === 'AbortError') return { status: 'cancelled', capabilities };
-      // 공유 자체 실패 시 파일 저장 fallback
-    }
+  try {
+    await navigator.share({
+      title,
+      text: linkShareText,
+      url: SERVICE_URL,
+      files: [file]
+    });
+    return { status: 'file_link_shared', capabilities };
+  } catch (err) {
+    if (err.name === 'AbortError') return { status: 'cancelled', capabilities };
+    return { status: 'failed', capabilities };
   }
+};
 
-  // 3차: 파일 저장
+export const saveBlobImageOnly = async ({ blob, filename }) => {
+  const capabilities = getShareCapabilities();
+
   if (capabilities.hasSaveFilePicker) {
     try {
       const handle = await window.showSaveFilePicker({

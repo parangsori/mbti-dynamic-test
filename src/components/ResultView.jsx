@@ -443,8 +443,9 @@ export default function ResultView({
 
   const {
     handleCopyShare,
-    handleSaveImage,
-    saveImageState,
+    handleSaveImageOnly,
+    handleShareImageLink,
+    shareActionState,
     shareCopied,
     shareToast
   } = useResultShare({
@@ -455,6 +456,8 @@ export default function ResultView({
     shareCardRef,
     trackEvent
   });
+  const [showShareOptions, setShowShareOptions] = useState(false);
+  const isShareBusy = shareActionState !== 'idle';
 
   const shareContext = {
     displayName,
@@ -735,26 +738,50 @@ export default function ResultView({
 
           <div className="mt-5 flex w-full flex-col gap-3">
             <button
-              onClick={handleSaveImage}
-              disabled={saveImageState === 'saving'}
+              onClick={() => setShowShareOptions((open) => !open)}
+              disabled={isShareBusy}
               className={`w-full rounded-[1.6rem] border border-cyan-300/20 bg-cyan-300/[0.1] py-4 text-[15px] font-black text-cyan-50 transition hover:bg-cyan-300/[0.14] ${
-                saveImageState === 'saving' ? 'cursor-wait opacity-70' : ''
+                isShareBusy ? 'cursor-wait opacity-70' : ''
               }`}
             >
-              {saveImageState === 'saving'
+              {shareActionState === 'sharing'
+                ? '공유 준비 중...'
+                : shareActionState === 'saving'
                 ? '이미지 준비 중...'
-                : saveImageState === 'shared'
-                  ? '공유 시트 열림'
-                : saveImageState === 'saved'
-                  ? '결과 카드 저장 완료'
-                  : saveImageState === 'download_started'
-                    ? '다운로드 시작됨'
-                    : saveImageState === 'text_shared'
-                      ? '텍스트 공유 완료'
-                      : saveImageState === 'failed'
-                        ? '다시 시도해 주세요'
-                    : '결과 카드 공유/저장'}
+                : shareActionState === 'shared'
+                  ? '이미지+링크 공유 완료'
+                : shareActionState === 'saved'
+                  ? '이미지 저장 완료'
+                : shareActionState === 'unavailable'
+                  ? '공유 지원 안 됨'
+                : shareActionState === 'failed'
+                  ? '다시 시도해 주세요'
+                : showShareOptions
+                  ? '저장/공유 옵션 닫기'
+                  : '결과 카드 저장/공유'}
             </button>
+            {showShareOptions && !isShareBusy && (
+              <div className="grid grid-cols-2 gap-3 rounded-[1.4rem] border border-white/10 bg-black/20 p-2">
+                <button
+                  onClick={() => {
+                    setShowShareOptions(false);
+                    handleShareImageLink();
+                  }}
+                  className="rounded-[1.2rem] border border-cyan-300/20 bg-cyan-300/[0.12] px-3 py-3 text-[13px] font-black text-cyan-50 transition hover:bg-cyan-300/[0.18]"
+                >
+                  이미지+링크 공유
+                </button>
+                <button
+                  onClick={() => {
+                    setShowShareOptions(false);
+                    handleSaveImageOnly();
+                  }}
+                  className="rounded-[1.2rem] border border-white/10 bg-white/[0.06] px-3 py-3 text-[13px] font-black text-slate-100 transition hover:bg-white/[0.1]"
+                >
+                  이미지 저장
+                </button>
+              </div>
+            )}
             <div className="grid grid-cols-2 gap-3">
               <button onClick={handleCopyShare} className="rounded-[1.4rem] border border-white/10 bg-white/[0.05] px-4 py-3 text-[13px] font-bold text-slate-100 transition hover:bg-white/[0.08]">
                 {shareCopied ? '한 줄 복사 완료' : '한 줄 결과 복사'}
