@@ -3,30 +3,28 @@ import { captureError } from '../lib/observability.js';
 import {
   getCanvasBlob,
   renderShareCardCanvas,
-  saveBlobImageOnly,
-  shareBlobWithLink,
+  shareOrSaveBlob,
   buildShareText,
   SERVICE_URL
 } from '../lib/shareCard.js';
 
 const EVENT_BY_SHARE_STATUS = {
+  file_shared: 'result_image_share',
   file_link_shared: 'result_image_link_share',
   picker_saved: 'result_image_save',
   download_started: 'result_image_download_fallback',
-  share_unavailable: 'result_image_link_share_unavailable',
   failed: 'result_image_save_fail'
 };
 
 const STATE_BY_SHARE_STATUS = {
+  file_shared: 'shared',
   file_link_shared: 'shared',
   picker_saved: 'saved',
   download_started: 'saved',
-  share_unavailable: 'unavailable',
   failed: 'failed'
 };
 
 const TOAST_BY_SHARE_STATUS = {
-  share_unavailable: '이 브라우저에서는 이미지와 링크를 함께 공유할 수 없어요. 다른 브라우저에서 다시 시도해 주세요.',
   download_started: '이미지 다운로드를 시작했어요. 다운로드 목록이나 파일 앱을 확인해 주세요.',
   failed: '저장/공유가 완료되지 않았어요. 브라우저에서 다시 시도해 주세요.'
 };
@@ -51,7 +49,7 @@ export function useResultShare({
   trackEvent
 }) {
   const [shareCopied, setShareCopied] = useState(false);
-  const [shareActionState, setShareActionState] = useState('idle');
+  const [saveImageState, setSaveImageState] = useState('idle');
   const [shareToast, setShareToast] = useState('');
 
   const handleCopyShare = async () => {
@@ -72,80 +70,28 @@ export function useResultShare({
     }
   };
 
-  const prepareShareCardBlob = async () => {
+  const handleSaveImage = async () => {
+    if (saveImageState !== 'idle') return;
     if (!shareCardRef.current) return;
-    const canvas = await renderShareCardCanvas(shareCardRef.current);
-    const blob = await getCanvasBlob(canvas);
-    const filename = `today-mbti-${mbti.toLowerCase()}.png`;
-    const title = `${displayName}님의 오늘 MBTI 카드`;
-    return { blob, filename, title };
-  };
-
-  const handleShareImageLink = async () => {
-    if (shareActionState !== 'idle') return;
-    setShareActionState('sharing');
+    setSaveImageState('saving');
     try {
-      const prepared = await prepareShareCardBlob();
-      if (!prepared) {
-        setShareActionState('idle');
-        return;
-      }
-      const result = await shareBlobWithLink({
-        ...prepared,
+      const canvas = await renderShareCardCanvas(shareCardRef.current);
+      const blob = await getCanvasBlob(canvas);
+      const filename = `today-mbti-${mbti.toLowerCase()}.png`;
+      const result = await shareOrSaveBlob({
+        blob,
+        filename,
+        title: `${displayName}님의 오늘 MBTI 카드`,
         text: shareCardCopy.boast
       });
       const status = result?.status || 'failed';
       const diagnostics = buildShareDiagnostics(result?.capabilities);
       if (status === 'cancelled') {
-        setShareActionState('idle');
+        setSaveImageState('idle');
         return;
       }
 
-      setShareActionState(STATE_BY_SHARE_STATUS[status] || 'failed');
-      trackEvent(EVENT_BY_SHARE_STATUS[status] || 'result_image_save_fail', {
-        mbti,
-        mode: status,
-        ...diagnostics
-      });
-
-      const toast = TOAST_BY_SHARE_STATUS[status] || '';
-      if (toast) {
-        setShareToast(toast);
-        setTimeout(() => setShareToast(''), 5000);
-      }
-    } catch (error) {
-      if (error?.name !== 'AbortError') {
-        captureError(error, {
-          key: 'share_card_share_error',
-          stage: 'share_card_share',
-          mbti
-        });
-        trackEvent('result_image_save_fail', { mbti, mode: 'share_exception' });
-      }
-      setShareActionState('idle');
-    } finally {
-      setTimeout(() => setShareActionState('idle'), 1800);
-    }
-  };
-
-  const handleSaveImageOnly = async () => {
-    if (shareActionState !== 'idle') return;
-    setShareActionState('saving');
-    try {
-      const prepared = await prepareShareCardBlob();
-      if (!prepared) {
-        setShareActionState('idle');
-        return;
-      }
-      const result = await saveBlobImageOnly(prepared);
-      const status = result?.status || 'failed';
-      const diagnostics = buildShareDiagnostics(result?.capabilities);
-      if (status === 'cancelled') {
-        setShareActionState('idle');
-        return;
-      }
-
-      setShareActionState(STATE_BY_SHARE_STATUS[status] || 'failed');
+      setSaveImageState(STATE_BY_SHARE_STATUS[status] || 'failed');
       trackEvent(EVENT_BY_SHARE_STATUS[status] || 'result_image_save_fail', {
         mbti,
         mode: status,
@@ -166,17 +112,16 @@ export function useResultShare({
         });
         trackEvent('result_image_save_fail', { mbti, mode: 'exception' });
       }
-      setShareActionState('idle');
+      setSaveImageState('idle');
     } finally {
-      setTimeout(() => setShareActionState('idle'), 1800);
+      setTimeout(() => setSaveImageState('idle'), 1800);
     }
   };
 
   return {
     handleCopyShare,
-    handleSaveImageOnly,
-    handleShareImageLink,
-    shareActionState,
+    handleSaveImage,
+    saveImageState,
     shareCopied,
     shareToast
   };

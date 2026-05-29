@@ -94,34 +94,52 @@ export const getShareCapabilities = (file = null) => {
   };
 };
 
-export const shareBlobWithLink = async ({ blob, filename, title, text }) => {
+/**
+ * 결과 카드 공유/저장
+ * - 기본은 OS 공유 시트를 열어 설치된 앱/저장 대상을 선택하게 한다.
+ * - 최신 브라우저가 files + url을 함께 지원하면 url 필드를 같이 보낸다.
+ * - 구형 Android처럼 files + url을 거부하면 files + text(URL 포함)로 공유 시트를 연다.
+ * - 파일 공유 자체가 불가능한 환경에서는 저장/다운로드로 내려간다.
+ */
+export const shareOrSaveBlob = async ({ blob, filename, title, text }) => {
   const file = blob && typeof File !== 'undefined'
     ? new File([blob], filename, { type: 'image/png' })
     : null;
   const capabilities = getShareCapabilities(file);
-  const linkShareText = text ? text.trim().replace(/[\s\n]+$/, '') : SERVICE_NAME;
+  const trimmedText = text ? text.trim().replace(/[\s\n]+$/, '') : SERVICE_NAME;
+  const shareText = `${trimmedText}\n${SERVICE_URL}`.replace(/[\s\n]+$/, '');
 
-  if (!file || !capabilities.hasNavigatorShare || !capabilities.canShareFileWithLink) {
-    return { status: 'share_unavailable', capabilities };
+  if (file && capabilities.hasNavigatorShare && capabilities.canShareFile) {
+    if (capabilities.canShareFileWithLink) {
+      try {
+        await navigator.share({
+          title,
+          text: trimmedText,
+          url: SERVICE_URL,
+          files: [file]
+        });
+        return { status: 'file_link_shared', capabilities };
+      } catch (err) {
+        if (err.name === 'AbortError') return { status: 'cancelled', capabilities };
+      }
+    }
+
+    try {
+      await navigator.share({
+        title,
+        text: shareText,
+        files: [file]
+      });
+      return { status: 'file_shared', capabilities };
+    } catch (err) {
+      if (err.name === 'AbortError') return { status: 'cancelled', capabilities };
+    }
   }
 
-  try {
-    await navigator.share({
-      title,
-      text: linkShareText,
-      url: SERVICE_URL,
-      files: [file]
-    });
-    return { status: 'file_link_shared', capabilities };
-  } catch (err) {
-    if (err.name === 'AbortError') return { status: 'cancelled', capabilities };
-    return { status: 'failed', capabilities };
-  }
+  return saveBlobImageOnly({ blob, filename, capabilities });
 };
 
-export const saveBlobImageOnly = async ({ blob, filename }) => {
-  const capabilities = getShareCapabilities();
-
+export const saveBlobImageOnly = async ({ blob, filename, capabilities = getShareCapabilities() }) => {
   if (capabilities.hasSaveFilePicker) {
     try {
       const handle = await window.showSaveFilePicker({
