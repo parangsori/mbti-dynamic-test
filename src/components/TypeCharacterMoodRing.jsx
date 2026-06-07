@@ -123,40 +123,60 @@ export default function TypeCharacterMoodRing({
           />
         </>
       ) : (
-        <svg
-          className="absolute inset-[4%] animate-[spin_18s_linear_infinite] overflow-visible"
-          viewBox="0 0 100 100"
-          aria-hidden="true"
-          style={{ filter: `drop-shadow(0 0 18px ${ringTheme.soft})` }}
-        >
-          <defs>
-            <linearGradient id={gradientId} x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stopColor={ringTheme.primary} />
-              <stop offset="58%" stopColor={ringTheme.secondary} />
-              <stop offset="100%" stopColor={ringTheme.primary} />
-            </linearGradient>
-          </defs>
-          <circle
-            cx="50"
-            cy="50"
-            r="42"
-            fill="none"
-            stroke={`url(#${gradientId})`}
-            strokeWidth="7"
-            strokeLinecap="round"
-            opacity="0.94"
+        <>
+          <div
+            className={`absolute ${config.ring} rounded-full`}
+            style={{
+              background: [
+                `radial-gradient(circle at 50% 50%, rgba(7,12,28,0.12) 0%, rgba(7,12,28,0.1) 48%, ${hexToRgba(ringTheme.primary, 0.2)} 62%, ${hexToRgba(ringTheme.primary, 0.58)} 76%, ${hexToRgba(ringTheme.secondary, 0.46)} 100%)`,
+                `conic-gradient(from 132deg, ${hexToRgba(ringTheme.primary, 0.72)} 0deg, ${hexToRgba(ringTheme.secondary, 0.58)} 72deg, ${hexToRgba(ringTheme.primary, 0.78)} 154deg, ${hexToRgba(ringTheme.secondary, 0.46)} 236deg, ${hexToRgba(ringTheme.primary, 0.72)} 360deg)`
+              ].join(', '),
+              boxShadow: `0 0 36px ${hexToRgba(ringTheme.primary, 0.22)}, 0 0 72px ${hexToRgba(ringTheme.secondary, 0.14)}`,
+              opacity: 0.9
+            }}
           />
-          <circle
-            cx="50"
-            cy="50"
-            r="34"
-            fill="none"
-            stroke={ringTheme.primary}
-            strokeWidth="3"
-            strokeLinecap="round"
-            opacity="0.36"
+          <div
+            className={`absolute ${config.ringInner} rounded-full`}
+            style={{
+              background: `radial-gradient(circle at 48% 42%, ${hexToRgba(ringTheme.primary, 0.14)} 0%, rgba(14,25,42,0.88) 44%, rgba(5,10,25,0.96) 100%)`,
+              boxShadow: `inset 0 0 30px rgba(2,6,23,0.72), inset 0 0 18px ${hexToRgba(ringTheme.primary, 0.12)}`
+            }}
           />
-        </svg>
+          <svg
+            className="absolute inset-[4%] animate-[spin_18s_linear_infinite] overflow-visible"
+            viewBox="0 0 100 100"
+            aria-hidden="true"
+            style={{ filter: `drop-shadow(0 0 18px ${ringTheme.soft})` }}
+          >
+            <defs>
+              <linearGradient id={gradientId} x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stopColor={ringTheme.primary} />
+                <stop offset="58%" stopColor={ringTheme.secondary} />
+                <stop offset="100%" stopColor={ringTheme.primary} />
+              </linearGradient>
+            </defs>
+            <circle
+              cx="50"
+              cy="50"
+              r="42"
+              fill="none"
+              stroke={`url(#${gradientId})`}
+              strokeWidth="5.5"
+              strokeLinecap="round"
+              opacity="0.78"
+            />
+            <circle
+              cx="50"
+              cy="50"
+              r="34"
+              fill="none"
+              stroke={ringTheme.primary}
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              opacity="0.3"
+            />
+          </svg>
+        </>
       )}
       {!exportSafeRing && (
         <svg
