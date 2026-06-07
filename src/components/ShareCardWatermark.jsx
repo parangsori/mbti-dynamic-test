@@ -9,7 +9,7 @@ export default function ShareCardWatermark({ size = 'large' }) {
   const isLarge = size === 'large';
 
   return (
-    <div className={`flex items-center justify-between w-full ${isLarge ? 'mt-5 px-2' : 'mt-3 px-1'}`}>
+    <div className={`flex items-center justify-between w-full ${isLarge ? 'mt-auto px-2 pt-5' : 'mt-3 px-1'}`}>
       <div className={`flex min-w-0 items-center ${isLarge ? 'gap-4' : 'gap-3'}`}>
         <div className={`shrink-0 overflow-hidden rounded-2xl border border-white/15 bg-white/10 p-1.5 shadow-[0_14px_30px_rgba(15,23,42,0.3)] ${isLarge ? 'h-[52px] w-[52px]' : 'h-8 w-8'}`}>
           <img src="/service-icon-1024.png" alt="오늘의 MBTI" className="h-full w-full rounded-xl object-cover" />

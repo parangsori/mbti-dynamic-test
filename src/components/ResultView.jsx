@@ -7,6 +7,7 @@ import {
 } from '../lib/resultAnalysis.js';
 import ShareCard from './ShareCard.jsx';
 import SyncRateBadge from './SyncRateBadge.jsx';
+import TypeCharacterMoodRing from './TypeCharacterMoodRing.jsx';
 import ServiceCopyright from './ServiceCopyright.jsx';
 import { getPersonalizedResultContext } from '../lib/personalization.js';
 import { useResultRecord } from '../hooks/useResultRecord.js';
@@ -30,6 +31,13 @@ const getPrecisionBadge = ({ percent, neutralReviewNote, boundaryAxes }) => {
   if (boundaryAxes.length > 0) return '경계 축이 조금 보여도 흐름은 읽히는 결과';
   return '오늘 컨디션을 가볍게 담은 결과';
 };
+
+function hasKoreanBatchim(text = '') {
+  const lastHangul = [...text].reverse().find((char) => /[가-힣]/.test(char));
+  if (!lastHangul) return false;
+  const code = lastHangul.charCodeAt(0) - 0xac00;
+  return code >= 0 && code <= 11171 && code % 28 !== 0;
+}
 
 const RESULT_THEME_CLASSES = {
   spark: {
@@ -197,6 +205,125 @@ function MoodPointCard({ presentation, todayDifferenceCopy, themeClasses }) {
   );
 }
 
+function TypeCharacterStage({
+  displayName,
+  info,
+  mbti,
+  onOpenCharacterIntro,
+  onOpenAxisGuide,
+  percent,
+  precisionBadge,
+  presentation,
+  resolvedImageSrc,
+  shareVibeStamp,
+  spirit,
+  themeClasses,
+  topChangeChip,
+  neutralReviewNote
+}) {
+  return (
+    <div className="relative overflow-hidden rounded-[1.8rem] border border-white/10 bg-[linear-gradient(145deg,rgba(9,13,31,0.96),rgba(14,18,36,0.9)_48%,rgba(27,31,49,0.82))] p-4 shadow-[0_26px_80px_rgba(2,6,23,0.44)] sm:p-5">
+      <div className={`absolute -right-16 top-[-4rem] h-52 w-52 rounded-full ${themeClasses.haloTop} blur-3xl`} />
+      <div className={`absolute -left-12 bottom-[-4rem] h-48 w-48 rounded-full ${themeClasses.haloBottom} blur-3xl`} />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_72%_34%,rgba(34,211,238,0.15),transparent_28%),linear-gradient(135deg,rgba(255,255,255,0.055),transparent_32%,rgba(255,255,255,0.025))]" />
+
+      <div className="relative z-10">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className={`text-[11px] font-black tracking-[0.18em] uppercase ${themeClasses.label}`}>
+              오늘의 MBTI
+            </p>
+            <p className="max-w-[16.5rem] text-[13px] font-semibold leading-relaxed text-slate-300 break-keep">
+              <span className="font-black text-white">{displayName}</span>님의 지금 마음을 비춰보니 가장 또렷하게 보인 성향이에요.
+            </p>
+          </div>
+          <span className={`inline-flex min-h-[2.05rem] max-w-[7.4rem] shrink-0 items-center justify-center rounded-full border px-3 py-1 text-center text-[10px] font-black leading-tight break-keep ${themeClasses.chip}`}>
+            {presentation.themeLabel}
+          </span>
+        </div>
+
+        <div className="mt-4 grid grid-cols-[minmax(0,1fr)_10.1rem] items-center gap-3 min-[390px]:grid-cols-[minmax(0,1fr)_11.4rem]">
+          <div className="col-span-2 flex min-w-0 items-center justify-between gap-3">
+            <div className="flex min-w-0 flex-1 items-end gap-1 overflow-visible">
+              {mbti.split('').map((letter, idx) => (
+                <button
+                  key={`${letter}-${idx}`}
+                  type="button"
+                  onClick={() => onOpenAxisGuide(letter)}
+                  style={{ fontSize: 'clamp(42px, calc((100vw - 9rem) / 4.5), 64px)' }}
+                  className={`${themeClasses.letterGradient} min-w-0 bg-clip-text font-black leading-none tracking-[0.06em] text-transparent drop-shadow-[0_16px_32px_rgba(34,211,238,0.22)]`}
+                >
+                  {letter}
+                </button>
+              ))}
+            </div>
+            <SyncRateBadge percent={percent} size="result" themeKey={presentation?.themeKey} />
+          </div>
+
+          <div className="min-w-0 self-center">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className={`inline-flex min-h-[2rem] items-center justify-center rounded-full border px-3 py-1 text-[11px] font-black leading-none ${themeClasses.chip}`}>
+                오늘의 타입 캐릭터
+              </span>
+              <button
+                type="button"
+                onClick={onOpenCharacterIntro}
+                className="inline-flex min-h-[2rem] items-center justify-center rounded-full border border-white/10 bg-white/[0.06] px-3 py-1 text-[13px] font-black leading-none text-white transition hover:border-white/20 hover:bg-white/[0.1] focus:outline-none focus:ring-2 focus:ring-cyan-200/40"
+                aria-label={`${spirit.displayName || spirit.name} 캐릭터 소개 보기`}
+              >
+                {spirit.displayName || spirit.name}
+              </button>
+              <span className="inline-flex min-h-[2rem] items-center justify-center rounded-full border border-white/10 bg-black/20 px-3 py-1 text-[11px] font-bold leading-none text-slate-200">
+                {spirit.role}
+              </span>
+            </div>
+          </div>
+
+          <div className="relative flex aspect-square items-center justify-center overflow-visible">
+            <TypeCharacterMoodRing
+              imageSrc={resolvedImageSrc}
+              alt={`${mbti} ${spirit.displayName || spirit.name} 타입 캐릭터`}
+              themeClasses={themeClasses}
+              themeKey={presentation?.themeKey}
+              size="result"
+            />
+          </div>
+
+          <div className="col-span-2 rounded-[1.2rem] border border-white/10 bg-black/18 px-4 py-3">
+            <p className="text-[13px] leading-relaxed text-slate-200 break-keep">{spirit.why || spirit.line}</p>
+            {spirit.line && spirit.line !== spirit.why && (
+              <p className="mt-2 text-[12px] font-semibold leading-relaxed text-cyan-100/90 break-keep">
+                {spirit.line}
+              </p>
+            )}
+          </div>
+        </div>
+
+        <div className="mt-4">
+          <div className="min-w-0 space-y-2">
+            <div className="flex flex-wrap gap-2">
+              <span className={`inline-flex min-h-[2rem] items-center justify-center rounded-full border px-3 py-1 text-[11px] font-bold leading-none ${themeClasses.chip}`}>{shareVibeStamp}</span>
+              <span className="inline-flex min-h-[2rem] items-center justify-center rounded-full border border-white/10 bg-white/[0.06] px-3 py-1 text-[11px] font-bold leading-none text-slate-100">{presentation.themeLabel}</span>
+              {topChangeChip && <span className="inline-flex min-h-[2rem] items-center justify-center rounded-full border border-amber-300/20 bg-amber-300/[0.12] px-3 py-1 text-[11px] font-bold leading-none text-amber-100">{topChangeChip}</span>}
+              {neutralReviewNote && <span className="inline-flex min-h-[2rem] items-center justify-center rounded-full border border-cyan-300/20 bg-cyan-300/[0.1] px-3 py-1 text-[11px] font-bold leading-none text-cyan-100">보정 질문 반영</span>}
+            </div>
+            <p className="rounded-[1rem] border border-cyan-300/15 bg-cyan-300/[0.07] px-3 py-2 text-[11px] font-bold leading-relaxed text-cyan-50 break-keep">
+              {precisionBadge}
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-4 rounded-[1.25rem] border border-white/10 bg-black/20 px-4 py-3">
+          <p className="text-[11px] font-black tracking-[0.16em] text-slate-400 uppercase">오늘의 타입 캐릭터란?</p>
+          <p className="mt-2 text-[12px] font-semibold leading-relaxed text-slate-100 break-keep">
+            지금 마음에 가장 또렷한 성향을 비춰주고, 오늘을 조금 더 나답게 보내는 힌트를 건네는 작은 동행 캐릭터예요. 같은 MBTI가 다시 나와도 싱크로율과 무드가 달라지면 오늘의 결도 다르게 남을 수 있어요.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ResultEssenceCard({ info, summaryCopy, todayDifferenceCopy, consistencyCopy, boundaryCopy, neutralReviewNote, questionContextInsight, themeClasses }) {
   const insightRows = [
     summaryCopy,
@@ -337,6 +464,93 @@ function ChangeSnapshotCard({ historyComparison, axisChanges, strongestAxis, tre
   );
 }
 
+function TypeCharacterIntroModal({
+  mbti,
+  onClose,
+  presentation,
+  resolvedImageSrc,
+  spirit,
+  themeClasses
+}) {
+  if (!spirit) return null;
+
+  const characterName = spirit.displayName || spirit.name || mbti;
+  const subject = `${characterName}${hasKoreanBatchim(spirit.name || characterName) ? '은' : '는'}`;
+  const symbols = Array.isArray(spirit.symbols) ? spirit.symbols : [];
+
+  return (
+    <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="type-character-modal-title">
+      <div className="absolute inset-0 bg-slate-950/82 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative z-10 flex max-h-[calc(100dvh-2rem)] w-full max-w-sm flex-col overflow-hidden rounded-[2rem] border border-white/10 bg-[linear-gradient(180deg,rgba(15,23,42,0.98),rgba(2,6,23,0.96))] shadow-2xl">
+        <div className={`absolute -right-14 top-[-4rem] h-44 w-44 rounded-full ${themeClasses.haloTop} blur-3xl`} />
+        <div className={`absolute -left-12 bottom-[-4rem] h-40 w-40 rounded-full ${themeClasses.haloBottom} blur-3xl`} />
+        <div className="relative min-h-0 overflow-y-auto px-5 pb-5 pt-5 overscroll-contain">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className={`text-[11px] font-black tracking-[0.18em] uppercase ${themeClasses.label}`}>오늘의 타입 캐릭터</p>
+              <h3 id="type-character-modal-title" className="mt-1 text-[24px] font-black leading-tight text-white break-keep">
+                {characterName}
+              </h3>
+              <p className="mt-1 text-[13px] font-bold leading-relaxed text-slate-300 break-keep">{spirit.role}</p>
+            </div>
+            <span className={`shrink-0 rounded-full border px-3 py-1 text-[10px] font-black ${themeClasses.chip}`}>
+              {mbti}
+            </span>
+          </div>
+
+          <div className="mt-5 flex justify-center">
+            <TypeCharacterMoodRing
+              imageSrc={resolvedImageSrc}
+              alt={`${mbti} ${characterName} 타입 캐릭터`}
+              themeClasses={themeClasses}
+              themeKey={presentation?.themeKey}
+              size="result"
+              showGlow={false}
+            />
+          </div>
+
+          <div className="mt-5 space-y-3">
+            <div className={`rounded-[1.25rem] border px-4 py-4 ${themeClasses.panel}`}>
+              <p className={`text-[11px] font-black tracking-[0.16em] uppercase ${themeClasses.label}`}>마음을 비추는 방식</p>
+              <p className="mt-2 text-[13px] font-semibold leading-relaxed text-slate-100 break-keep">
+                {spirit.support || `${subject} 지금 마음에 가장 또렷한 성향을 비춰주고, 오늘을 조금 더 나답게 보내도록 작은 힌트를 건네는 타입 캐릭터예요.`}
+              </p>
+            </div>
+            <div className="rounded-[1.25rem] border border-white/10 bg-white/[0.04] px-4 py-4">
+              <p className="text-[11px] font-black tracking-[0.16em] text-slate-400 uppercase">언제 가까이 나타나나요?</p>
+              <p className="mt-2 text-[13px] font-semibold leading-relaxed text-slate-100 break-keep">{spirit.appearsWhen || spirit.why}</p>
+            </div>
+            <div className="rounded-[1.25rem] border border-white/10 bg-black/20 px-4 py-4">
+              <p className="text-[11px] font-black tracking-[0.16em] text-slate-400 uppercase">오늘 건네는 말</p>
+              <p className="mt-2 text-[13px] font-semibold leading-relaxed text-slate-100 break-keep">{spirit.message || spirit.line}</p>
+            </div>
+            {symbols.length > 0 && (
+              <div className="rounded-[1.25rem] border border-white/10 bg-white/[0.035] px-4 py-4">
+                <p className="text-[11px] font-black tracking-[0.16em] text-slate-400 uppercase">고유 상징</p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {symbols.map((symbol) => (
+                    <span key={symbol} className={`rounded-full border px-3 py-1.5 text-[11px] font-bold ${themeClasses.chip}`}>
+                      {symbol}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+            <div className="rounded-[1.25rem] border border-cyan-300/15 bg-cyan-300/[0.06] px-4 py-4">
+              <p className="text-[11px] font-black tracking-[0.16em] text-cyan-100 uppercase">오늘 연결된 이유</p>
+              <p className="mt-2 text-[12px] font-semibold leading-relaxed text-slate-200 break-keep">{spirit.why}</p>
+            </div>
+          </div>
+
+          <button onClick={onClose} className="mt-5 w-full rounded-2xl bg-white/10 py-3 text-[14px] font-bold text-white transition hover:bg-white/15">
+            닫기
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function ResultView({
   scores,
   userName,
@@ -359,6 +573,7 @@ export default function ResultView({
   const currentEntryRef = useRef(null);
   const [detailOpen, setDetailOpen] = useState({ why: false, axes: false, history: false });
   const [showMoodLegend, setShowMoodLegend] = useState(false);
+  const [showCharacterIntro, setShowCharacterIntro] = useState(false);
 
   if (!currentEntryRef.current) {
     const now = new Date();
@@ -372,6 +587,7 @@ export default function ResultView({
   const {
     mbti,
     info,
+    spirit,
     badges,
     percent,
     spectrum,
@@ -416,7 +632,7 @@ export default function ResultView({
     questionContextSummary
   }), [ageGroup, defaultUserName, historyData, neutralCount, questionContextSummary, scores, usedFollowup, userName]);
 
-  const resolvedImageSrc = info.image ? IMAGE_BASE64[info.image] || info.image : '';
+  const resolvedImageSrc = spirit.asset || (info.image ? IMAGE_BASE64[info.image] || info.image : '');
   const themeClasses = getThemeClasses(presentation.themeKey);
   const precisionBadge = getPrecisionBadge({ percent, neutralReviewNote, boundaryAxes });
   const todayLabel = getTodayLabel();
@@ -441,6 +657,19 @@ export default function ResultView({
     trackEvent('result_view', { mbti, percent, questionContextTop: questionContextSummary?.topTag || '' });
   }, [mbti, percent, questionContextSummary, trackEvent]);
 
+  useEffect(() => {
+    if (!showMoodLegend && !showCharacterIntro) return undefined;
+
+    const handleKeyDown = (event) => {
+      if (event.key !== 'Escape') return;
+      setShowMoodLegend(false);
+      setShowCharacterIntro(false);
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [showCharacterIntro, showMoodLegend]);
+
   const {
     handleCopyShare,
     handleSaveImage,
@@ -462,6 +691,7 @@ export default function ResultView({
     mbti,
     percent,
     info,
+    spirit,
     shareHeadline,
     shareMoodLine,
     shareCardCopy,
@@ -616,48 +846,34 @@ export default function ResultView({
       <div ref={resultRef} className="relative mt-2 w-full max-w-[26.25rem] overflow-hidden rounded-[2rem] border border-white/10 bg-slate-900/95 p-4 shadow-[0_30px_90px_rgba(2,6,23,0.55)] sm:p-6">
         <div className={`absolute inset-0 ${themeClasses.shell}`} />
         <div className="relative z-10 flex flex-col items-center">
-          <div className="w-full min-w-0 rounded-[1.8rem] border border-white/10 bg-[linear-gradient(145deg,rgba(15,23,42,0.96),rgba(17,24,39,0.88))] p-4 shadow-[0_26px_80px_rgba(2,6,23,0.44)] sm:p-5">
-            <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-start gap-2 min-[390px]:gap-3">
-              <div className="min-w-0">
-                <p className="text-[15px] font-medium text-slate-300"><span className="font-black text-white">{displayName}</span>님의 오늘 성향 스냅샷</p>
-                <div className="mt-4 flex max-w-full items-end gap-1 overflow-hidden">
-                  {mbti.split('').map((letter, idx) => (
-                    <button
-                      key={`${letter}-${idx}`}
-                      type="button"
-                      onClick={() => onOpenAxisGuide(letter)}
-                      style={{ fontSize: 'clamp(31px, calc((100vw - 9rem) / 5.7), 60px)' }}
-                      className={`${themeClasses.letterGradient} min-w-0 bg-clip-text font-black leading-none tracking-[0.04em] text-transparent drop-shadow-[0_14px_30px_rgba(99,102,241,0.22)] min-[390px]:tracking-[0.08em]`}
-                    >
-                      {letter}
-                    </button>
-                  ))}
-                </div>
-                <p className="mt-3 inline-flex max-w-full rounded-full border border-white/10 bg-white/[0.05] px-3 py-2 text-[13px] font-bold text-slate-100 min-[390px]:px-4 min-[390px]:text-[14px]">{info.nickname}</p>
-              </div>
-              <div className="flex w-[5.55rem] shrink-0 flex-col items-end gap-2 min-[390px]:w-[6.1rem]">
-                <SyncRateBadge percent={percent} size="result" themeKey={presentation?.themeKey} />
-                <span className="w-full rounded-full border border-cyan-300/20 bg-cyan-300/[0.1] px-2 py-1.5 text-center text-[9px] font-black leading-snug text-cyan-100 break-keep min-[390px]:text-[10px]">{precisionBadge}</span>
-              </div>
-            </div>
+          <TypeCharacterStage
+            displayName={displayName}
+            info={info}
+            mbti={mbti}
+            onOpenCharacterIntro={() => setShowCharacterIntro(true)}
+            onOpenAxisGuide={onOpenAxisGuide}
+            percent={percent}
+            precisionBadge={precisionBadge}
+            presentation={presentation}
+            resolvedImageSrc={resolvedImageSrc}
+            shareVibeStamp={shareVibeStamp}
+            spirit={spirit}
+            themeClasses={themeClasses}
+            topChangeChip={topChangeChip}
+            neutralReviewNote={neutralReviewNote}
+          />
 
-            <div className="mt-4 flex flex-wrap gap-2">
-              <span className={`rounded-full border px-3 py-1.5 text-[11px] font-bold ${themeClasses.chip}`}>{shareVibeStamp}</span>
-              <span className="rounded-full border border-white/10 bg-white/[0.06] px-3 py-1.5 text-[11px] font-bold text-slate-100">{presentation.themeLabel}</span>
-              {topChangeChip && <span className="rounded-full border border-amber-300/20 bg-amber-300/[0.12] px-3 py-1.5 text-[11px] font-bold text-amber-100">{topChangeChip}</span>}
-              {neutralReviewNote && <span className="rounded-full border border-cyan-300/20 bg-cyan-300/[0.1] px-3 py-1.5 text-[11px] font-bold text-cyan-100">보정 질문 반영</span>}
-            </div>
-
+          <div className="mt-5 flex w-full flex-col gap-4 rounded-[1.8rem] border border-white/10 bg-[linear-gradient(180deg,rgba(10,16,29,0.94),rgba(15,23,42,0.88))] p-5 shadow-[0_22px_70px_rgba(2,6,23,0.38)]">
             {recentFlowSummary?.timeline && recentFlowSummary.timeline.length > 0 && (
-              <div className="mt-5 w-full rounded-[1.45rem] border border-white/10 bg-black/20 px-4 py-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
+              <div className="w-full rounded-[1.45rem] border border-white/10 bg-black/20 px-4 py-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex min-w-0 items-center gap-2">
                     <p className="text-[11px] font-black tracking-[0.15em] text-slate-400 uppercase">최근 나의 성향 흐름</p>
-                    <button onClick={() => setShowMoodLegend(true)} className="flex h-5 w-5 items-center justify-center rounded-full border border-white/10 bg-white/5 text-[10px] text-slate-400 transition hover:bg-white/10 hover:text-white">
+                    <button onClick={() => setShowMoodLegend(true)} className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/5 text-[10px] text-slate-400 transition hover:bg-white/10 hover:text-white">
                       ?
                     </button>
                   </div>
-                  <button onClick={() => setShowMoodLegend(true)} className="flex items-center gap-2 rounded-full px-2 py-1 transition hover:bg-white/5">
+                  <button onClick={() => setShowMoodLegend(true)} className="flex shrink-0 items-center gap-2 rounded-full px-2 py-1 transition hover:bg-white/5">
                     {recentFlowSummary.timeline.map((item, idx) => (
                       <span
                         key={idx}
@@ -668,6 +884,20 @@ export default function ResultView({
                     ))}
                   </button>
                 </div>
+                <button
+                  type="button"
+                  onClick={() => setShowMoodLegend(true)}
+                  className="mt-3 w-full rounded-[1.1rem] border border-white/10 bg-white/[0.04] px-3 py-3 text-left transition hover:bg-white/[0.07]"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className={`inline-block h-2.5 w-2.5 shrink-0 rounded-full ${themeClasses.dot}`}></span>
+                    <p className={`text-[12px] font-black ${themeClasses.label}`}>{presentation.themeLabel}</p>
+                    <span className="text-[11px] font-bold text-slate-500">무드 설명</span>
+                  </div>
+                  <p className="mt-2 text-[12px] font-semibold leading-relaxed text-slate-300 break-keep">
+                    {presentation.themeDescription}
+                  </p>
+                </button>
               </div>
             )}
 
@@ -676,25 +906,6 @@ export default function ResultView({
               todayDifferenceCopy={todayDifferenceCopy}
               themeClasses={themeClasses}
             />
-          </div>
-
-          <div className="mt-5 flex w-full flex-col gap-4 rounded-[1.8rem] border border-white/10 bg-[linear-gradient(180deg,rgba(10,16,29,0.94),rgba(15,23,42,0.88))] p-5 shadow-[0_22px_70px_rgba(2,6,23,0.38)]">
-            {resolvedImageSrc && (
-              <div className={`relative flex items-center justify-center overflow-hidden rounded-[1.6rem] border px-3 py-4 ${themeClasses.imageFrame}`}>
-                <div className={`absolute inset-x-6 top-3 h-14 rounded-full ${themeClasses.haloTop} blur-2xl`} />
-                <div className={`absolute inset-x-6 bottom-3 h-16 rounded-full ${themeClasses.haloBottom} blur-2xl`} />
-                <img src={resolvedImageSrc} alt={mbti} className="relative z-10 h-44 w-44 object-contain drop-shadow-[0_16px_34px_rgba(15,23,42,0.76)]" />
-              </div>
-            )}
-
-            <div className={`rounded-[1.5rem] border px-4 py-4 ${themeClasses.panel}`}>
-              <div className="flex items-center justify-between gap-3">
-                <p className={`text-[11px] font-black tracking-[0.2em] uppercase ${themeClasses.label}`}>오늘의 무드 테마</p>
-                <span className={`rounded-full border px-3 py-1 text-[10px] font-black ${themeClasses.chip}`}>{presentation.themeShortLabel}</span>
-              </div>
-              <p className="mt-2 text-[25px] font-black leading-[1.18] text-white break-keep">{presentation.themeLabel}</p>
-              <p className="mt-3 text-[14px] leading-relaxed text-slate-100 break-keep">{shareCardCopy.boast}</p>
-            </div>
 
             <ResultEssenceCard
               info={info}
@@ -738,19 +949,22 @@ export default function ResultView({
             <button
               onClick={handleSaveImage}
               disabled={isShareBusy}
-              className={`w-full rounded-[1.6rem] border border-cyan-300/20 bg-cyan-300/[0.1] py-4 text-[15px] font-black text-cyan-50 transition hover:bg-cyan-300/[0.14] ${
+              className={`group relative w-full overflow-hidden rounded-[1.6rem] border border-cyan-300/25 bg-cyan-300/[0.1] py-4 text-[15px] font-black text-cyan-50 shadow-[0_14px_34px_rgba(34,211,238,0.12)] transition duration-300 hover:-translate-y-0.5 hover:bg-cyan-300/[0.14] hover:shadow-[0_18px_46px_rgba(34,211,238,0.18)] active:translate-y-0 active:scale-[0.99] ${
                 isShareBusy ? 'cursor-wait opacity-70' : ''
               }`}
             >
-              {saveImageState === 'saving'
-                ? '이미지 준비 중...'
-                : saveImageState === 'shared'
-                  ? '공유 시트 열림'
-                : saveImageState === 'saved'
-                  ? '결과 카드 저장 완료'
-                : saveImageState === 'failed'
-                  ? '다시 시도해 주세요'
-                : '결과 카드 저장/공유'}
+              <span className="pointer-events-none absolute inset-y-0 left-[-40%] w-[38%] rotate-12 bg-white/10 blur-md transition duration-700 group-hover:left-[115%]" />
+              <span className="relative">
+                {saveImageState === 'saving'
+                  ? '이미지 준비 중...'
+                  : saveImageState === 'shared'
+                    ? '공유 시트 열림'
+                  : saveImageState === 'saved'
+                    ? '결과 카드 저장 완료'
+                  : saveImageState === 'failed'
+                    ? '다시 시도해 주세요'
+                  : '결과 카드 저장/공유'}
+              </span>
             </button>
             <div className="grid grid-cols-2 gap-3">
               <button onClick={handleCopyShare} className="rounded-[1.4rem] border border-white/10 bg-white/[0.05] px-4 py-3 text-[13px] font-bold text-slate-100 transition hover:bg-white/[0.08]">
@@ -826,30 +1040,44 @@ export default function ResultView({
 
       <ServiceCopyright className="mt-8 pb-8" />
 
+      {showCharacterIntro && (
+        <TypeCharacterIntroModal
+          mbti={mbti}
+          onClose={() => setShowCharacterIntro(false)}
+          presentation={presentation}
+          resolvedImageSrc={resolvedImageSrc}
+          spirit={spirit}
+          themeClasses={themeClasses}
+        />
+      )}
+
       {showMoodLegend && (
-        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}>
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }} role="dialog" aria-modal="true" aria-labelledby="mood-legend-title">
           <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm" onClick={() => setShowMoodLegend(false)} />
-          <div className="relative z-10 w-full max-w-sm overflow-hidden rounded-[2rem] border border-white/10 bg-slate-900 p-6 shadow-2xl">
-            <h3 className="text-center text-[18px] font-black text-white">무드 테마 범례</h3>
-            <p className="mt-2 text-center text-[13px] leading-relaxed text-slate-300 break-keep">
-              결과에 표시되는 색상 점은 그날의 <strong>성향 축 강도와 흐름</strong>에 따라 부여받은 고유한 테마를 의미합니다. 같은 MBTI라도 날마다 다른 무드가 나타날 수 있습니다.
-            </p>
-            <div className="mt-6 grid grid-cols-2 gap-3">
-              {PRESENTATION_THEMES.map((theme) => {
-                const tClasses = getThemeClasses(theme.key);
-                return (
-                  <div key={theme.key} className={`flex items-center gap-3 rounded-2xl border px-3 py-3 ${tClasses.panel}`}>
-                    <span className={`inline-block h-3 w-3 shrink-0 rounded-full ${tClasses.dot}`}></span>
-                    <div className="min-w-0 flex-1">
-                      <p className={`text-[12px] font-black tracking-wide ${tClasses.label}`}>{theme.label}</p>
+          <div className="relative z-10 flex max-h-[calc(100dvh-2rem)] w-full max-w-sm flex-col overflow-hidden rounded-[2rem] border border-white/10 bg-slate-900 shadow-2xl">
+            <div className="min-h-0 overflow-y-auto px-6 pb-6 pt-6 overscroll-contain">
+              <h3 id="mood-legend-title" className="text-center text-[18px] font-black text-white">8가지 오늘의 무드</h3>
+              <p className="mt-2 text-center text-[13px] leading-relaxed text-slate-300 break-keep">
+                타입 캐릭터는 그대로이고, 오늘의 무드가 주변 빛과 링, 흐름 점으로 달라져요. 같은 MBTI라도 오늘의 결은 다르게 남을 수 있습니다.
+              </p>
+              <div className="mt-6 grid grid-cols-1 gap-3">
+                {PRESENTATION_THEMES.map((theme) => {
+                  const tClasses = getThemeClasses(theme.key);
+                  return (
+                    <div key={theme.key} className={`flex items-start gap-3 rounded-2xl border px-3 py-3 ${tClasses.panel}`}>
+                      <span className={`inline-block h-3 w-3 shrink-0 rounded-full ${tClasses.dot}`}></span>
+                      <div className="min-w-0 flex-1">
+                        <p className={`text-[12px] font-black tracking-wide ${tClasses.label}`}>{theme.label}</p>
+                        <p className="mt-1 text-[11px] font-semibold leading-relaxed text-slate-200 break-keep">{theme.description}</p>
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
+              <button onClick={() => setShowMoodLegend(false)} className="mt-6 w-full rounded-2xl bg-white/10 py-3 text-[14px] font-bold text-white transition hover:bg-white/15">
+                닫기
+              </button>
             </div>
-            <button onClick={() => setShowMoodLegend(false)} className="mt-6 w-full rounded-2xl bg-white/10 py-3 text-[14px] font-bold text-white transition hover:bg-white/15">
-              닫기
-            </button>
           </div>
         </div>
       )}

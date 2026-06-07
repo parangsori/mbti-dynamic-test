@@ -20,14 +20,14 @@ const SIZE_PRESETS = {
 };
 
 const RING_THEMES = {
-  spark: { glow: '#fbbf24', fill: '#fbbf24', inner: '#fb7185' },
-  wave: { glow: '#60a5fa', fill: '#60a5fa', inner: '#2dd4bf' },
+  spark: { glow: '#fcd34d', fill: '#fcd34d', inner: '#fb7185' },
+  wave: { glow: '#5eead4', fill: '#5eead4', inner: '#60a5fa' },
   neon: { glow: '#67e8f9', fill: '#67e8f9', inner: '#a78bfa' },
   steady: { glow: '#6ee7b7', fill: '#6ee7b7', inner: '#cbd5e1' },
   'soft-shift': { glow: '#f9a8d4', fill: '#f9a8d4', inner: '#818cf8' },
   citrus: { glow: '#bef264', fill: '#bef264', inner: '#2dd4bf' },
-  afterglow: { glow: '#fb7185', fill: '#fb7185', inner: '#facc15' },
-  studio: { glow: '#38bdf8', fill: '#38bdf8', inner: '#e2e8f0' }
+  afterglow: { glow: '#fda4af', fill: '#fda4af', inner: '#facc15' },
+  studio: { glow: '#e2e8f0', fill: '#e2e8f0', inner: '#7dd3fc' }
 };
 
 export default function SyncRateBadge({ percent, size = 'result', themeKey = 'neon', className = '' }) {

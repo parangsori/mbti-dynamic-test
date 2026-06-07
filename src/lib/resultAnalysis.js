@@ -1,4 +1,5 @@
 import { BADGES, MBTI_RESULTS } from '../data/mbtiData.js';
+import { getSpiritMeta } from '../data/spiritMeta.js';
 import { COMPATIBILITY } from './constants.js';
 import {
   getAxisChangeDetails,
@@ -150,49 +151,57 @@ export const PRESENTATION_THEMES = [
     key: 'spark',
     label: '불꽃 무드',
     shortLabel: '불꽃',
-    stampSuffix: '번쩍 올라온 오늘'
+    stampSuffix: '번쩍 올라온 오늘',
+    description: '순간적으로 에너지가 올라오고, 하고 싶은 말이나 행동이 빠르게 켜진 상태예요.'
   },
   {
     key: 'wave',
     label: '파도 무드',
     shortLabel: '파도',
-    stampSuffix: '흐름을 타는 오늘'
+    stampSuffix: '흐름을 타는 오늘',
+    description: '상황의 흐름을 자연스럽게 타며, 감정과 선택이 유연하게 움직이는 상태예요.'
   },
   {
     key: 'neon',
     label: '네온 무드',
     shortLabel: '네온',
-    stampSuffix: '선명하게 켜진 오늘'
+    stampSuffix: '선명하게 켜진 오늘',
+    description: '오늘의 방향과 반응이 또렷하게 드러나, 내 성향이 선명하게 보이는 상태예요.'
   },
   {
     key: 'steady',
     label: '스테디 무드',
     shortLabel: '스테디',
-    stampSuffix: '탄탄하게 잡힌 오늘'
+    stampSuffix: '탄탄하게 잡힌 오늘',
+    description: '크게 흔들리기보다 안정적으로 판단하고, 익숙한 리듬을 지키기 좋은 상태예요.'
   },
   {
     key: 'soft-shift',
     label: '소프트 시프트',
     shortLabel: '시프트',
-    stampSuffix: '살짝 달라진 오늘'
+    stampSuffix: '살짝 달라진 오늘',
+    description: '평소 흐름은 남아 있지만, 오늘은 관점이나 반응이 부드럽게 다른 쪽으로 기운 상태예요.'
   },
   {
     key: 'citrus',
     label: '시트러스 무드',
     shortLabel: '시트러스',
-    stampSuffix: '상큼하게 살아난 오늘'
+    stampSuffix: '상큼하게 살아난 오늘',
+    description: '가볍게 환기되고, 새로운 자극이나 작은 즐거움에 반응하기 쉬운 상태예요.'
   },
   {
     key: 'afterglow',
     label: '애프터글로우',
     shortLabel: '글로우',
-    stampSuffix: '은근히 달아오른 오늘'
+    stampSuffix: '은근히 달아오른 오늘',
+    description: '겉으로 강하게 드러나진 않아도 감정의 온도와 여운이 오래 남는 상태예요.'
   },
   {
     key: 'studio',
     label: '스튜디오 무드',
     shortLabel: '스튜디오',
-    stampSuffix: '또렷하게 기록된 오늘'
+    stampSuffix: '또렷하게 기록된 오늘',
+    description: '오늘의 상태를 차분히 관찰하고, 기억하기 좋은 형태로 정리하기 쉬운 상태예요.'
   }
 ];
 
@@ -455,6 +464,7 @@ export const getResultPresentation = ({
     themeKey: theme.key,
     themeLabel: theme.label,
     themeShortLabel: theme.shortLabel,
+    themeDescription: theme.description,
     stateLabel: variant.stateLabel,
     hook: variant.hook(mbti),
     detail: variant.detail,
@@ -608,6 +618,7 @@ export const buildResultViewModel = ({
   questionContextSummary = null
 }) => {
   const { mbti, info, badges, percent, spectrum, boundaryAxes } = computeResult(scores);
+  const spirit = getSpiritMeta(mbti);
   const axisNarratives = getAxisNarratives(spectrum);
   const strongestAxis = [...axisNarratives].sort((a, b) => b.intensity - a.intensity)[0];
   const currentHistoryEntry = {
@@ -665,6 +676,7 @@ export const buildResultViewModel = ({
   return {
     mbti,
     info,
+    spirit,
     badges,
     percent,
     spectrum,
