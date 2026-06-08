@@ -77,7 +77,7 @@ function hexToRgba(hex, alpha) {
 const RING_LAYER_STYLE = {
   backfaceVisibility: 'hidden',
   transform: 'translate3d(0,0,0)',
-  transformOrigin: '50% 50%',
+  transformOrigin: '50% 50%'
 };
 
 const ANIMATED_RING_STYLE = {
@@ -138,12 +138,12 @@ export default function TypeCharacterMoodRing({
         </>
       ) : (
         <svg
-          className="absolute inset-[4%] overflow-visible"
+          className="absolute inset-[4%] animate-[spin_18s_linear_infinite] overflow-visible"
           viewBox="0 0 100 100"
           aria-hidden="true"
           style={{
-            ...RING_LAYER_STYLE,
-            filter: `drop-shadow(0 0 10px ${ringTheme.soft})`
+            ...ANIMATED_RING_STYLE,
+            filter: `drop-shadow(0 0 18px ${ringTheme.soft})`
           }}
         >
           <defs>
@@ -177,7 +177,7 @@ export default function TypeCharacterMoodRing({
       )}
       {!exportSafeRing && (
         <svg
-          className="absolute inset-[4%] animate-[spin_6.8s_linear_infinite] overflow-visible"
+          className="absolute inset-[4%] animate-[spin_7.8s_linear_infinite] overflow-visible"
           viewBox="0 0 100 100"
           aria-hidden="true"
           style={ANIMATED_RING_STYLE}
@@ -196,12 +196,12 @@ export default function TypeCharacterMoodRing({
             r="42"
             fill="none"
             stroke={`url(#${highlightGradientId})`}
-            strokeWidth="7"
+            strokeWidth="5"
             strokeLinecap="round"
-            strokeDasharray="54 210"
+            strokeDasharray="20 244"
             transform="rotate(-92 50 50)"
-            opacity="0.96"
-            style={{ filter: `drop-shadow(0 0 10px ${ringTheme.primary})` }}
+            opacity="0.88"
+            style={{ filter: `drop-shadow(0 0 8px ${ringTheme.primary}) drop-shadow(0 0 16px ${ringTheme.soft})` }}
           />
           <circle
             cx="50"
@@ -211,26 +211,11 @@ export default function TypeCharacterMoodRing({
             stroke={ringTheme.secondary}
             strokeWidth="6"
             strokeLinecap="round"
-            strokeDasharray="16 248"
-            transform="rotate(72 50 50)"
-            opacity="0.46"
+            strokeDasharray="8 256"
+            transform="rotate(-68 50 50)"
+            opacity="0.28"
           />
         </svg>
-      )}
-      {!exportSafeRing && (
-        <span
-          aria-hidden="true"
-          className="absolute inset-[4%] animate-[spin_6.8s_linear_infinite] rounded-full"
-          style={ANIMATED_RING_STYLE}
-        >
-          <span
-            className={`absolute right-[3%] top-[18%] rounded-full ${config.dot}`}
-            style={{
-              backgroundColor: ringTheme.primary,
-              boxShadow: `0 0 14px ${ringTheme.primary}, 0 0 28px ${ringTheme.soft}`
-            }}
-          />
-        </span>
       )}
       {!exportSafeRing && (
         <div
@@ -243,14 +228,6 @@ export default function TypeCharacterMoodRing({
           }}
         />
       )}
-      <span
-        className={`absolute right-[18%] top-[20%] rounded-full ${config.dot}`}
-        style={{
-          backgroundColor: ringTheme.primary,
-          opacity: exportSafeRing ? 0.72 : 1,
-          boxShadow: exportSafeRing ? undefined : `0 0 18px ${ringTheme.primary}`
-        }}
-      />
       {imageSrc && (
         <img
           src={imageSrc}
