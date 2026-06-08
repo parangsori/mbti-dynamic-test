@@ -150,7 +150,7 @@ function ActionGlow({ className = 'opacity-0 group-hover:opacity-100' }) {
   return (
     <span
       aria-hidden="true"
-      className={`pointer-events-none absolute inset-0 rounded-[inherit] bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.16),transparent_46%)] transition-opacity duration-300 ${className}`}
+      className={`pointer-events-none absolute inset-0 z-0 rounded-[inherit] bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.16),transparent_46%)] transition-opacity duration-300 ${className}`}
     />
   );
 }
@@ -233,27 +233,27 @@ function MoodPointCard({ presentation, todayDifferenceCopy, themeClasses, onOpen
           <button
             type="button"
             onClick={onOpenMoodLegend}
-            className="group relative overflow-hidden rounded-full border border-white/10 bg-black/20 px-3 py-1 text-[10px] font-black text-slate-200 transition hover:border-cyan-200/25 hover:bg-white/10 hover:text-white focus:outline-none focus:ring-2 focus:ring-cyan-200/30"
+            className="group relative isolate overflow-hidden rounded-full border border-white/10 bg-black/20 px-3 py-1 text-[10px] font-black text-slate-100 transition hover:border-cyan-200/25 hover:bg-white/10 hover:text-white focus:outline-none focus:ring-2 focus:ring-cyan-200/30"
           >
             <ActionGlow />
-            <span className="relative">무드 설명</span>
+            <span className="relative z-10">무드 설명</span>
           </button>
         </div>
       </div>
       <button
         type="button"
         onClick={onOpenMoodLegend}
-        className="group relative mt-3 flex w-full items-start gap-2 overflow-hidden rounded-[1rem] border border-white/10 bg-black/15 px-3 py-2 text-left transition hover:border-cyan-200/20 hover:bg-white/[0.055] focus:outline-none focus:ring-2 focus:ring-cyan-200/25"
+        className="group relative isolate mt-3 flex w-full items-start gap-2 overflow-hidden rounded-[1rem] border border-white/10 bg-black/15 px-3 py-2 text-left transition hover:border-cyan-200/20 hover:bg-white/[0.055] focus:outline-none focus:ring-2 focus:ring-cyan-200/25"
       >
         <ActionGlow />
         <motion.span
-          className={`relative mt-1 inline-block h-2.5 w-2.5 shrink-0 rounded-full ${themeClasses.dot}`}
+          className={`relative z-10 mt-1 inline-block h-2.5 w-2.5 shrink-0 rounded-full ${themeClasses.dot}`}
           animate={{ scale: [1, 1.16, 1], opacity: [0.86, 1, 0.86] }}
           transition={{ duration: 3.2, repeat: Infinity, ease: 'easeInOut' }}
         />
-        <span className="relative min-w-0">
+        <span className="relative z-10 min-w-0">
           <span className={`block text-[12px] font-black ${themeClasses.label}`}>{presentation.themeLabel}</span>
-          <span className="mt-1 block text-[11px] font-semibold leading-relaxed text-slate-300 break-keep">
+          <span className="mt-1 block text-[11px] font-semibold leading-relaxed text-slate-100 break-keep">
             {presentation.themeDescription}
           </span>
         </span>
@@ -412,11 +412,12 @@ function TypeCharacterStage({
               <button
                 type="button"
                 onClick={onOpenCharacterIntro}
-                className="group relative inline-flex min-h-[2rem] items-center justify-center overflow-hidden rounded-full border border-cyan-200/20 bg-cyan-300/[0.08] px-3 py-1 text-[13px] font-black leading-none text-white shadow-[0_0_0_1px_rgba(103,232,249,0.04)] transition duration-300 hover:-translate-y-0.5 hover:border-cyan-200/35 hover:bg-cyan-300/[0.12] hover:shadow-[0_10px_24px_rgba(34,211,238,0.12)] focus:outline-none focus:ring-2 focus:ring-cyan-200/40 active:translate-y-0 active:scale-[0.99]"
+                className="group relative isolate inline-flex min-h-[2rem] items-center justify-center overflow-hidden rounded-full border border-cyan-200/30 bg-cyan-300/[0.1] px-3 py-1 text-[13px] font-black leading-none text-white shadow-[inset_0_0_16px_rgba(103,232,249,0.08),0_0_0_1px_rgba(103,232,249,0.06)] ring-1 ring-cyan-100/10 transition duration-300 hover:-translate-y-0.5 hover:border-cyan-200/45 hover:bg-cyan-300/[0.14] hover:shadow-[inset_0_0_18px_rgba(103,232,249,0.1),0_10px_24px_rgba(34,211,238,0.12)] focus:outline-none focus:ring-2 focus:ring-cyan-200/40 active:translate-y-0 active:scale-[0.99]"
                 aria-label={`${spirit.displayName || spirit.name} 캐릭터 소개 보기`}
               >
-                <ActionGlow />
-                <span className="relative">{spirit.displayName || spirit.name}</span>
+                <ActionGlow className="opacity-45 group-hover:opacity-100" />
+                <span aria-hidden="true" className="relative z-10 mr-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-cyan-200 shadow-[0_0_10px_rgba(103,232,249,0.9)]" />
+                <span className="relative z-10">{spirit.displayName || spirit.name}</span>
               </button>
               <span className="inline-flex min-h-[2rem] items-center justify-center rounded-full border border-white/10 bg-black/20 px-3 py-1 text-[11px] font-bold leading-none text-slate-200">
                 {spirit.role}
@@ -1146,11 +1147,12 @@ export default function ResultView({
                 {PRESENTATION_THEMES.map((theme) => {
                   const tClasses = getThemeClasses(theme.key);
                   return (
-                    <div key={theme.key} className={`flex items-start gap-3 rounded-2xl border px-3 py-3 ${tClasses.panel}`}>
-                      <span className={`inline-block h-3 w-3 shrink-0 rounded-full ${tClasses.dot}`}></span>
-                      <div className="min-w-0 flex-1">
+                    <div key={theme.key} className={`relative isolate flex items-start gap-3 overflow-hidden rounded-2xl border px-3 py-3 ${tClasses.panel}`}>
+                      <span className="pointer-events-none absolute inset-0 z-0 rounded-[inherit] bg-slate-950/35" aria-hidden="true" />
+                      <span className={`relative z-10 inline-block h-3 w-3 shrink-0 rounded-full ${tClasses.dot}`}></span>
+                      <div className="relative z-10 min-w-0 flex-1">
                         <p className={`text-[12px] font-black tracking-wide ${tClasses.label}`}>{theme.label}</p>
-                        <p className="mt-1 text-[11px] font-semibold leading-relaxed text-slate-200 break-keep">{theme.description}</p>
+                        <p className="mt-1 text-[11px] font-semibold leading-relaxed text-slate-100 break-keep">{theme.description}</p>
                       </div>
                     </div>
                   );

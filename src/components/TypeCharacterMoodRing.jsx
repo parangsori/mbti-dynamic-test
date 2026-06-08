@@ -1,3 +1,5 @@
+import { useId } from 'react';
+
 const SIZE_CONFIG = {
   result: {
     frame: 'h-[10.1rem] w-[10.1rem] min-[390px]:h-[11.4rem] min-[390px]:w-[11.4rem]',
@@ -72,6 +74,17 @@ function hexToRgba(hex, alpha) {
   return `rgba(${r},${g},${b},${alpha})`;
 }
 
+const RING_LAYER_STYLE = {
+  backfaceVisibility: 'hidden',
+  transform: 'translate3d(0,0,0)',
+  transformOrigin: '50% 50%',
+};
+
+const ANIMATED_RING_STYLE = {
+  ...RING_LAYER_STYLE,
+  willChange: 'transform'
+};
+
 export default function TypeCharacterMoodRing({
   imageSrc,
   alt,
@@ -84,8 +97,9 @@ export default function TypeCharacterMoodRing({
   const config = SIZE_CONFIG[size] || SIZE_CONFIG.result;
   const ringTheme = RING_THEME[themeKey] || RING_THEME.neon;
   const exportSafeRing = size === 'share' && !showGlow;
-  const gradientId = `type-character-ring-${themeKey}-${size}`;
-  const highlightGradientId = `type-character-ring-highlight-${themeKey}-${size}`;
+  const idPrefix = useId().replace(/[^a-zA-Z0-9_-]/g, '');
+  const gradientId = `type-character-ring-${themeKey}-${size}-${idPrefix}`;
+  const highlightGradientId = `type-character-ring-highlight-${themeKey}-${size}-${idPrefix}`;
 
   return (
     <div className={`relative flex shrink-0 items-center justify-center ${config.frame}`}>
@@ -124,10 +138,13 @@ export default function TypeCharacterMoodRing({
         </>
       ) : (
         <svg
-          className="absolute inset-[4%] animate-[spin_18s_linear_infinite] overflow-visible"
+          className="absolute inset-[4%] overflow-visible"
           viewBox="0 0 100 100"
           aria-hidden="true"
-          style={{ filter: `drop-shadow(0 0 18px ${ringTheme.soft})` }}
+          style={{
+            ...RING_LAYER_STYLE,
+            filter: `drop-shadow(0 0 10px ${ringTheme.soft})`
+          }}
         >
           <defs>
             <linearGradient id={gradientId} x1="0" y1="0" x2="1" y2="1">
@@ -163,6 +180,7 @@ export default function TypeCharacterMoodRing({
           className="absolute inset-[4%] animate-[spin_7.8s_linear_infinite] overflow-visible"
           viewBox="0 0 100 100"
           aria-hidden="true"
+          style={ANIMATED_RING_STYLE}
         >
           <defs>
             <linearGradient id={highlightGradientId} x1="0" y1="0" x2="1" y2="1">
@@ -183,7 +201,7 @@ export default function TypeCharacterMoodRing({
             strokeDasharray="20 244"
             transform="rotate(-92 50 50)"
             opacity="0.88"
-            style={{ filter: `drop-shadow(0 0 8px ${ringTheme.primary}) drop-shadow(0 0 16px ${ringTheme.soft})` }}
+            style={{ filter: `drop-shadow(0 0 8px ${ringTheme.primary})` }}
           />
           <circle
             cx="50"
@@ -211,7 +229,7 @@ export default function TypeCharacterMoodRing({
         />
       )}
       <span
-        className={`absolute right-[18%] top-[20%] rounded-full ${config.dot}`}
+        className={`absolute right-[18%] top-[20%] animate-[pulse_3.2s_ease-in-out_infinite] rounded-full ${config.dot}`}
         style={{
           backgroundColor: ringTheme.primary,
           opacity: exportSafeRing ? 0.72 : 1,
