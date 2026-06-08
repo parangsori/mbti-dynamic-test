@@ -140,6 +140,12 @@ const RESULT_THEME_CLASSES = {
 
 const getThemeClasses = (themeKey) => RESULT_THEME_CLASSES[themeKey] || RESULT_THEME_CLASSES.neon;
 
+const IOS_ROUNDED_CLIP_STYLE = {
+  clipPath: 'inset(0 round 1.8rem)',
+  WebkitMaskImage: '-webkit-radial-gradient(white, black)',
+  transform: 'translateZ(0)'
+};
+
 const getDetailPreview = ({ section, summaryCopy, todayDifferenceCopy, consistencyCopy, historyComparison, trendAnalysis, historyInsights }) => {
   if (section === 'why') return todayDifferenceCopy || consistencyCopy || summaryCopy;
   if (section === 'axes') return trendAnalysis?.title || '축별 밸런스와 우세 흐름을 자세히 볼 수 있어요.';
@@ -325,7 +331,10 @@ function TypeCharacterStage({
   neutralReviewNote
 }) {
   return (
-    <div className="relative overflow-hidden rounded-[1.8rem] border border-white/10 bg-[linear-gradient(145deg,rgba(9,13,31,0.96),rgba(14,18,36,0.9)_48%,rgba(27,31,49,0.82))] p-4 shadow-[0_26px_80px_rgba(2,6,23,0.44)] sm:p-5">
+    <div
+      className="relative overflow-hidden rounded-[1.8rem] border border-white/10 bg-[linear-gradient(145deg,rgba(9,13,31,0.96),rgba(14,18,36,0.9)_48%,rgba(27,31,49,0.82))] p-4 shadow-[0_26px_80px_rgba(2,6,23,0.44)] sm:p-5"
+      style={IOS_ROUNDED_CLIP_STYLE}
+    >
       <div className={`absolute -right-16 top-[-4rem] h-52 w-52 rounded-full ${themeClasses.haloTop} blur-3xl`} />
       <div className={`absolute -left-12 bottom-[-4rem] h-48 w-48 rounded-full ${themeClasses.haloBottom} blur-3xl`} />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_72%_34%,rgba(34,211,238,0.15),transparent_28%),linear-gradient(135deg,rgba(255,255,255,0.055),transparent_32%,rgba(255,255,255,0.025))]" />
