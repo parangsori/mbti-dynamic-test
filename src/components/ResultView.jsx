@@ -146,6 +146,15 @@ const IOS_ROUNDED_CLIP_STYLE = {
   transform: 'translateZ(0)'
 };
 
+function ActionGlow({ className = 'opacity-0 group-hover:opacity-100' }) {
+  return (
+    <span
+      aria-hidden="true"
+      className={`pointer-events-none absolute inset-0 rounded-[inherit] bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.16),transparent_46%)] transition-opacity duration-300 ${className}`}
+    />
+  );
+}
+
 const getDetailPreview = ({ section, summaryCopy, todayDifferenceCopy, consistencyCopy, historyComparison, trendAnalysis, historyInsights }) => {
   if (section === 'why') return todayDifferenceCopy || consistencyCopy || summaryCopy;
   if (section === 'axes') return trendAnalysis?.title || '축별 밸런스와 우세 흐름을 자세히 볼 수 있어요.';
@@ -159,21 +168,38 @@ const getDetailPreview = ({ section, summaryCopy, todayDifferenceCopy, consisten
 
 function DetailSection({ title, preview, open, onToggle, children }) {
   return (
-    <div className="rounded-[1.6rem] border border-white/10 bg-white/[0.04] shadow-[0_22px_55px_rgba(2,6,23,0.24)]">
+    <div className={`group rounded-[1.6rem] border bg-white/[0.04] shadow-[0_22px_55px_rgba(2,6,23,0.24)] transition duration-300 ${open ? 'border-cyan-200/20' : 'border-white/10 hover:border-white/20'}`}>
       <button
         type="button"
         onClick={onToggle}
-        className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left"
+        className="flex w-full items-center justify-between gap-4 rounded-[1.6rem] px-5 py-4 text-left transition hover:bg-white/[0.025] focus:outline-none focus:ring-2 focus:ring-cyan-200/30"
       >
         <div className="min-w-0 flex-1">
           <p className="text-[14px] font-black text-white">{title}</p>
           <p className="mt-1 text-[12px] leading-relaxed text-slate-400 break-keep">{preview}</p>
         </div>
-        <span className="shrink-0 whitespace-nowrap rounded-full border border-white/10 bg-black/20 px-4 py-2 text-[11px] font-bold text-slate-300">
+        <span className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border border-white/10 bg-black/20 px-4 py-2 text-[11px] font-bold text-slate-300 transition group-hover:border-cyan-200/25 group-hover:bg-cyan-300/[0.08] group-hover:text-cyan-50">
           {open ? '접기' : '펼치기'}
+          <motion.span
+            aria-hidden="true"
+            className="inline-block text-[12px] leading-none"
+            animate={{ rotate: open ? 180 : 0 }}
+            transition={{ duration: 0.2, ease: 'easeOut' }}
+          >
+            ˅
+          </motion.span>
         </span>
       </button>
-      {open && <div className="border-t border-white/10 px-5 py-5">{children}</div>}
+      {open && (
+        <motion.div
+          initial={{ opacity: 0, y: -4 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.2, ease: 'easeOut' }}
+          className="border-t border-white/10 px-5 py-5"
+        >
+          {children}
+        </motion.div>
+      )}
     </div>
   );
 }
@@ -207,19 +233,25 @@ function MoodPointCard({ presentation, todayDifferenceCopy, themeClasses, onOpen
           <button
             type="button"
             onClick={onOpenMoodLegend}
-            className="rounded-full border border-white/10 bg-black/20 px-3 py-1 text-[10px] font-black text-slate-200 transition hover:bg-white/10 hover:text-white"
+            className="group relative overflow-hidden rounded-full border border-white/10 bg-black/20 px-3 py-1 text-[10px] font-black text-slate-200 transition hover:border-cyan-200/25 hover:bg-white/10 hover:text-white focus:outline-none focus:ring-2 focus:ring-cyan-200/30"
           >
-            무드 설명
+            <ActionGlow />
+            <span className="relative">무드 설명</span>
           </button>
         </div>
       </div>
       <button
         type="button"
         onClick={onOpenMoodLegend}
-        className="mt-3 flex w-full items-start gap-2 rounded-[1rem] border border-white/10 bg-black/15 px-3 py-2 text-left transition hover:bg-white/[0.055]"
+        className="group relative mt-3 flex w-full items-start gap-2 overflow-hidden rounded-[1rem] border border-white/10 bg-black/15 px-3 py-2 text-left transition hover:border-cyan-200/20 hover:bg-white/[0.055] focus:outline-none focus:ring-2 focus:ring-cyan-200/25"
       >
-        <span className={`mt-1 inline-block h-2.5 w-2.5 shrink-0 rounded-full ${themeClasses.dot}`}></span>
-        <span className="min-w-0">
+        <ActionGlow />
+        <motion.span
+          className={`relative mt-1 inline-block h-2.5 w-2.5 shrink-0 rounded-full ${themeClasses.dot}`}
+          animate={{ scale: [1, 1.16, 1], opacity: [0.86, 1, 0.86] }}
+          transition={{ duration: 3.2, repeat: Infinity, ease: 'easeInOut' }}
+        />
+        <span className="relative min-w-0">
           <span className={`block text-[12px] font-black ${themeClasses.label}`}>{presentation.themeLabel}</span>
           <span className="mt-1 block text-[11px] font-semibold leading-relaxed text-slate-300 break-keep">
             {presentation.themeDescription}
@@ -380,10 +412,11 @@ function TypeCharacterStage({
               <button
                 type="button"
                 onClick={onOpenCharacterIntro}
-                className="inline-flex min-h-[2rem] items-center justify-center rounded-full border border-white/10 bg-white/[0.06] px-3 py-1 text-[13px] font-black leading-none text-white transition hover:border-white/20 hover:bg-white/[0.1] focus:outline-none focus:ring-2 focus:ring-cyan-200/40"
+                className="group relative inline-flex min-h-[2rem] items-center justify-center overflow-hidden rounded-full border border-cyan-200/20 bg-cyan-300/[0.08] px-3 py-1 text-[13px] font-black leading-none text-white shadow-[0_0_0_1px_rgba(103,232,249,0.04)] transition duration-300 hover:-translate-y-0.5 hover:border-cyan-200/35 hover:bg-cyan-300/[0.12] hover:shadow-[0_10px_24px_rgba(34,211,238,0.12)] focus:outline-none focus:ring-2 focus:ring-cyan-200/40 active:translate-y-0 active:scale-[0.99]"
                 aria-label={`${spirit.displayName || spirit.name} 캐릭터 소개 보기`}
               >
-                {spirit.displayName || spirit.name}
+                <ActionGlow />
+                <span className="relative">{spirit.displayName || spirit.name}</span>
               </button>
               <span className="inline-flex min-h-[2rem] items-center justify-center rounded-full border border-white/10 bg-black/20 px-3 py-1 text-[11px] font-bold leading-none text-slate-200">
                 {spirit.role}
@@ -1014,9 +1047,10 @@ export default function ResultView({
 
           <div className="mt-5 flex w-full flex-col gap-3">
             <button
+              type="button"
               onClick={handleSaveImage}
               disabled={isShareBusy}
-              className={`group relative w-full overflow-hidden rounded-[1.6rem] border border-cyan-300/25 bg-cyan-300/[0.1] py-4 text-[15px] font-black text-cyan-50 shadow-[0_14px_34px_rgba(34,211,238,0.12)] transition duration-300 hover:-translate-y-0.5 hover:bg-cyan-300/[0.14] hover:shadow-[0_18px_46px_rgba(34,211,238,0.18)] active:translate-y-0 active:scale-[0.99] ${
+              className={`group relative w-full overflow-hidden rounded-[1.6rem] border border-cyan-300/25 bg-cyan-300/[0.1] py-4 text-[15px] font-black text-cyan-50 shadow-[0_14px_34px_rgba(34,211,238,0.12)] transition duration-300 hover:-translate-y-0.5 hover:bg-cyan-300/[0.14] hover:shadow-[0_18px_46px_rgba(34,211,238,0.18)] focus:outline-none focus:ring-2 focus:ring-cyan-200/40 active:translate-y-0 active:scale-[0.99] ${
                 isShareBusy ? 'cursor-wait opacity-70' : ''
               }`}
             >
@@ -1034,15 +1068,30 @@ export default function ResultView({
               </span>
             </button>
             <div className="grid grid-cols-2 gap-3">
-              <button onClick={handleCopyShare} className="rounded-[1.4rem] border border-white/10 bg-white/[0.05] px-4 py-3 text-[13px] font-bold text-slate-100 transition hover:bg-white/[0.08]">
-                {shareCopied ? '한 줄 복사 완료' : '한 줄 결과 복사'}
+              <button
+                type="button"
+                onClick={handleCopyShare}
+                className="group relative overflow-hidden rounded-[1.4rem] border border-white/10 bg-white/[0.05] px-4 py-3 text-[13px] font-bold text-slate-100 transition duration-300 hover:-translate-y-0.5 hover:border-cyan-200/20 hover:bg-white/[0.08] focus:outline-none focus:ring-2 focus:ring-cyan-200/30 active:translate-y-0 active:scale-[0.99]"
+              >
+                <ActionGlow />
+                <span className="relative">{shareCopied ? '한 줄 복사 완료' : '한 줄 결과 복사'}</span>
               </button>
-              <button onClick={openHistoryModal} className="rounded-[1.4rem] border border-white/10 bg-white/[0.05] px-4 py-3 text-[13px] font-bold text-slate-100 transition hover:bg-white/[0.08]">
-                나의 기록 & 활동 보기
+              <button
+                type="button"
+                onClick={openHistoryModal}
+                className="group relative overflow-hidden rounded-[1.4rem] border border-white/10 bg-white/[0.05] px-4 py-3 text-[13px] font-bold text-slate-100 transition duration-300 hover:-translate-y-0.5 hover:border-cyan-200/20 hover:bg-white/[0.08] focus:outline-none focus:ring-2 focus:ring-cyan-200/30 active:translate-y-0 active:scale-[0.99]"
+              >
+                <ActionGlow />
+                <span className="relative">나의 기록 & 활동 보기</span>
               </button>
             </div>
-            <button onClick={onRestart} className="rounded-[1.4rem] border border-white/10 bg-black/20 px-4 py-3 text-[13px] font-bold text-slate-300 transition hover:bg-white/[0.06] hover:text-white">
-              지금 다시 해보기
+            <button
+              type="button"
+              onClick={onRestart}
+              className="group relative overflow-hidden rounded-[1.4rem] border border-white/10 bg-black/20 px-4 py-3 text-[13px] font-bold text-slate-300 transition duration-300 hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/[0.06] hover:text-white focus:outline-none focus:ring-2 focus:ring-cyan-200/25 active:translate-y-0 active:scale-[0.99]"
+            >
+              <ActionGlow className="opacity-0 group-hover:opacity-70" />
+              <span className="relative">지금 다시 해보기</span>
             </button>
             <p className="px-1 text-center text-[12px] leading-relaxed text-slate-400 break-keep">{retestPrompt}</p>
           </div>
