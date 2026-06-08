@@ -243,15 +243,10 @@ function MoodPointCard({ presentation, todayDifferenceCopy, themeClasses, onOpen
       <button
         type="button"
         onClick={onOpenMoodLegend}
-        className="group relative isolate mt-3 flex w-full items-start gap-2 overflow-hidden rounded-[1rem] border border-white/10 bg-black/15 px-3 py-2 text-left transition hover:border-cyan-200/20 hover:bg-white/[0.055] focus:outline-none focus:ring-2 focus:ring-cyan-200/25"
+        className="mt-3 flex w-full items-start gap-2 rounded-[1rem] border border-cyan-200/15 bg-black/20 px-3 py-2 text-left shadow-[inset_0_0_18px_rgba(103,232,249,0.035)] transition hover:border-cyan-200/25 hover:bg-white/[0.055] focus:outline-none focus:ring-2 focus:ring-cyan-200/25 active:scale-[0.995]"
       >
-        <ActionGlow />
-        <motion.span
-          className={`relative z-10 mt-1 inline-block h-2.5 w-2.5 shrink-0 rounded-full ${themeClasses.dot}`}
-          animate={{ scale: [1, 1.16, 1], opacity: [0.86, 1, 0.86] }}
-          transition={{ duration: 3.2, repeat: Infinity, ease: 'easeInOut' }}
-        />
-        <span className="relative z-10 min-w-0">
+        <span className={`mt-1 inline-block h-2.5 w-2.5 shrink-0 rounded-full ${themeClasses.dot}`} />
+        <span className="min-w-0">
           <span className={`block text-[12px] font-black ${themeClasses.label}`}>{presentation.themeLabel}</span>
           <span className="mt-1 block text-[11px] font-semibold leading-relaxed text-slate-100 break-keep">
             {presentation.themeDescription}
