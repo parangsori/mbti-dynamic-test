@@ -52,6 +52,14 @@ const applyAccessibilitySettings = ({ fontScale, highContrast }) => {
   document.documentElement.style.setProperty('--app-font-scale', fontScale);
   document.documentElement.classList.toggle('high-contrast', highContrast);
 };
+const readMockPremiumFlag = () => {
+  if (!import.meta.env.DEV) return false;
+  try {
+    return localStorage.getItem('mbti_mock_premium') === 'true';
+  } catch {
+    return false;
+  }
+};
 import { getPersonalizedTempoMessage, getAgeGroupFromBirthDate } from './lib/personalization.js';
 
 const retryImport = (loader, retries = 1) =>
@@ -274,6 +282,7 @@ export default function App() {
   const [recoverableSession, setRecoverableSession] = useState(null);
   const [axisGuideKey, setAxisGuideKey] = useState(null);
   const [historyData, setHistoryData] = useState([]);
+  const [isPremiumUser] = useState(readMockPremiumFlag);
   const {
     questions,
     setQuestions,
@@ -845,6 +854,7 @@ export default function App() {
                 latestHistoryComparison={latestHistoryComparison}
                 latestHistoryInsights={latestHistoryInsights}
                 historyData={historyData}
+                isPremiumUser={isPremiumUser}
                 getHistoryEntryNote={getHistoryEntryNote}
                 onClose={() => setShowHistory(false)}
                 onClearData={handleClearLocalData}

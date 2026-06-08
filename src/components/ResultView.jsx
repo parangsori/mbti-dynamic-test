@@ -189,19 +189,122 @@ function MiniResultCard({ title, value, description, tone = 'green' }) {
   );
 }
 
-function MoodPointCard({ presentation, todayDifferenceCopy, themeClasses }) {
+function MoodPointCard({ presentation, todayDifferenceCopy, themeClasses, onOpenMoodLegend }) {
   return (
     <div className={`mt-4 w-full rounded-[1.45rem] border px-4 py-4 ${themeClasses.panel}`}>
       <div className="flex items-center justify-between gap-3">
         <p className={`text-[11px] font-black tracking-[0.18em] uppercase ${themeClasses.label}`}>오늘만의 포인트</p>
-        <span className={`shrink-0 rounded-full border px-3 py-1 text-[10px] font-black ${themeClasses.chip}`}>
-          {presentation.stateLabel}
-        </span>
+        <div className="flex shrink-0 items-center gap-2">
+          <span className={`rounded-full border px-3 py-1 text-[10px] font-black ${themeClasses.chip}`}>
+            {presentation.stateLabel}
+          </span>
+          <button
+            type="button"
+            onClick={onOpenMoodLegend}
+            className="rounded-full border border-white/10 bg-black/20 px-3 py-1 text-[10px] font-black text-slate-200 transition hover:bg-white/10 hover:text-white"
+          >
+            무드 설명
+          </button>
+        </div>
       </div>
+      <button
+        type="button"
+        onClick={onOpenMoodLegend}
+        className="mt-3 flex w-full items-start gap-2 rounded-[1rem] border border-white/10 bg-black/15 px-3 py-2 text-left transition hover:bg-white/[0.055]"
+      >
+        <span className={`mt-1 inline-block h-2.5 w-2.5 shrink-0 rounded-full ${themeClasses.dot}`}></span>
+        <span className="min-w-0">
+          <span className={`block text-[12px] font-black ${themeClasses.label}`}>{presentation.themeLabel}</span>
+          <span className="mt-1 block text-[11px] font-semibold leading-relaxed text-slate-300 break-keep">
+            {presentation.themeDescription}
+          </span>
+        </span>
+      </button>
       <p className="mt-3 text-[18px] font-black leading-[1.22] text-white break-keep">{presentation.hook}</p>
       <p className="mt-2 text-[12px] leading-relaxed text-slate-100 break-keep">{presentation.detail}</p>
       {todayDifferenceCopy && <p className="mt-2 text-[12px] leading-relaxed text-slate-200 break-keep">{todayDifferenceCopy}</p>}
     </div>
+  );
+}
+
+function PremiumFlowTeaser({ feedback, preview, mbti, presentation, themeClasses, onCtaClick, onSajuClick }) {
+  if (!preview?.available) return null;
+
+  const visibleTypes = preview.recentTypes.length ? preview.recentTypes : [mbti].filter(Boolean);
+  const visibleMoods = preview.recentMoods.length ? preview.recentMoods : [presentation.themeKey].filter(Boolean);
+
+  return (
+    <section className="w-full rounded-[1.7rem] border border-white/10 bg-[linear-gradient(135deg,rgba(255,255,255,0.075),rgba(255,255,255,0.025))] px-4 py-4 shadow-[0_20px_56px_rgba(2,6,23,0.25)]">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className={`text-[11px] font-black tracking-[0.17em] uppercase ${themeClasses.label}`}>최근 흐름 미리보기</p>
+          <h3 className="mt-2 text-[18px] font-black leading-tight text-white break-keep">{preview.title}</h3>
+        </div>
+        <span className={`shrink-0 rounded-full border px-3 py-1.5 text-[10px] font-black ${themeClasses.chip}`}>
+          {preview.historyCount}회 기록
+        </span>
+      </div>
+
+      <p className="mt-3 text-[13px] font-semibold leading-relaxed text-slate-200 break-keep">{preview.previewCopy}</p>
+
+      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+        <div className="rounded-[1.2rem] border border-white/10 bg-black/20 px-3 py-3">
+          <p className="text-[10px] font-black tracking-[0.15em] text-slate-500 uppercase">타입 흐름</p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {visibleTypes.map((type, idx) => (
+              <span key={`${type}-${idx}`} className="rounded-full border border-white/10 bg-white/[0.06] px-3 py-1.5 text-[11px] font-black text-white">
+                {type}
+              </span>
+            ))}
+          </div>
+        </div>
+        <div className="rounded-[1.2rem] border border-white/10 bg-black/20 px-3 py-3">
+          <p className="text-[10px] font-black tracking-[0.15em] text-slate-500 uppercase">무드 흐름</p>
+          <div className="mt-2 flex items-center gap-2">
+            {visibleMoods.map((moodKey, idx) => (
+              <span
+                key={`${moodKey}-${idx}`}
+                className={`inline-block h-3 w-3 rounded-full ${getThemeClasses(moodKey).dot} ${idx === visibleMoods.length - 1 ? 'scale-110 ring-1 ring-white/50' : 'opacity-65'}`}
+              />
+            ))}
+            <span className="ml-1 text-[11px] font-bold text-slate-300">{presentation.themeLabel}</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-4 rounded-[1.2rem] border border-white/10 bg-white/[0.035] px-3 py-3">
+        <p className="text-[10px] font-black tracking-[0.15em] text-slate-500 uppercase">프리미엄에서 열리는 것</p>
+        <div className="mt-2 flex flex-wrap gap-2">
+          {preview.lockedInsights.map((item) => (
+            <span key={item} className="rounded-full border border-white/10 bg-black/20 px-3 py-1.5 text-[11px] font-bold text-slate-200">
+              {item}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      <div className="mt-4 grid gap-2 sm:grid-cols-[1fr_auto]">
+        <button
+          type="button"
+          onClick={() => onCtaClick?.(preview)}
+          className={`rounded-[1.25rem] border px-4 py-3 text-[13px] font-black transition hover:-translate-y-0.5 active:translate-y-0 ${themeClasses.chip}`}
+        >
+          {preview.ctaLabel}
+        </button>
+        <button
+          type="button"
+          onClick={() => onSajuClick?.(preview)}
+          className="rounded-[1.25rem] border border-white/10 bg-white/[0.055] px-4 py-3 text-[12px] font-bold text-slate-200 transition hover:bg-white/[0.085]"
+        >
+          사주 리듬 관심 표시
+        </button>
+      </div>
+      {feedback && (
+        <p className="mt-3 rounded-[1rem] border border-white/10 bg-black/20 px-3 py-2 text-[11px] font-bold leading-relaxed text-slate-300 break-keep">
+          {feedback}
+        </p>
+      )}
+    </section>
   );
 }
 
@@ -641,6 +744,7 @@ export default function ResultView({
   useResultRecord({
     ageGroup,
     currentEntry: currentEntryRef.current,
+    gender,
     historyData,
     mbti,
     onResultReady,
@@ -721,6 +825,13 @@ export default function ResultView({
           <p className="mt-2 text-[14px] leading-relaxed text-white break-keep">{summaryCopy}</p>
           {todayDifferenceCopy && <p className="mt-2 text-[13px] leading-relaxed text-cyan-50/90 break-keep">{todayDifferenceCopy}</p>}
         </div>
+        <DailyInsightCard
+          dailyAction={dailyAction}
+          relationshipHint={relationshipHint}
+          recoveryHint={recoveryHint}
+          tomorrowCheckPoint={tomorrowCheckPoint}
+          themeClasses={themeClasses}
+        />
         <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-4">
           <p className="text-[12px] font-black tracking-[0.18em] text-slate-400 uppercase">결과 또렷함</p>
           <p className="mt-2 text-[13px] leading-relaxed text-slate-200 break-keep">{consistencyCopy}</p>
@@ -864,47 +975,11 @@ export default function ResultView({
           />
 
           <div className="mt-5 flex w-full flex-col gap-4 rounded-[1.8rem] border border-white/10 bg-[linear-gradient(180deg,rgba(10,16,29,0.94),rgba(15,23,42,0.88))] p-5 shadow-[0_22px_70px_rgba(2,6,23,0.38)]">
-            {recentFlowSummary?.timeline && recentFlowSummary.timeline.length > 0 && (
-              <div className="w-full rounded-[1.45rem] border border-white/10 bg-black/20 px-4 py-3">
-                <div className="flex items-center justify-between gap-3">
-                  <div className="flex min-w-0 items-center gap-2">
-                    <p className="text-[11px] font-black tracking-[0.15em] text-slate-400 uppercase">최근 나의 성향 흐름</p>
-                    <button onClick={() => setShowMoodLegend(true)} className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/5 text-[10px] text-slate-400 transition hover:bg-white/10 hover:text-white">
-                      ?
-                    </button>
-                  </div>
-                  <button onClick={() => setShowMoodLegend(true)} className="flex shrink-0 items-center gap-2 rounded-full px-2 py-1 transition hover:bg-white/5">
-                    {recentFlowSummary.timeline.map((item, idx) => (
-                      <span
-                        key={idx}
-                        className={`inline-block h-2.5 w-2.5 rounded-full ${
-                          getThemeClasses(item.themeKey).dot
-                        } ${idx === recentFlowSummary.timeline.length - 1 ? 'scale-125 ring-[1.5px] ring-white/60' : 'opacity-60'}`}
-                      />
-                    ))}
-                  </button>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setShowMoodLegend(true)}
-                  className="mt-3 w-full rounded-[1.1rem] border border-white/10 bg-white/[0.04] px-3 py-3 text-left transition hover:bg-white/[0.07]"
-                >
-                  <div className="flex items-center gap-2">
-                    <span className={`inline-block h-2.5 w-2.5 shrink-0 rounded-full ${themeClasses.dot}`}></span>
-                    <p className={`text-[12px] font-black ${themeClasses.label}`}>{presentation.themeLabel}</p>
-                    <span className="text-[11px] font-bold text-slate-500">무드 설명</span>
-                  </div>
-                  <p className="mt-2 text-[12px] font-semibold leading-relaxed text-slate-300 break-keep">
-                    {presentation.themeDescription}
-                  </p>
-                </button>
-              </div>
-            )}
-
             <MoodPointCard
               presentation={presentation}
               todayDifferenceCopy={todayDifferenceCopy}
               themeClasses={themeClasses}
+              onOpenMoodLegend={() => setShowMoodLegend(true)}
             />
 
             <ResultEssenceCard
@@ -918,23 +993,6 @@ export default function ResultView({
               themeClasses={themeClasses}
             />
 
-            <DailyInsightCard
-              dailyAction={dailyAction}
-              relationshipHint={relationshipHint}
-              recoveryHint={recoveryHint}
-              tomorrowCheckPoint={tomorrowCheckPoint}
-              themeClasses={themeClasses}
-            />
-
-            <AxisCoordinateCard axisNarratives={axisNarratives} themeClasses={themeClasses} />
-
-            <ChangeSnapshotCard
-              historyComparison={historyComparison}
-              axisChanges={axisChanges}
-              strongestAxis={strongestAxis}
-              trendAnalysis={trendAnalysis}
-              themeClasses={themeClasses}
-            />
           </div>
 
           {/* 공유 안내 토스트 (텔레그램 등 이미지 공유 불가 환경) */}
@@ -983,40 +1041,6 @@ export default function ResultView({
       </div>
 
       <div className="mt-6 flex w-full max-w-sm flex-col gap-4">
-        <div className="rounded-[1.8rem] border border-white/10 bg-slate-900/85 p-5 shadow-[0_22px_60px_rgba(2,6,23,0.28)]">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <p className="text-[11px] font-black tracking-[0.2em] text-slate-400 uppercase">반복 사용 포인트</p>
-              <p className="mt-2 text-[18px] font-black text-white break-keep">최근 흐름에서 뭐가 달라졌는지 바로 보이게</p>
-            </div>
-            <span className={`shrink-0 rounded-full border px-3 py-1 text-[10px] font-black ${themeClasses.chip}`}>
-              {recentFlowSummary.chips.length}회 흐름
-            </span>
-          </div>
-
-          <div className="mt-4 flex flex-wrap gap-2">
-            {recentFlowSummary.chips.map((type, idx) => (
-              <span
-                key={`${type}-${idx}`}
-                className={`rounded-full border px-3 py-1.5 text-[11px] font-black ${idx === 0 ? themeClasses.chip : 'border-white/10 bg-white/[0.05] text-slate-200'}`}
-              >
-                {idx === 0 ? `이번 ${type}` : `${idx + 1}전 ${type}`}
-              </span>
-            ))}
-          </div>
-
-          <div className="mt-4 grid gap-3 sm:grid-cols-2">
-            <div className="rounded-[1.4rem] border border-white/10 bg-white/[0.04] px-4 py-4">
-              <p className="text-[10px] font-black tracking-[0.18em] text-slate-400 uppercase">최근 흐름 메모</p>
-              <p className="mt-2 text-[13px] leading-relaxed text-slate-100 break-keep">{recentFlowSummary.note}</p>
-            </div>
-            <div className="rounded-[1.4rem] border border-cyan-300/20 bg-cyan-300/[0.08] px-4 py-4">
-              <p className="text-[10px] font-black tracking-[0.18em] text-cyan-100 uppercase">다음 테스트에서 보기 좋은 포인트</p>
-              <p className="mt-2 text-[13px] leading-relaxed text-white break-keep">{revisitInsight}</p>
-            </div>
-          </div>
-        </div>
-
         {DETAIL_SECTIONS.map((section) => (
           <DetailSection
             key={section.key}

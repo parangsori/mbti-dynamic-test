@@ -1,4 +1,5 @@
 import { AXIS_META } from './constants.js';
+import { HISTORY_ENTRY_LIMIT } from './storage.js';
 
 export const getHistoryComparison = (currentMbti, historyData) => {
   if (!historyData.length) return null;
@@ -59,7 +60,7 @@ export const getEffectiveHistory = (currentEntry, historyData) => {
   if (!currentEntry) return historyData;
   if (!historyData.length) return [currentEntry];
   if (historyData[0].createdAt && currentEntry.createdAt && historyData[0].createdAt === currentEntry.createdAt) return historyData;
-  return [currentEntry, ...historyData].slice(0, 7);
+  return [currentEntry, ...historyData].slice(0, HISTORY_ENTRY_LIMIT);
 };
 
 export const getAxisChangeDetails = (currentMbti, previousMbti) =>
@@ -155,6 +156,91 @@ export const getRecentFlowSummary = (effectiveHistory, fallbackMbti = '', curren
     chips: flow,
     timeline,
     note
+  };
+};
+
+const countBy = (items, getKey) => items.reduce((acc, item) => {
+  const key = getKey(item);
+  if (!key) return acc;
+  acc[key] = (acc[key] || 0) + 1;
+  return acc;
+}, {});
+
+const getTopCount = (countMap) => {
+  const top = Object.entries(countMap).sort((a, b) => b[1] - a[1])[0];
+  return top ? { key: top[0], count: top[1] } : null;
+};
+
+export const buildPremiumFlowPreview = (historyData, currentEntry, {
+  mbti = '',
+  percent = 0,
+  presentation = {}
+} = {}) => {
+  const current = {
+    ...currentEntry,
+    mbti: currentEntry?.mbti || mbti,
+    percent: currentEntry?.percent || percent,
+    themeKey: currentEntry?.themeKey || presentation.themeKey || ''
+  };
+  const effectiveHistory = getEffectiveHistory(current, historyData || []);
+  const recent = effectiveHistory
+    .filter((item) => item?.mbti)
+    .slice(0, 7);
+  const recentTypes = recent.map((item) => item.mbti).slice(0, 5);
+  const recentMoods = recent.map((item) => item.themeKey || item.moodKey || '').filter(Boolean).slice(0, 5);
+  const topType = getTopCount(countBy(recent, (item) => item.mbti));
+  const topMood = getTopCount(countBy(recent, (item) => item.themeKey || item.moodKey));
+  const previous = recent[1];
+  const changedFromPrevious = Boolean(previous?.mbti && current.mbti && previous.mbti !== current.mbti);
+  const historyCount = recent.length;
+
+  let status = 'empty';
+  let title = '기록이 쌓이면 흐름이 보여요';
+  let previewCopy = '오늘 결과를 기준점으로 남겨두면, 다음 결과부터 작은 변화가 더 잘 보여요.';
+  let ctaLabel = '다음 결과도 기록하기';
+  let ctaKind = 'retest';
+
+  if (historyCount >= 5) {
+    status = 'ready_30d_preview';
+    title = '최근 흐름이 꽤 선명해졌어요';
+    const typeCopy = topType ? `${topType.key} 결이 ${topType.count}번 보였고` : '여러 성향이 번갈아 보였고';
+    const moodCopy = topMood ? `${presentation.themeLabel || '오늘 무드'} 흐름도 함께 잡혔어요` : '오늘 무드도 함께 읽을 수 있어요';
+    previewCopy = `${typeCopy}, ${moodCopy}. 프리미엄에서는 7일/30일 리듬으로 더 자세히 열어볼 수 있어요.`;
+    ctaLabel = '30일 리듬 미리보기';
+    ctaKind = 'flow_30d';
+  } else if (historyCount >= 2) {
+    status = 'ready_7d_preview';
+    title = changedFromPrevious ? '직전과 달라진 결이 보여요' : '비슷한 결이 이어지고 있어요';
+    previewCopy = changedFromPrevious
+      ? `최근 ${historyCount}번 안에서 ${previous.mbti}에서 ${current.mbti} 쪽으로 흐름이 바뀌었어요.`
+      : `최근 ${historyCount}번은 ${current.mbti} 흐름이 이어졌어요. 같은 타입 안의 무드 차이를 보기 좋은 상태예요.`;
+    ctaLabel = '7일 흐름 미리보기';
+    ctaKind = 'flow_7d';
+  } else if (historyCount === 1) {
+    status = 'first_result';
+    title = '오늘 결과가 첫 기준점이에요';
+    previewCopy = '다음 결과가 쌓이면 지금과 같은지, 어떤 축이 먼저 달라지는지 비교할 수 있어요.';
+  }
+
+  return {
+    available: historyCount > 0,
+    status,
+    historyCount,
+    recentTypes,
+    recentMoods,
+    topType,
+    topMood,
+    changedFromPrevious,
+    title,
+    previewCopy,
+    ctaLabel,
+    ctaKind,
+    lockedInsights: [
+      '7일 성향 변화 그래프',
+      '자주 등장한 타입 캐릭터',
+      '평소와 다른 날 감지',
+      '사주 리듬 믹스'
+    ]
   };
 };
 

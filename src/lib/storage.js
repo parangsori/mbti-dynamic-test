@@ -35,6 +35,9 @@ const MAX_MIGRATION_VALUE_LENGTH = 250_000;
 const MAX_MIGRATION_TOTAL_LENGTH = 750_000;
 const MAX_MIGRATION_META_LENGTH = 200;
 
+export const HISTORY_ENTRY_LIMIT = 30;
+export const RESULT_SNAPSHOT_VERSION = 1;
+
 export const readJson = (key, fallback) => {
   try {
     const raw = localStorage.getItem(key);
