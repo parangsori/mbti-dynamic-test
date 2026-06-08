@@ -177,7 +177,7 @@ export default function TypeCharacterMoodRing({
       )}
       {!exportSafeRing && (
         <svg
-          className="absolute inset-[4%] animate-[spin_7.8s_linear_infinite] overflow-visible"
+          className="absolute inset-[4%] animate-[spin_6.8s_linear_infinite] overflow-visible"
           viewBox="0 0 100 100"
           aria-hidden="true"
           style={ANIMATED_RING_STYLE}
@@ -196,12 +196,12 @@ export default function TypeCharacterMoodRing({
             r="42"
             fill="none"
             stroke={`url(#${highlightGradientId})`}
-            strokeWidth="5"
+            strokeWidth="7"
             strokeLinecap="round"
-            strokeDasharray="20 244"
+            strokeDasharray="54 210"
             transform="rotate(-92 50 50)"
-            opacity="0.88"
-            style={{ filter: `drop-shadow(0 0 8px ${ringTheme.primary})` }}
+            opacity="0.96"
+            style={{ filter: `drop-shadow(0 0 10px ${ringTheme.primary})` }}
           />
           <circle
             cx="50"
@@ -211,11 +211,26 @@ export default function TypeCharacterMoodRing({
             stroke={ringTheme.secondary}
             strokeWidth="6"
             strokeLinecap="round"
-            strokeDasharray="8 256"
-            transform="rotate(-68 50 50)"
-            opacity="0.28"
+            strokeDasharray="16 248"
+            transform="rotate(72 50 50)"
+            opacity="0.46"
           />
         </svg>
+      )}
+      {!exportSafeRing && (
+        <span
+          aria-hidden="true"
+          className="absolute inset-[4%] animate-[spin_6.8s_linear_infinite] rounded-full"
+          style={ANIMATED_RING_STYLE}
+        >
+          <span
+            className={`absolute right-[3%] top-[18%] rounded-full ${config.dot}`}
+            style={{
+              backgroundColor: ringTheme.primary,
+              boxShadow: `0 0 14px ${ringTheme.primary}, 0 0 28px ${ringTheme.soft}`
+            }}
+          />
+        </span>
       )}
       {!exportSafeRing && (
         <div
@@ -229,7 +244,7 @@ export default function TypeCharacterMoodRing({
         />
       )}
       <span
-        className={`absolute right-[18%] top-[20%] animate-[pulse_3.2s_ease-in-out_infinite] rounded-full ${config.dot}`}
+        className={`absolute right-[18%] top-[20%] rounded-full ${config.dot}`}
         style={{
           backgroundColor: ringTheme.primary,
           opacity: exportSafeRing ? 0.72 : 1,
