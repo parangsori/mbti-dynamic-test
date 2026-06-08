@@ -76,8 +76,10 @@ function hexToRgba(hex, alpha) {
 
 const RING_LAYER_STYLE = {
   backfaceVisibility: 'hidden',
-  transform: 'translate3d(0,0,0)',
-  transformOrigin: '50% 50%'
+  WebkitBackfaceVisibility: 'hidden',
+  contain: 'paint',
+  transformOrigin: '50% 50%',
+  WebkitTransformOrigin: '50% 50%'
 };
 
 const ANIMATED_RING_STYLE = {
@@ -225,6 +227,15 @@ export default function TypeCharacterMoodRing({
             boxShadow: softInner
               ? `0 0 26px ${ringTheme.soft}, inset 0 0 24px ${ringTheme.soft}`
               : undefined
+          }}
+        />
+      )}
+      {!exportSafeRing && (
+        <span
+          className={`absolute right-[18%] top-[20%] rounded-full ${config.dot}`}
+          style={{
+            backgroundColor: ringTheme.primary,
+            boxShadow: `0 0 18px ${ringTheme.primary}`
           }}
         />
       )}
