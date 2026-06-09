@@ -7,6 +7,7 @@ export default defineConfig({
     drop: ['console', 'debugger']
   },
   build: {
+    assetsDir: 'assets/build',
     rollupOptions: {
       output: {
         manualChunks: {
