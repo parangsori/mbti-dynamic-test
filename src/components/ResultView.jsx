@@ -168,7 +168,7 @@ const getDetailPreview = ({ section, summaryCopy, todayDifferenceCopy, consisten
 
 function DetailSection({ title, preview, open, onToggle, children }) {
   return (
-    <div className={`group rounded-[1.6rem] border bg-white/[0.04] shadow-[0_22px_55px_rgba(2,6,23,0.24)] transition duration-300 ${open ? 'border-cyan-200/20' : 'border-white/10 hover:border-white/20'}`}>
+    <div className={`group rounded-[1.6rem] border bg-white/[0.055] shadow-[0_22px_55px_rgba(2,6,23,0.24)] transition duration-300 ${open ? 'border-cyan-200/25' : 'border-white/15 hover:border-white/25'}`}>
       <button
         type="button"
         onClick={onToggle}
@@ -176,9 +176,9 @@ function DetailSection({ title, preview, open, onToggle, children }) {
       >
         <div className="min-w-0 flex-1">
           <p className="text-[14px] font-black text-white">{title}</p>
-          <p className="mt-1 text-[12px] leading-relaxed text-slate-400 break-keep">{preview}</p>
+          <p className="mt-1 text-[12px] leading-relaxed text-slate-300 break-keep">{preview}</p>
         </div>
-        <span className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border border-white/10 bg-black/20 px-4 py-2 text-[11px] font-bold text-slate-300 transition group-hover:border-cyan-200/25 group-hover:bg-cyan-300/[0.08] group-hover:text-cyan-50">
+        <span className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border border-white/15 bg-black/25 px-4 py-2 text-[11px] font-bold text-slate-200 transition group-hover:border-cyan-200/30 group-hover:bg-cyan-300/[0.1] group-hover:text-cyan-50">
           {open ? '접기' : '펼치기'}
           <motion.span
             aria-hidden="true"
@@ -195,7 +195,7 @@ function DetailSection({ title, preview, open, onToggle, children }) {
           initial={{ opacity: 0, y: -4 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.2, ease: 'easeOut' }}
-          className="border-t border-white/10 px-5 py-5"
+          className="border-t border-white/15 px-5 py-5"
         >
           {children}
         </motion.div>
@@ -282,7 +282,7 @@ function PremiumFlowTeaser({ feedback, preview, mbti, presentation, themeClasses
 
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
         <div className="rounded-[1.2rem] border border-white/10 bg-black/20 px-3 py-3">
-          <p className="text-[10px] font-black tracking-[0.15em] text-slate-500 uppercase">타입 흐름</p>
+          <p className="text-[10px] font-black tracking-[0.15em] text-slate-400 uppercase">타입 흐름</p>
           <div className="mt-2 flex flex-wrap gap-2">
             {visibleTypes.map((type, idx) => (
               <span key={`${type}-${idx}`} className="rounded-full border border-white/10 bg-white/[0.06] px-3 py-1.5 text-[11px] font-black text-white">
@@ -292,7 +292,7 @@ function PremiumFlowTeaser({ feedback, preview, mbti, presentation, themeClasses
           </div>
         </div>
         <div className="rounded-[1.2rem] border border-white/10 bg-black/20 px-3 py-3">
-          <p className="text-[10px] font-black tracking-[0.15em] text-slate-500 uppercase">무드 흐름</p>
+          <p className="text-[10px] font-black tracking-[0.15em] text-slate-400 uppercase">무드 흐름</p>
           <div className="mt-2 flex items-center gap-2">
             {visibleMoods.map((moodKey, idx) => (
               <span
@@ -306,7 +306,7 @@ function PremiumFlowTeaser({ feedback, preview, mbti, presentation, themeClasses
       </div>
 
       <div className="mt-4 rounded-[1.2rem] border border-white/10 bg-white/[0.035] px-3 py-3">
-        <p className="text-[10px] font-black tracking-[0.15em] text-slate-500 uppercase">프리미엄에서 열리는 것</p>
+        <p className="text-[10px] font-black tracking-[0.15em] text-slate-400 uppercase">프리미엄에서 열리는 것</p>
         <div className="mt-2 flex flex-wrap gap-2">
           {preview.lockedInsights.map((item) => (
             <span key={item} className="rounded-full border border-white/10 bg-black/20 px-3 py-1.5 text-[11px] font-bold text-slate-200">
@@ -372,7 +372,7 @@ function TypeCharacterStage({
             <p className={`text-[11px] font-black tracking-[0.18em] uppercase ${themeClasses.label}`}>
               오늘의 MBTI
             </p>
-            <p className="max-w-[16.5rem] text-[13px] font-semibold leading-relaxed text-slate-300 break-keep">
+            <p className="max-w-[16.5rem] text-[13px] font-semibold leading-relaxed text-slate-200 break-keep">
               <span className="font-black text-white">{displayName}</span>님의 지금 마음을 비춰보니 가장 또렷하게 보인 성향이에요.
             </p>
           </div>
@@ -430,8 +430,8 @@ function TypeCharacterStage({
             />
           </div>
 
-          <div className="col-span-2 rounded-[1.2rem] border border-white/10 bg-black/18 px-4 py-3">
-            <p className="text-[13px] leading-relaxed text-slate-200 break-keep">{spirit.why || spirit.line}</p>
+          <div className="col-span-2 rounded-[1.2rem] border border-white/15 bg-black/25 px-4 py-3">
+            <p className="text-[13px] leading-relaxed text-slate-100 break-keep">{spirit.why || spirit.line}</p>
             {spirit.line && spirit.line !== spirit.why && (
               <p className="mt-2 text-[12px] font-semibold leading-relaxed text-cyan-100/90 break-keep">
                 {spirit.line}
@@ -454,8 +454,8 @@ function TypeCharacterStage({
           </div>
         </div>
 
-        <div className="mt-4 rounded-[1.25rem] border border-white/10 bg-black/20 px-4 py-3">
-          <p className="text-[11px] font-black tracking-[0.16em] text-slate-400 uppercase">오늘의 타입 캐릭터란?</p>
+        <div className="mt-4 rounded-[1.25rem] border border-white/15 bg-black/25 px-4 py-3">
+          <p className="text-[11px] font-black tracking-[0.16em] text-slate-300 uppercase">오늘의 타입 캐릭터란?</p>
           <p className="mt-2 text-[12px] font-semibold leading-relaxed text-slate-100 break-keep">
             지금 마음에 가장 또렷한 성향을 비춰주고, 오늘을 조금 더 나답게 보내는 힌트를 건네는 작은 동행 캐릭터예요. 같은 MBTI가 다시 나와도 싱크로율과 무드가 달라지면 오늘의 결도 다르게 남을 수 있어요.
           </p>
@@ -529,11 +529,11 @@ function DailyInsightCard({ dailyAction, relationshipHint, recoveryHint, tomorro
 
 function AxisCoordinateCard({ axisNarratives, themeClasses }) {
   return (
-    <div className="rounded-[1.45rem] border border-white/10 bg-white/[0.04] px-4 py-4">
+    <div className="rounded-[1.45rem] border border-white/15 bg-white/[0.055] px-4 py-4">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-[11px] font-black tracking-[0.18em] text-slate-400 uppercase">나의 성향 좌표</p>
-          <p className="mt-1 text-[13px] leading-relaxed text-slate-300 break-keep">오늘 답변이 어느 쪽으로 기울었는지 한눈에 볼 수 있어요.</p>
+          <p className="text-[11px] font-black tracking-[0.18em] text-slate-300 uppercase">나의 성향 좌표</p>
+          <p className="mt-1 text-[13px] leading-relaxed text-slate-200 break-keep">오늘 답변이 어느 쪽으로 기울었는지 한눈에 볼 수 있어요.</p>
         </div>
         <span className={`shrink-0 rounded-full border px-3 py-1 text-[10px] font-black ${themeClasses.chip}`}>4축</span>
       </div>
@@ -553,7 +553,7 @@ function AxisCoordinateBar({ axis }) {
   const markerPosition = isLeftDom ? leftRatio : 100 - rightRatio;
 
   return (
-    <div className={`rounded-[1rem] border px-3 py-3 ${axis.isBoundary ? 'border-amber-300/20 bg-amber-300/[0.07]' : 'border-white/10 bg-black/20'}`}>
+    <div className={`rounded-[1rem] border px-3 py-3 ${axis.isBoundary ? 'border-amber-300/25 bg-amber-300/[0.08]' : 'border-white/15 bg-black/25'}`}>
       <div className="mb-2 flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <span className="text-[12px] font-black text-white">{axis.pair}</span>
@@ -562,7 +562,7 @@ function AxisCoordinateBar({ axis }) {
         <span className="text-[11px] font-black text-slate-200">{axis.dominantType} {axis.intensity}%</span>
       </div>
       <div className="grid grid-cols-[2.1rem_minmax(0,1fr)_2.1rem] items-center gap-2">
-        <div className={`text-center text-[12px] font-black ${isLeftDom ? 'text-brand' : 'text-slate-500'}`}>{axis.left}</div>
+        <div className={`text-center text-[12px] font-black ${isLeftDom ? 'text-brand' : 'text-slate-400'}`}>{axis.left}</div>
         <div className="relative h-3 overflow-hidden rounded-full bg-slate-800/80">
           <motion.div initial={{ width: 0 }} animate={{ width: `${leftRatio}%` }} transition={{ duration: 0.75 }} className="absolute left-0 top-0 h-full bg-gradient-to-r from-brand to-purple-400" />
           <motion.div initial={{ width: 0 }} animate={{ width: `${rightRatio}%` }} transition={{ duration: 0.75 }} className="absolute right-0 top-0 h-full bg-gradient-to-l from-cyan-300 to-cyan-600" />
@@ -573,9 +573,9 @@ function AxisCoordinateBar({ axis }) {
             className="absolute top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-slate-950 shadow-[0_0_16px_rgba(255,255,255,0.28)]"
           />
         </div>
-        <div className={`text-center text-[12px] font-black ${!isLeftDom ? 'text-cyan-300' : 'text-slate-500'}`}>{axis.right}</div>
+        <div className={`text-center text-[12px] font-black ${!isLeftDom ? 'text-cyan-300' : 'text-slate-400'}`}>{axis.right}</div>
       </div>
-      <p className="mt-2 text-[11px] leading-relaxed text-slate-400 break-keep">{axis.stateLabel}</p>
+      <p className="mt-2 text-[11px] leading-relaxed text-slate-300 break-keep">{axis.stateLabel}</p>
     </div>
   );
 }
@@ -992,7 +992,7 @@ export default function ResultView({
         </div>
       </div>
 
-      <div ref={resultRef} className="relative mt-2 w-full max-w-[26.25rem] overflow-hidden rounded-[2rem] border border-white/10 bg-slate-900/95 p-4 shadow-[0_30px_90px_rgba(2,6,23,0.55)] sm:p-6">
+      <div ref={resultRef} className="relative mt-2 w-full max-w-[26.25rem] overflow-hidden rounded-[2rem] border border-white/15 bg-slate-900/95 p-4 shadow-[0_30px_90px_rgba(2,6,23,0.55)] sm:p-6">
         <div className={`absolute inset-0 ${themeClasses.shell}`} />
         <div className="relative z-10 flex flex-col items-center">
           <TypeCharacterStage
@@ -1012,7 +1012,7 @@ export default function ResultView({
             neutralReviewNote={neutralReviewNote}
           />
 
-          <div className="mt-5 flex w-full flex-col gap-4 rounded-[1.8rem] border border-white/10 bg-[linear-gradient(180deg,rgba(10,16,29,0.94),rgba(15,23,42,0.88))] p-5 shadow-[0_22px_70px_rgba(2,6,23,0.38)]">
+          <div className="mt-5 flex w-full flex-col gap-4 rounded-[1.8rem] border border-white/15 bg-[linear-gradient(180deg,rgba(10,16,29,0.96),rgba(15,23,42,0.92))] p-5 shadow-[0_22px_70px_rgba(2,6,23,0.38)]">
             <MoodPointCard
               presentation={presentation}
               todayDifferenceCopy={todayDifferenceCopy}
@@ -1067,7 +1067,7 @@ export default function ResultView({
               <button
                 type="button"
                 onClick={handleCopyShare}
-                className="group relative overflow-hidden rounded-[1.4rem] border border-white/10 bg-white/[0.05] px-4 py-3 text-[13px] font-bold text-slate-100 transition duration-300 hover:-translate-y-0.5 hover:border-cyan-200/20 hover:bg-white/[0.08] focus:outline-none focus:ring-2 focus:ring-cyan-200/30 active:translate-y-0 active:scale-[0.99]"
+                className="group relative overflow-hidden rounded-[1.4rem] border border-white/15 bg-white/[0.065] px-4 py-3 text-[13px] font-bold text-slate-50 transition duration-300 hover:-translate-y-0.5 hover:border-cyan-200/25 hover:bg-white/[0.09] focus:outline-none focus:ring-2 focus:ring-cyan-200/30 active:translate-y-0 active:scale-[0.99]"
               >
                 <ActionGlow />
                 <span className="relative">{shareCopied ? '한 줄 복사 완료' : '한 줄 결과 복사'}</span>
@@ -1075,7 +1075,7 @@ export default function ResultView({
               <button
                 type="button"
                 onClick={openHistoryModal}
-                className="group relative overflow-hidden rounded-[1.4rem] border border-white/10 bg-white/[0.05] px-4 py-3 text-[13px] font-bold text-slate-100 transition duration-300 hover:-translate-y-0.5 hover:border-cyan-200/20 hover:bg-white/[0.08] focus:outline-none focus:ring-2 focus:ring-cyan-200/30 active:translate-y-0 active:scale-[0.99]"
+                className="group relative overflow-hidden rounded-[1.4rem] border border-white/15 bg-white/[0.065] px-4 py-3 text-[13px] font-bold text-slate-50 transition duration-300 hover:-translate-y-0.5 hover:border-cyan-200/25 hover:bg-white/[0.09] focus:outline-none focus:ring-2 focus:ring-cyan-200/30 active:translate-y-0 active:scale-[0.99]"
               >
                 <ActionGlow />
                 <span className="relative">나의 기록 & 활동 보기</span>
@@ -1084,12 +1084,12 @@ export default function ResultView({
             <button
               type="button"
               onClick={onRestart}
-              className="group relative overflow-hidden rounded-[1.4rem] border border-white/10 bg-black/20 px-4 py-3 text-[13px] font-bold text-slate-300 transition duration-300 hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/[0.06] hover:text-white focus:outline-none focus:ring-2 focus:ring-cyan-200/25 active:translate-y-0 active:scale-[0.99]"
+              className="group relative overflow-hidden rounded-[1.4rem] border border-white/15 bg-black/25 px-4 py-3 text-[13px] font-bold text-slate-200 transition duration-300 hover:-translate-y-0.5 hover:border-white/25 hover:bg-white/[0.07] hover:text-white focus:outline-none focus:ring-2 focus:ring-cyan-200/25 active:translate-y-0 active:scale-[0.99]"
             >
               <ActionGlow className="opacity-0 group-hover:opacity-70" />
               <span className="relative">지금 다시 해보기</span>
             </button>
-            <p className="px-1 text-center text-[12px] leading-relaxed text-slate-400 break-keep">{retestPrompt}</p>
+            <p className="px-1 text-center text-[12px] leading-relaxed text-slate-300 break-keep">{retestPrompt}</p>
           </div>
         </div>
       </div>
@@ -1135,7 +1135,7 @@ export default function ResultView({
           <div className="relative z-10 flex max-h-[calc(100dvh-2rem)] w-full max-w-sm flex-col overflow-hidden rounded-[2rem] border border-white/10 bg-slate-900 shadow-2xl">
             <div className="min-h-0 overflow-y-auto px-6 pb-6 pt-6 overscroll-contain">
               <h3 id="mood-legend-title" className="text-center text-[18px] font-black text-white">8가지 오늘의 무드</h3>
-              <p className="mt-2 text-center text-[13px] leading-relaxed text-slate-300 break-keep">
+              <p className="mt-2 text-center text-[13px] leading-relaxed text-slate-200 break-keep">
                 타입 캐릭터는 그대로이고, 오늘의 무드가 주변 빛과 링, 흐름 점으로 달라져요. 같은 MBTI라도 오늘의 결은 다르게 남을 수 있습니다.
               </p>
               <div className="mt-6 grid grid-cols-1 gap-3">
