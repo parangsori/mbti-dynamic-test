@@ -214,11 +214,11 @@ export default function QuestionView({
       initial={{ opacity: 0, x: 50 }}
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -50 }}
-      className="w-full min-h-[100dvh] flex flex-col max-w-sm pt-8 pb-8 px-5"
+      className="w-full min-h-[100dvh] flex flex-col max-w-[23.5rem] pt-8 pb-8 px-5"
     >
       {/* Enhanced Progress Bar */}
       <div className="w-full mb-3">
-        <div className="flex justify-between items-end mb-2.5 text-slate-300 font-bold">
+        <div className="flex justify-between items-end mb-2.5 text-slate-300 font-semibold">
           <span className="text-2xl bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-brand tracking-widest italic">{questionLabel || `Q${currIdx + 1}`}</span>
           <span className="text-sm font-medium bg-white/10 px-3 py-1 rounded-full">{counterText || `${currIdx + 1} / ${totalQuestions}`}</span>
         </div>
@@ -277,7 +277,7 @@ export default function QuestionView({
                 </span>
               </div>
               <div className="px-5 py-6">
-                <h2 className="text-[21px] font-black text-white leading-snug break-keep text-center">{question.q}</h2>
+                <h2 className="text-[20px] font-extrabold text-white leading-snug break-keep text-center">{question.q}</h2>
                 <p className="mt-4 text-center text-[11px] font-semibold text-slate-400 break-keep">
                   질문을 읽고 아래 답변 카드를 골라주세요
                 </p>
@@ -343,7 +343,7 @@ export default function QuestionView({
                     opacity: isFlyingOut ? 0 : isOtherFlyingOut ? 0.3 : isTransitioning ? 0.4 : isMuted ? 0.7 : 1
                   }}
                   transition={{ type: 'spring', stiffness: 650, damping: 20 }}
-                  className={`relative flex h-[7.25rem] w-[78%] flex-col justify-between overflow-hidden rounded-2xl border px-4 py-3.5 text-center shadow-lg transition-colors active:scale-[0.98] ${
+                  className={`relative flex h-[7rem] w-[78%] flex-col justify-between overflow-hidden rounded-2xl border px-4 py-3.5 text-center shadow-lg transition-colors active:scale-[0.98] ${
                     side === 'left' ? 'self-start' : 'self-end'
                   } ${
                     isActive || hasSwipeFeedback
@@ -370,7 +370,7 @@ export default function QuestionView({
                       {side === 'left' ? '← 왼쪽' : '오른쪽 →'}
                     </span>
                   </div>
-                  <span className="mt-2.5 flex flex-1 items-center justify-center text-[15px] font-bold leading-snug break-words">
+                  <span className="mt-2.5 flex flex-1 items-center justify-center text-[15px] font-semibold leading-snug break-words">
                     {option.text}
                   </span>
                   <span className={`mt-2.5 text-[10px] font-semibold text-slate-400 ${side === 'left' ? 'text-left' : 'text-right'}`}>

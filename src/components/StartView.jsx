@@ -137,9 +137,9 @@ export default function StartView({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
-      className="w-full max-w-sm flex flex-col items-center px-6 py-8 min-[390px]:py-10"
+      className="w-full max-w-[23.5rem] flex flex-col items-center px-6 py-8"
     >
-      <div className="mb-5 flex flex-col items-center gap-3 min-[390px]:mb-6">
+      <div className="mb-5 flex flex-col items-center gap-3">
         <div className="relative flex h-[7.25rem] w-[7.25rem] items-center justify-center rounded-[2rem] bg-white/[0.045] shadow-[inset_0_1px_0_rgba(255,255,255,0.16),0_24px_70px_rgba(34,211,238,0.16)]">
           <div className="absolute inset-2 rounded-[1.7rem] bg-gradient-to-br from-cyan-300/14 via-white/[0.03] to-brand/14" />
           <div className="relative flex h-24 w-24 items-center justify-center overflow-hidden rounded-[1.65rem] border border-white/15 bg-white/10 p-2 shadow-[0_18px_42px_rgba(15,23,42,0.28)]">
@@ -155,10 +155,10 @@ export default function StartView({
           </span>
         </div>
       </div>
-      <h1 className="mb-3 text-center text-[2.05rem] font-black leading-[1.12] text-white min-[390px]:text-[2.35rem]">
+      <h1 className="mb-3 text-center text-[2.05rem] font-extrabold leading-[1.12] text-white">
         지금 내 결은 어느 쪽이 더 강할까?
       </h1>
-      <p className="mb-8 text-center font-medium leading-relaxed text-slate-300 min-[390px]:mb-9">
+      <p className="mb-8 text-center font-normal leading-relaxed text-slate-300">
         12문항으로 오늘의 무드와 성향 흐름을
         <br />
         가볍고 재밌게 확인해보세요
@@ -180,7 +180,7 @@ export default function StartView({
           value={userName}
           onChange={(event) => onChangeUserName(event.target.value)}
           placeholder="이름은 선택이에요 (비워도 바로 시작)"
-          className="w-full bg-transparent text-white placeholder-slate-400 text-center text-xl py-4 outline-none font-bold"
+          className="w-full bg-transparent text-white placeholder-slate-400 text-center text-xl py-4 outline-none font-semibold"
           maxLength="10"
           onKeyPress={(event) => event.key === 'Enter' && onStart()}
           aria-label="이름 입력"
@@ -199,7 +199,7 @@ export default function StartView({
 
       <button
         onClick={onStart}
-        className="mt-5 w-[92%] max-w-[19rem] rounded-[1.35rem] bg-gradient-to-r from-brand to-cyan-500 py-4 text-base font-black text-white shadow-[0_14px_34px_rgba(34,211,238,0.2)] transition-all duration-300 hover:scale-[1.01] active:scale-[0.98] min-[390px]:mt-6 min-[390px]:py-[1.05rem] min-[390px]:text-lg"
+        className="mt-5 w-[92%] max-w-[19rem] rounded-[1.35rem] bg-gradient-to-r from-brand to-cyan-500 py-4 text-base font-extrabold text-white shadow-[0_14px_34px_rgba(34,211,238,0.2)] transition-all duration-300 hover:scale-[1.01] active:scale-[0.98]"
       >
         바로 시작하기
       </button>

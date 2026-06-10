@@ -20,6 +20,11 @@ body,
   overscroll-behavior-x: none;
 }
 
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
 :root {
   --app-font-scale: 1;
 }
