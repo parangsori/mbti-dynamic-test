@@ -625,13 +625,25 @@ function TypeCharacterIntroModal({
       <div className="relative z-10 flex max-h-[calc(100dvh-2rem)] w-full max-w-sm flex-col overflow-hidden rounded-[2rem] border border-white/10 bg-[linear-gradient(180deg,rgba(15,23,42,0.98),rgba(2,6,23,0.96))] shadow-2xl">
         <div className={`absolute -right-14 top-[-4rem] h-44 w-44 rounded-full ${themeClasses.haloTop} blur-3xl`} />
         <div className={`absolute -left-12 bottom-[-4rem] h-40 w-40 rounded-full ${themeClasses.haloBottom} blur-3xl`} />
-        <div className="relative min-h-0 overflow-y-auto px-5 pb-5 pt-5 overscroll-contain">
+        <div className="relative z-10 flex shrink-0 items-start justify-between gap-3 border-b border-white/10 bg-slate-950/72 px-5 py-4 backdrop-blur-sm">
+          <div className="min-w-0">
+            <p className={`text-[11px] font-black tracking-[0.18em] uppercase ${themeClasses.label}`}>오늘의 타입 캐릭터</p>
+            <h3 id="type-character-modal-title" className="mt-1 text-[24px] font-black leading-tight text-white break-keep">
+              {characterName}
+            </h3>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/5 text-[24px] font-light leading-none text-slate-200 transition-colors hover:bg-white/10"
+            aria-label="타입 캐릭터 소개 닫기"
+          >
+            ×
+          </button>
+        </div>
+        <div className="relative min-h-0 overflow-y-auto px-5 pb-5 pt-4 overscroll-contain">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <p className={`text-[11px] font-black tracking-[0.18em] uppercase ${themeClasses.label}`}>오늘의 타입 캐릭터</p>
-              <h3 id="type-character-modal-title" className="mt-1 text-[24px] font-black leading-tight text-white break-keep">
-                {characterName}
-              </h3>
               <p className="mt-1 text-[13px] font-bold leading-relaxed text-slate-300 break-keep">{spirit.role}</p>
             </div>
             <span className={`shrink-0 rounded-full border px-3 py-1 text-[10px] font-black ${themeClasses.chip}`}>
@@ -683,9 +695,6 @@ function TypeCharacterIntroModal({
             </div>
           </div>
 
-          <button onClick={onClose} className="mt-5 w-full rounded-2xl bg-white/10 py-3 text-[14px] font-bold text-white transition hover:bg-white/15">
-            닫기
-          </button>
         </div>
       </div>
     </div>
@@ -1133,9 +1142,19 @@ export default function ResultView({
         <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }} role="dialog" aria-modal="true" aria-labelledby="mood-legend-title">
           <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm" onClick={() => setShowMoodLegend(false)} />
           <div className="relative z-10 flex max-h-[calc(100dvh-2rem)] w-full max-w-sm flex-col overflow-hidden rounded-[2rem] border border-white/10 bg-slate-900 shadow-2xl">
-            <div className="min-h-0 overflow-y-auto px-6 pb-6 pt-6 overscroll-contain">
-              <h3 id="mood-legend-title" className="text-center text-[18px] font-black text-white">8가지 오늘의 무드</h3>
-              <p className="mt-2 text-center text-[13px] leading-relaxed text-slate-200 break-keep">
+            <div className="relative z-10 flex shrink-0 items-center justify-between border-b border-white/10 bg-slate-900/95 px-5 py-4 backdrop-blur-sm">
+              <h3 id="mood-legend-title" className="text-[18px] font-black text-white">8가지 오늘의 무드</h3>
+              <button
+                type="button"
+                onClick={() => setShowMoodLegend(false)}
+                className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/5 text-[24px] font-light leading-none text-slate-200 transition-colors hover:bg-white/10"
+                aria-label="오늘의 무드 설명 닫기"
+              >
+                ×
+              </button>
+            </div>
+            <div className="min-h-0 overflow-y-auto px-6 pb-6 pt-5 overscroll-contain">
+              <p className="text-center text-[13px] leading-relaxed text-slate-200 break-keep">
                 타입 캐릭터는 그대로이고, 오늘의 무드가 주변 빛과 링, 흐름 점으로 달라져요. 같은 MBTI라도 오늘의 결은 다르게 남을 수 있습니다.
               </p>
               <div className="mt-6 grid grid-cols-1 gap-3">
@@ -1153,9 +1172,6 @@ export default function ResultView({
                   );
                 })}
               </div>
-              <button onClick={() => setShowMoodLegend(false)} className="mt-6 w-full rounded-2xl bg-white/10 py-3 text-[14px] font-bold text-white transition hover:bg-white/15">
-                닫기
-              </button>
             </div>
           </div>
         </div>

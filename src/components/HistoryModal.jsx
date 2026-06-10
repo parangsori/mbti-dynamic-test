@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 
 const THEME_LABELS = {
@@ -173,6 +173,20 @@ export default function HistoryModal({
   const [selectedEntry, setSelectedEntry] = useState(null);
   const [lockNote, setLockNote] = useState('');
 
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      if (event.key !== 'Escape') return;
+      if (selectedEntry) {
+        setSelectedEntry(null);
+        return;
+      }
+      onClose();
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose, selectedEntry]);
+
   const handleHistoryEntryClick = (item) => {
     if (isPremiumUser && item.resultSnapshotVersion) {
       setSelectedEntry(item);
@@ -321,11 +335,6 @@ export default function HistoryModal({
           </div>
         </div>
 
-        <div className="border-t border-white/10 bg-slate-900/95 px-5 py-4">
-          <button onClick={onClose} className="w-full py-4 bg-white/10 border border-white/10 rounded-2xl text-slate-200 font-bold hover:bg-white/20 transition-colors">
-            닫기
-          </button>
-        </div>
       </motion.div>
       </motion.div>
 

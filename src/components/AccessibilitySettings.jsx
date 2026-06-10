@@ -56,6 +56,17 @@ export default function AccessibilitySettings({
     }
   }, [fontScale, highContrast]);
 
+  useEffect(() => {
+    if (!isOpen) return undefined;
+
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') onClose();
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -64,20 +75,35 @@ export default function AccessibilitySettings({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           className="fixed inset-0 z-[99999] flex items-center justify-center p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="accessibility-settings-title"
         >
           <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm" onClick={onClose} />
           <motion.div
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.9, opacity: 0 }}
-            className="relative z-10 w-full max-w-sm overflow-hidden rounded-[2rem] border border-white/10 bg-slate-900 p-6 shadow-2xl"
+            className="relative z-10 flex max-h-[calc(100dvh-2rem)] w-full max-w-sm flex-col overflow-hidden rounded-[2rem] border border-white/10 bg-slate-900 shadow-2xl"
           >
-            <h3 className="text-center text-[18px] font-black text-white">접근성 설정</h3>
-            <p className="mt-2 text-center text-[13px] text-slate-400">
-              편하게 사용할 수 있도록 글자 크기와 대비를 조정할 수 있어요
-            </p>
+            <div className="relative z-10 flex shrink-0 items-center justify-between border-b border-white/10 bg-slate-900/95 px-5 py-4 backdrop-blur-sm">
+              <h3 id="accessibility-settings-title" className="text-[18px] font-black text-white">접근성 설정</h3>
+              <button
+                type="button"
+                onClick={onClose}
+                className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/5 text-[24px] font-light leading-none text-slate-200 transition-colors hover:bg-white/10"
+                aria-label="접근성 설정 닫기"
+              >
+                ×
+              </button>
+            </div>
 
-            <div className="mt-6">
+            <div className="min-h-0 overflow-y-auto px-6 pb-6 overscroll-contain">
+              <p className="mt-5 text-[13px] leading-relaxed text-slate-400">
+                편하게 사용할 수 있도록 글자 크기와 대비를 조정할 수 있어요
+              </p>
+
+              <div className="mt-6">
               <p className="text-[13px] font-bold text-slate-300 mb-3">글자 크기</p>
               <div className="flex gap-2">
                 {FONT_SIZE_OPTIONS.map((option) => (
@@ -98,9 +124,9 @@ export default function AccessibilitySettings({
               <p className="mt-2 text-[11px] text-slate-500 text-center">
                 현재: {Math.round(fontScale * 16)}px 기준
               </p>
-            </div>
+              </div>
 
-            <div className="mt-5">
+              <div className="mt-5">
               <p className="text-[13px] font-bold text-slate-300 mb-3">고대비 모드</p>
               <button
                 onClick={() => setHighContrast(!highContrast)}
@@ -118,9 +144,9 @@ export default function AccessibilitySettings({
                 </div>
                 <p className="mt-1 text-[11px] text-slate-400">텍스트와 배경의 색상 대비를 높여 가독성을 개선합니다</p>
               </button>
-            </div>
+              </div>
 
-            <div className="mt-5 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-4">
+              <div className="mt-5 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-4">
               <p className="text-[13px] font-bold text-slate-300">홈화면 추가 안내</p>
               <p className="mt-1 text-[11px] leading-relaxed text-slate-400">
                 안내를 다시 보이게 하면 시작 화면에서 홈화면 추가 방법을 확인할 수 있어요.
@@ -132,14 +158,8 @@ export default function AccessibilitySettings({
               >
                 {homeScreenTipHidden ? '안내 다시 보기' : '시작 화면에서 안내 보기'}
               </button>
+              </div>
             </div>
-
-            <button
-              onClick={onClose}
-              className="mt-6 w-full rounded-2xl bg-white/10 py-3 text-[14px] font-bold text-white transition hover:bg-white/15"
-            >
-              닫기
-            </button>
           </motion.div>
         </motion.div>
       )}

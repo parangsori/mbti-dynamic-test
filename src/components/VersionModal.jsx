@@ -1,18 +1,47 @@
+import { useEffect } from 'react';
 import { motion } from 'framer-motion';
 
 export default function VersionModal({ changelog, onClose }) {
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') onClose();
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
+
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/60 backdrop-blur-sm" onClick={onClose}>
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm sm:p-6"
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="version-modal-title"
+    >
       <motion.div
         initial={{ scale: 0.9, y: 20 }}
         animate={{ scale: 1, y: 0 }}
         exit={{ scale: 0.9, y: 20 }}
-        className="bg-slate-900 border border-white/10 rounded-3xl p-6 w-full max-w-sm shadow-2xl overflow-hidden relative"
+        className="relative flex max-h-[calc(100dvh-2rem)] w-full max-w-sm flex-col overflow-hidden rounded-[2rem] border border-white/10 bg-slate-900 shadow-2xl"
         onClick={(event) => event.stopPropagation()}
       >
         <div className="absolute top-[-50px] right-[-50px] w-32 h-32 bg-brand/30 blur-3xl rounded-full"></div>
-        <h3 className="text-xl font-black text-white mb-6">업데이트 내역</h3>
-        <div className="flex flex-col gap-4 max-h-[60vh] overflow-y-auto pr-2">
+        <div className="relative z-10 flex shrink-0 items-center justify-between border-b border-white/10 bg-slate-900/95 px-5 py-4 backdrop-blur-sm">
+          <h3 id="version-modal-title" className="text-xl font-black text-white">업데이트 내역</h3>
+          <button
+            type="button"
+            onClick={onClose}
+            className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/5 text-[24px] font-light leading-none text-slate-200 transition-colors hover:bg-white/10"
+            aria-label="업데이트 내역 닫기"
+          >
+            ×
+          </button>
+        </div>
+        <div className="flex min-h-0 flex-col gap-4 overflow-y-auto px-5 py-5 overscroll-contain">
           {changelog.map((item, idx) => (
             <div key={idx} className="rounded-2xl border border-white/10 bg-white/5 px-4 py-4">
               <div className="flex items-center justify-between">
@@ -30,9 +59,6 @@ export default function VersionModal({ changelog, onClose }) {
             </div>
           ))}
         </div>
-        <button onClick={onClose} className="w-full py-4 mt-8 bg-white/10 border border-white/10 rounded-2xl text-slate-200 font-bold hover:bg-white/20 transition-colors">
-          확인
-        </button>
       </motion.div>
     </motion.div>
   );
