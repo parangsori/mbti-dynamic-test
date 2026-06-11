@@ -20,9 +20,10 @@ export const COMPATIBILITY = {
 export const CHANGELOG = [
   {
     version: 'v1.7.3',
-    date: '2026.06.10',
+    date: '2026.06.11',
     updates: [
-      '서비스 안정성과 운영 점검 기반을 개선'
+      '새 앱 아이콘과 시작 화면 브랜드 로고, 고정 스플래시 화면을 적용',
+      '클라이언트 오류를 더 안전하고 구체적으로 진단할 수 있도록 운영 점검 기반을 개선'
     ]
   },
   {

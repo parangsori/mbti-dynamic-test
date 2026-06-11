@@ -111,6 +111,55 @@ function InsightList({ eyebrow, title, items = [], getPrimary, getSecondary, emp
   );
 }
 
+function ErrorDiagnostics({ items = [] }) {
+  return (
+    <section className="panel error-panel">
+      <div className="panel-title">
+        <div>
+          <p>오류 진단</p>
+          <h2>패치에 필요한 발생 정보</h2>
+        </div>
+      </div>
+
+      {items.length === 0 ? (
+        <p className="empty-text">수집된 클라이언트 오류 이벤트가 없습니다.</p>
+      ) : (
+        <div className="error-list">
+          {items.map((item, index) => {
+            const location = item.filename
+              ? `${item.filename}${item.line ? `:${item.line}${item.column ? `:${item.column}` : ''}` : ''}`
+              : item.path;
+            return (
+              <article className="error-item" key={`${item.fingerprint}-${index}`}>
+                <div className="error-heading">
+                  <div>
+                    <strong>{item.errorKey}</strong>
+                    <span>{item.errorName} · {item.source}</span>
+                  </div>
+                  <em>{formatNumber(item.total)}건 · {formatNumber(item.actors)}명</em>
+                </div>
+                <p className="error-message">{item.message}</p>
+                {item.cause && <p className="error-cause">원인: {item.cause}</p>}
+                <dl className="error-meta">
+                  <div><dt>위치</dt><dd>{location || '알 수 없음'}</dd></div>
+                  {item.resourceType && <div><dt>리소스</dt><dd>{item.resourceType}</dd></div>}
+                  <div><dt>환경</dt><dd>{item.deviceType} · {item.browser} · {item.os}</dd></div>
+                  <div><dt>상태</dt><dd>{item.online} · {item.connectionType} · {item.visibilityState}</dd></div>
+                  <div><dt>버전</dt><dd>{item.appVersion}</dd></div>
+                  <div><dt>최근</dt><dd>{formatTime(item.lastSeen) || '알 수 없음'}</dd></div>
+                  <div><dt>지문</dt><dd>{item.fingerprint}</dd></div>
+                </dl>
+                {item.stack && <pre>{item.stack}</pre>}
+                {item.componentStack && <pre>{item.componentStack}</pre>}
+              </article>
+            );
+          })}
+        </div>
+      )}
+    </section>
+  );
+}
+
 function DailyPulse({ daily = [] }) {
   const totalsByDay = daily.reduce((acc, item) => {
     if (!acc[item.day]) acc[item.day] = { day: item.day, pageview: 0, start: 0, complete: 0, share: 0 };
@@ -376,15 +425,9 @@ export default function App() {
               getPrimary={(item) => item.source}
               getSecondary={(item) => `${formatNumber(item.actors)}명 기준`}
             />
-            <InsightList
-              eyebrow="오류"
-              title="사용자가 겪는 문제"
-              items={metrics.errors?.items || []}
-              emptyText="수집된 클라이언트 오류 이벤트가 없습니다."
-              getPrimary={(item) => item.errorKey}
-              getSecondary={(item) => `${item.source} · ${formatNumber(item.actors)}명 영향`}
-            />
           </section>
+
+          <ErrorDiagnostics items={metrics.errors?.items || []} />
 
           <section className="panel compact">
             <div className="panel-title">
@@ -421,7 +464,7 @@ export default function App() {
             <p>마지막 갱신: {lastUpdated}</p>
             <p>조회 기간과 일별 흐름은 {DASHBOARD_TIME_ZONE_LABEL} 달력일 기준입니다.</p>
             <p>화면은 60초마다 자동으로 다시 조회됩니다.</p>
-            <p>집계 숫자만 표시하며 사용자별 원문 로그는 노출하지 않습니다.</p>
+            <p>비식별 오류 진단 정보만 표시하며 사용자별 원문 데이터는 노출하지 않습니다.</p>
           </footer>
         </>
       )}

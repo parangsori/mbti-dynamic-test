@@ -300,14 +300,34 @@ const buildErrorQuery = (days) => `
 SELECT
   coalesce(nullIf(toString(properties['error_key']), ''), 'unknown_error') AS errorKey,
   coalesce(nullIf(toString(properties['error_source']), ''), 'app') AS source,
+  coalesce(nullIf(toString(properties['error_name']), ''), 'Error') AS errorName,
+  coalesce(nullIf(toString(properties['error_message']), ''), '상세 정보 없음 (이전 수집 데이터)') AS message,
+  coalesce(nullIf(toString(properties['error_cause']), ''), '') AS cause,
+  coalesce(nullIf(toString(properties['error_fingerprint']), ''), 'legacy') AS fingerprint,
+  coalesce(nullIf(toString(properties['error_filename']), ''), '') AS filename,
+  coalesce(nullIf(toString(properties['error_line']), ''), '0') AS errorLine,
+  coalesce(nullIf(toString(properties['error_column']), ''), '0') AS errorColumn,
+  coalesce(nullIf(toString(properties['error_stack']), ''), '') AS stack,
+  coalesce(nullIf(toString(properties['error_component_stack']), ''), '') AS componentStack,
+  coalesce(nullIf(toString(properties['error_resource_type']), ''), '') AS resourceType,
+  coalesce(nullIf(toString(properties['app_version']), ''), '이전 버전') AS appVersion,
+  coalesce(nullIf(toString(properties['path']), ''), '/') AS path,
+  coalesce(nullIf(toString(properties['$browser']), ''), '알 수 없음') AS browser,
+  coalesce(nullIf(toString(properties['$os']), ''), '알 수 없음') AS os,
+  coalesce(nullIf(toString(properties['$device_type']), ''), '알 수 없음') AS deviceType,
+  coalesce(nullIf(toString(properties['online']), ''), '알 수 없음') AS online,
+  coalesce(nullIf(toString(properties['connection_type']), ''), '알 수 없음') AS connectionType,
+  coalesce(nullIf(toString(properties['visibility_state']), ''), '알 수 없음') AS visibilityState,
   count() AS total,
-  count(DISTINCT distinct_id) AS actors
+  count(DISTINCT distinct_id) AS actors,
+  min(timestamp) AS firstSeen,
+  max(timestamp) AS lastSeen
 FROM events
 ${kstDateWindowSql(days)}
   AND event = 'client_error'
-GROUP BY errorKey, source
-ORDER BY total DESC
-LIMIT 8
+GROUP BY errorKey, source, errorName, message, cause, fingerprint, filename, errorLine, errorColumn, stack, componentStack, resourceType, appVersion, path, browser, os, deviceType, online, connectionType, visibilityState
+ORDER BY lastSeen DESC, total DESC
+LIMIT 20
 `;
 
 const rowsToCounts = (rows = []) =>
@@ -352,11 +372,56 @@ const rowsToReferrers = (rows = []) =>
   }));
 
 const rowsToErrors = (rows = []) =>
-  rows.map(([errorKey, source, total, actors]) => ({
+  rows.map(([
+    errorKey,
+    source,
+    errorName,
+    message,
+    cause,
+    fingerprint,
+    filename,
+    line,
+    column,
+    stack,
+    componentStack,
+    resourceType,
+    appVersion,
+    path,
+    browser,
+    os,
+    deviceType,
+    online,
+    connectionType,
+    visibilityState,
+    total,
+    actors,
+    firstSeen,
+    lastSeen
+  ]) => ({
     errorKey: errorKey || 'unknown_error',
     source: source || 'app',
+    errorName: errorName || 'Error',
+    message: message || '상세 정보 없음',
+    cause: cause || '',
+    fingerprint: fingerprint || 'legacy',
+    filename: filename || '',
+    line: Number(line) || 0,
+    column: Number(column) || 0,
+    stack: stack || '',
+    componentStack: componentStack || '',
+    resourceType: resourceType || '',
+    appVersion: appVersion || '이전 버전',
+    path: path || '/',
+    browser: browser || '알 수 없음',
+    os: os || '알 수 없음',
+    deviceType: deviceType || '알 수 없음',
+    online: online || '알 수 없음',
+    connectionType: connectionType || '알 수 없음',
+    visibilityState: visibilityState || '알 수 없음',
     total: Number(total) || 0,
-    actors: Number(actors) || 0
+    actors: Number(actors) || 0,
+    firstSeen: firstSeen || '',
+    lastSeen: lastSeen || ''
   }));
 
 const percent = (value, base) => (base > 0 ? Math.round((value / base) * 100) : 0);
