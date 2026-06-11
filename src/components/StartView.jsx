@@ -143,7 +143,11 @@ export default function StartView({
         <img 
           src="/brand-logo.png" 
           alt="오늘의 MBTI 브랜드 로고" 
-          className="w-44 h-44 object-contain drop-shadow-[0_18px_45px_rgba(34,211,238,0.15)]" 
+          className="w-44 h-44 object-contain drop-shadow-[0_18px_45px_rgba(34,211,238,0.15)]"
+          style={{
+            WebkitMaskImage: 'radial-gradient(ellipse 90% 90% at 50% 50%, black 65%, transparent 100%)',
+            maskImage: 'radial-gradient(ellipse 90% 90% at 50% 50%, black 65%, transparent 100%)'
+          }}
         />
       </div>
       <h1 className="mb-3 text-center text-[2.05rem] font-extrabold leading-[1.12] text-white">
