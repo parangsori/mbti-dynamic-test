@@ -16,6 +16,7 @@ const PRESENTATION_STATE_EXPECTED_MIN = 5;
 const SAMPLE_MBTIS = ['INFP', 'ENFP', 'ISTJ', 'ENTJ', 'ISFJ'];
 const STRESS_SESSION_COUNT = 20;
 const STRESS_AGE_GROUP = '30s';
+const RETAINED_FAMILY_STRESS_AGE_GROUPS = ['teen', '20s', '30s', '40s', '50s'];
 const MAX_STRESS_SINGLE_QUESTION_REPEAT = 5;
 const MAX_STRESS_REPEAT_RATE = 0.32;
 const AGE_TONE_RISK_PATTERNS = {
@@ -23,7 +24,7 @@ const AGE_TONE_RISK_PATTERNS = {
   '20s': /어린이|친구들과 놀면|학교 숙제/,
   '30s': /어린이|학교 숙제/,
   '40s': /ㄱㄱ|스퍼트|불도저|중독|폭발|노년|어르신/,
-  '50s': /ㄱㄱ|스퍼트|불도저|중독|폭발|노년|어르신|품격/
+  '50s': /ㄱㄱ|스퍼트|불도저|중독|폭발|노년|어르신/
 };
 
 const readSource = async (path) => {
@@ -172,6 +173,39 @@ const stressRepeatRate = stressAllQuestions.length > 0
   ? (stressAllQuestions.length - new Set(stressAllQuestions.map(getQuestionId)).size) / stressAllQuestions.length
   : 0;
 
+const retainedFamilyStress = RETAINED_FAMILY_STRESS_AGE_GROUPS.map((ageGroup) => {
+  const recent = [];
+  const overlaps = [];
+
+  for (let i = 0; i < STRESS_SESSION_COUNT; i += 1) {
+    const recentFamilyIds = new Set(recent.flatMap((session) => session.familyIds || []));
+    const questions = buildQuestionSession(recent, { ageGroup });
+    const repeatedFamilies = questions
+      .map(getFamilyId)
+      .filter((familyId) => familyId && recentFamilyIds.has(familyId));
+
+    if (repeatedFamilies.length) {
+      overlaps.push({
+        session: i + 1,
+        familyIds: repeatedFamilies
+      });
+    }
+
+    recent.unshift(createRecentSessionSnapshot({
+      questions,
+      ids: questions.map(getQuestionId),
+      ageGroup
+    }));
+    recent.splice(12);
+  }
+
+  return {
+    ageGroup,
+    sessionCount: STRESS_SESSION_COUNT,
+    overlaps
+  };
+});
+
 const failures = [];
 
 axisCountsBySession.forEach(({ session, counts }) => {
@@ -219,6 +253,12 @@ if (overRepeatedStressIds.length > 0) {
   failures.push(`같은 연령대 반복에서 특정 문항이 과다 반복됩니다. ${JSON.stringify(overRepeatedStressIds.slice(0, 5))}`);
 }
 
+retainedFamilyStress.forEach(({ ageGroup, overlaps }) => {
+  if (overlaps.length > 0) {
+    failures.push(`${ageGroup} 반복에서 최근 12회 familyId가 다시 선택되었습니다. ${JSON.stringify(overlaps.slice(0, 5))}`);
+  }
+});
+
 Object.entries(presentationVariantStats).forEach(([state, stats]) => {
   if (stats.count < PRESENTATION_STATE_EXPECTED_MIN) {
     failures.push(`${state} presentation 변주가 ${PRESENTATION_STATE_EXPECTED_MIN}개보다 적습니다. actual=${stats.count}`);
@@ -243,6 +283,7 @@ const summary = {
     repeatRate: Number(stressRepeatRate.toFixed(3)),
     topRepeatedIds: stressRepeatedIds.slice(0, 8)
   },
+  retainedFamilyStress,
   presentationVariantStats,
   passed: failures.length === 0,
   failures

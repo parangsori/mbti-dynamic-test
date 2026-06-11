@@ -248,7 +248,16 @@ const getSelectionWeight = (question, { ageGroup = '', recentLifeTags = new Set(
   return (question.weight || 1) * roleBoost * middleBoost * freshnessBoost * lifeBoost * ageBoost * lifeStageBoost;
 };
 
-const pickWeightedQuestion = (pool, { recentIds, recentFamilyIds = new Set(), recentLifeTags, usedIds, usedFamilyIds, usedLifeTagCounts, ageGroup }) => {
+const pickWeightedQuestion = (pool, {
+  recentIds,
+  recentFamilyIds = new Set(),
+  recentLifeTags,
+  usedIds,
+  usedFamilyIds,
+  usedLifeTagCounts,
+  ageGroup,
+  allowRecentFamilyFallback = true
+}) => {
   const usableBase = pool.filter((question) =>
     !usedIds.has(question.id) &&
     !usedFamilyIds.has(question.familyId) &&
@@ -264,9 +273,11 @@ const pickWeightedQuestion = (pool, { recentIds, recentFamilyIds = new Set(), re
     ? nonRecentFamilyUsable
     : nonRecentFamilyBase.length
       ? nonRecentFamilyBase
-      : usable.length
+      : allowRecentFamilyFallback && usable.length
         ? usable
-        : usableBase;
+        : allowRecentFamilyFallback
+          ? usableBase
+          : [];
   if (!fallbackUsable.length) return null;
 
   const fresh = fallbackUsable.filter((question) => !recentIds.has(question.id));
@@ -315,15 +326,15 @@ const ensureAgeFitForAxis = ({ axis, enriched, selected, usedIds, usedFamilyIds,
     !recentIds.has(question.id) &&
     !recentFamilyIds.has(question.familyId)
   );
-  const ageFitPool = freshAgeFitPool.length ? freshAgeFitPool : enriched.filter((question) => isAgeFit(question, ageGroup));
-  const replacement = pickWeightedQuestion(ageFitPool, {
+  const replacement = pickWeightedQuestion(freshAgeFitPool, {
     recentIds,
     recentFamilyIds,
     recentLifeTags,
     usedIds,
     usedFamilyIds,
     usedLifeTagCounts,
-    ageGroup
+    ageGroup,
+    allowRecentFamilyFallback: false
   });
   if (!replacement) return;
 
@@ -490,7 +501,8 @@ export const buildQuestionSession = (recentSessions = [], { ageGroup = '' } = {}
         usedIds,
         usedFamilyIds,
         usedLifeTagCounts,
-        ageGroup
+        ageGroup,
+        allowRecentFamilyFallback: false
       });
       addPickedQuestion(question, selected, usedIds, usedFamilyIds, usedLifeTagCounts);
     });

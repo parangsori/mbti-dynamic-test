@@ -183,10 +183,22 @@
 
 1. 결과 화면 및 공유 카드 안정성 유지
 2. 반복 사용 시 결과 문구/테마/질문 신선도 개선
-3. 변경 작업 시 회귀 방지와 백업-비교 체계 고정
-4. PostHog 기반 모바일 운영 대시보드로 유입, 시작, 완료, 공유, 재방문 지표를 계속 확인
-5. Supabase 기반 결과 기록 백업을 로컬 우선 구조로 안정화
-6. 이후 백엔드/수익화 작업 전, 프론트 경험 품질과 운영 지표 판단 흐름 안정화
+3. 타입 캐릭터·브랜드 로고·앱 아이콘·스플래시를 기준으로 시작, 프로필, 문항, 분석 대기, 결과, 기록, 프리미엄 teaser까지 서비스 전반 디자인 시스템 개편
+4. 문항 화면의 질문 집중도, 선택 확신, 진행감, 스와이프/탭 조작성, 접근성, 다국어 장문 대응 개선
+5. 변경 작업 시 회귀 방지와 백업-비교 체계 고정
+6. PostHog 기반 모바일 운영 대시보드로 유입, 시작, 문항 이탈, 완료, 공유, 재방문, 프리미엄 관심 지표를 계속 확인
+7. Supabase 기반 결과 기록 백업을 로컬 우선 구조로 안정화하고 회원·권한·기기 변경 복구 구조로 확장
+8. 7일/30일 흐름, 사주 믹스, 장기 기록을 중심으로 반복형 프리미엄 멤버십과 패스 상품을 준비
+
+### 수익화 기획 기준 문서
+
+수익화와 서비스 전반 디자인 개편 작업은 아래 iCloud 문서를 기준으로 이어간다.
+
+- 현재 액션: `/Users/beatblue/Library/Mobile Documents/com~apple~CloudDocs/000_개인_프로젝트/오늘의MBTI/Next_Action_Plan.md`
+- 실행 명세: `/Users/beatblue/Library/Mobile Documents/com~apple~CloudDocs/000_개인_프로젝트/오늘의MBTI/Monetization_Execution_Spec_v1.md`
+- 전략 기준: `/Users/beatblue/Library/Mobile Documents/com~apple~CloudDocs/000_개인_프로젝트/오늘의MBTI/Today_MBTI_Monetization_Strategy_Report.md`
+
+`PLAN.md`는 단건 리포트 중심의 과거 초기안이고, `PLAN2.md`는 최종 전략 리포트 작성 전 계획 문서다. 최신 우선순위를 판단할 때는 위 세 문서를 먼저 확인한다.
 
 ### 지속 주의할 문제
 
@@ -256,6 +268,7 @@
 - 2026-05-24: 고정 dev QA 도메인을 `https://dev-mbti.beatblue.net`으로 설정했다. Cloudflare DNS의 `dev-mbti` 레코드는 Proxied 상태이며 Cloudflare Access가 먼저 보호하고, Access 허용 정책은 `beatblue.joo@gmail.com` 기준으로 관리한다. Vercel 프로젝트 `mbti-dynamic-test`의 해당 도메인은 `gitBranch: dev`로 연결되어 새 dev 커밋마다 최신 dev Preview를 따라가야 하며, Preview(dev) 환경변수 `VITE_PUBLIC_SERVICE_URL`도 같은 URL로 설정했다. 비인증 요청은 Cloudflare Access 로그인으로 `302` 리다이렉트되는 것이 정상이고, 운영 `https://todaymbti.com`은 별도 main/production 기준으로 유지한다.
 - 2026-05-28: 결과 카드 저장/공유가 브라우저별 Web Share/파일 저장 지원 차이로 실제 완료 여부를 보장하지 못하는 문제를 줄이기 위해, 이미지 공유·파일 선택 저장·텍스트만 공유·다운로드 fallback·실패 상태를 분리했다. 자동 다운로드 fallback은 더 이상 "저장 완료"로 표시하지 않고 다운로드 목록/파일 앱 확인 안내로 처리하며, admin 대시보드에서도 관련 이벤트를 나눠 본다.
 - 2026-05-28: 잦은 반복 테스트에서 같은 질문이 다시 나오는 느낌을 줄이기 위해 v1.6.14에서 최근 문항 `familyId` 회피를 강화하고 최근 세션 보관 범위를 12회로 늘렸다. 같은 연령대 20회 반복 freshness gate를 추가해 JP_068/JP_080 같은 특정 앵커 문항 과표집을 막는다.
+- 2026-06-11: 반복 테스트에서 익숙한 문항이 자주 다시 보인다는 체감 제보를 재현했다. 문항 후보가 소진되는 과정에서 신선도가 낮아지던 선택 로직을 조정하고, 연령대별 반복 사용 품질 검증을 강화한 v1.7.4를 준비했다.
 
 ### 다음 채팅에서 먼저 확인할 체크포인트
 

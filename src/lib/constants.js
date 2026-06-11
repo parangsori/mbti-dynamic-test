@@ -19,6 +19,14 @@ export const COMPATIBILITY = {
 
 export const CHANGELOG = [
   {
+    version: 'v1.7.4',
+    date: '2026.06.11',
+    updates: [
+      '반복 테스트에서 익숙한 문항이 자주 다시 보이지 않도록 테스트 문항의 신선도 로직을 개선',
+      '연령대와 생활 맥락에 맞는 다양한 문항이 더 자연스럽게 섞이도록 반복 사용 품질 검증을 보강'
+    ]
+  },
+  {
     version: 'v1.7.3',
     date: '2026.06.11',
     updates: [
