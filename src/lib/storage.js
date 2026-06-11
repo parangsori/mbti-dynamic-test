@@ -370,21 +370,18 @@ export const handlePublicDomainMigration = () => {
 const buildDomainMigrationHash = () => {
   if (!canUseBrowserStorage()) return false;
 
-  const { hostname, pathname, search } = window.location;
-  if (hostname !== PUBLIC_CANONICAL_HOST) return false;
-
   const payload = collectDomainMigrationPayload();
   if (!Object.keys(payload.values).length) return false;
 
   const nextHash = `${MIGRATION_HASH_PREFIX.slice(1)}${encodeMigrationPayload(payload)}`;
-  return { pathname, search, nextHash };
+  return { origin: window.location.origin, search: window.location.search, nextHash };
 };
 
 export const createHomeScreenMigrationText = () => {
   const migration = buildDomainMigrationHash();
   if (!migration) return '';
 
-  return `${PUBLIC_SERVICE_ORIGIN}/${migration.search}#${migration.nextHash}`;
+  return `${migration.origin}/${migration.search}#${migration.nextHash}`;
 };
 
 export const importHomeScreenMigrationText = (text) => {

@@ -88,6 +88,7 @@ function HomeScreenTipCard({
                   : '기록을 복사했어요. 홈화면 앱에서 기록 가져오기를 눌러주세요.'
               )}
               {migrationStatus === 'imported' && '기록을 가져왔어요. 이제 이어서 사용할 수 있어요.'}
+              {migrationStatus === 'no_data' && '아직 복사할 기록이 없어요. 테스트를 완료한 뒤 다시 시도해주세요.'}
               {migrationStatus === 'copy_failed' && '복사에 실패했어요. 브라우저의 클립보드 권한을 확인해주세요.'}
               {migrationStatus === 'manual_copy' && '브라우저에서 자동 복사가 제한됐어요. 아래 내용을 길게 눌러 전체 선택 후 복사해주세요.'}
               {migrationStatus === 'import_failed' && '가져오지 못했어요. Safari에서 먼저 기록 복사를 눌러주세요.'}

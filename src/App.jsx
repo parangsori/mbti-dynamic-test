@@ -485,7 +485,7 @@ export default function App() {
   const handleCopyHomeScreenMigration = async () => {
     const text = createHomeScreenMigrationText();
     if (!text) {
-      setHomeScreenMigrationStatus('copy_failed');
+      setHomeScreenMigrationStatus('no_data');
       trackEvent('home_screen_migration_copy', { status: 'failed', reason: 'empty_payload' });
       return;
     }
