@@ -236,6 +236,15 @@ const isStandaloneDisplay = () => {
   return window.matchMedia?.('(display-mode: standalone)').matches || window.navigator?.standalone === true;
 };
 
+const isAppleMobileDevice = () => {
+  if (typeof window === 'undefined') return false;
+  const userAgent = window.navigator?.userAgent || '';
+  const platform = window.navigator?.platform || '';
+  return /iPad|iPhone|iPod/i.test(userAgent) || (platform === 'MacIntel' && window.navigator?.maxTouchPoints > 1);
+};
+
+const shouldShowBootSplash = () => !isStandaloneDisplay() || isAppleMobileDevice();
+
 const readHomeScreenTipHidden = () => {
   try {
     return localStorage.getItem(HOME_SCREEN_TIP_HIDDEN_KEY) === 'true';
@@ -333,10 +342,10 @@ export default function App() {
   const [homeScreenMigrationStatus, setHomeScreenMigrationStatus] = useState('');
   const [homeScreenMigrationText, setHomeScreenMigrationText] = useState('');
   const [resultBoundaryKey, setResultBoundaryKey] = useState(0);
-  const [isBooting, setIsBooting] = useState(() => !isStandaloneDisplay());
+  const [isBooting, setIsBooting] = useState(shouldShowBootSplash);
 
   useEffect(() => {
-    if (isStandaloneDisplay()) return undefined;
+    if (!shouldShowBootSplash()) return undefined;
 
     const timer = setTimeout(() => {
       setIsBooting(false);
