@@ -18,12 +18,16 @@ function HomeScreenTipCard({
   const handleGuideClick = () => {
     setExpanded((value) => !value);
   };
+  const handleCopyBeforeInstall = () => {
+    setExpanded(true);
+    onCopyHomeScreenMigration();
+  };
   const primaryCopy = isStandalone
     ? '새 앱 아이콘은 기록을 복사한 뒤 홈화면 앱을 다시 추가하면 적용돼요.'
     : '홈화면에 추가하기 전에 기록을 복사하면 앱에서도 이어서 사용할 수 있어요.';
   const title = isStandalone ? '새 앱 아이콘으로 바꿀 수 있어요' : '홈화면에 추가하면 더 편해요';
   const guideCopy = isStandalone
-    ? '재설치용 기록을 복사한 뒤 홈화면 앱을 삭제하고, Safari에서 todaymbti.com을 다시 추가한 다음 기록을 가져오세요.'
+    ? '재설치용 기록을 복사한 뒤 홈화면 앱을 삭제하고, 브라우저에서 todaymbti.com을 다시 추가한 다음 기록을 가져오세요.'
     : '기록 복사를 누른 뒤 홈화면에 추가하고, 홈화면 앱에서 기록 가져오기를 누르면 이어집니다.';
 
   return (
@@ -84,14 +88,14 @@ function HomeScreenTipCard({
             <p className="mt-2 text-center text-[11px] font-bold text-cyan-100/85 break-keep">
               {migrationStatus === 'copied' && (
                 isStandalone
-                  ? '기록을 복사했어요. 이제 홈화면 앱을 삭제하고 Safari에서 다시 추가해도 됩니다.'
+                  ? '기록을 복사했어요. 이제 홈화면 앱을 삭제하고 브라우저에서 다시 추가해도 됩니다.'
                   : '기록을 복사했어요. 홈화면 앱에서 기록 가져오기를 눌러주세요.'
               )}
               {migrationStatus === 'imported' && '기록을 가져왔어요. 이제 이어서 사용할 수 있어요.'}
               {migrationStatus === 'no_data' && '아직 복사할 기록이 없어요. 테스트를 완료한 뒤 다시 시도해주세요.'}
               {migrationStatus === 'copy_failed' && '복사에 실패했어요. 브라우저의 클립보드 권한을 확인해주세요.'}
               {migrationStatus === 'manual_copy' && '브라우저에서 자동 복사가 제한됐어요. 아래 내용을 길게 눌러 전체 선택 후 복사해주세요.'}
-              {migrationStatus === 'import_failed' && '가져오지 못했어요. Safari에서 먼저 기록 복사를 눌러주세요.'}
+              {migrationStatus === 'import_failed' && '가져오지 못했어요. 브라우저에서 먼저 기록 복사를 눌러주세요.'}
             </p>
           )}
           {migrationStatus === 'manual_copy' && migrationText && (
@@ -110,6 +114,16 @@ function HomeScreenTipCard({
             </div>
           )}
         </div>
+      )}
+
+      {canInstallApp && !isStandalone && !expanded && (
+        <button
+          type="button"
+          onClick={handleCopyBeforeInstall}
+          className="mt-3 w-full rounded-2xl border border-cyan-200/20 bg-cyan-300/[0.12] px-3 py-2.5 text-[12px] font-black text-cyan-50 transition hover:bg-cyan-300/[0.18]"
+        >
+          홈화면용 기록 복사
+        </button>
       )}
 
       <div className="mt-3 grid grid-cols-[minmax(0,1fr)_auto] gap-2">

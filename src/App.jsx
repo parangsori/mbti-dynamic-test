@@ -526,7 +526,7 @@ export default function App() {
     }
 
     if (!text) {
-      text = window.prompt('Safari에서 복사한 기록을 여기에 붙여넣어 주세요.') || '';
+      text = window.prompt('브라우저에서 복사한 기록을 여기에 붙여넣어 주세요.') || '';
     }
 
     if (!text) {
