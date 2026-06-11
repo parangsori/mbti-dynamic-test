@@ -13,7 +13,7 @@ export default function BootSplashScreen() {
       <img
         src="/splash-screen.png"
         alt="Today MBTI Splash"
-        className="w-full h-full object-cover"
+        className="w-full h-full max-w-md object-cover sm:object-contain"
       />
     </motion.div>
   );

@@ -139,21 +139,12 @@ export default function StartView({
       exit={{ opacity: 0, y: -20 }}
       className="w-full max-w-[23.5rem] flex flex-col items-center px-6 py-8"
     >
-      <div className="mb-5 flex flex-col items-center gap-3">
-        <div className="relative flex h-[7.25rem] w-[7.25rem] items-center justify-center rounded-[2rem] bg-white/[0.045] shadow-[inset_0_1px_0_rgba(255,255,255,0.16),0_24px_70px_rgba(34,211,238,0.16)]">
-          <div className="absolute inset-2 rounded-[1.7rem] bg-gradient-to-br from-cyan-300/14 via-white/[0.03] to-brand/14" />
-          <div className="relative flex h-24 w-24 items-center justify-center overflow-hidden rounded-[1.65rem] border border-white/15 bg-white/10 p-2 shadow-[0_18px_42px_rgba(15,23,42,0.28)]">
-            <img src="/app-icon.png" alt="오늘의 MBTI 서비스 아이콘" className="h-full w-full rounded-[1.3rem] object-cover" />
-          </div>
-        </div>
-        <div className="flex flex-col items-center gap-1">
-          <span className="rounded-full border border-white/10 bg-white/[0.06] px-4 py-1.5 text-[12px] font-black tracking-[0.18em] text-cyan-100 uppercase shadow-[0_12px_28px_rgba(15,23,42,0.22)]">
-            오늘의 MBTI
-          </span>
-          <span className="text-[11px] font-semibold tracking-[0.12em] text-slate-500">
-            todaymbti.com
-          </span>
-        </div>
+      <div className="mb-6 flex flex-col items-center">
+        <img 
+          src="/brand-logo.png" 
+          alt="오늘의 MBTI 브랜드 로고" 
+          className="w-44 h-44 object-contain drop-shadow-[0_18px_45px_rgba(34,211,238,0.15)]" 
+        />
       </div>
       <h1 className="mb-3 text-center text-[2.05rem] font-extrabold leading-[1.12] text-white">
         지금 내 결은 어느 쪽이 더 강할까?
