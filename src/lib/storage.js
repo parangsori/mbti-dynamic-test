@@ -20,7 +20,8 @@ const MIGRATION_META_KEY = 'mbti_domain_migration';
 const EXTRA_LOCAL_KEYS = [
   'mbti_font_scale',
   'mbti_high_contrast',
-  'mbti_home_screen_tip_hidden'
+  'mbti_home_screen_tip_hidden',
+  'mbti_home_screen_tip_hidden_icon_refresh_v1'
 ];
 const ALLOWED_MIGRATION_KEYS = new Set([...Object.values(STORAGE_KEYS), ...EXTRA_LOCAL_KEYS]);
 const PRESERVE_EXISTING_MIGRATION_KEYS = new Set([

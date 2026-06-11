@@ -18,18 +18,18 @@ function HomeScreenTipCard({
     setExpanded((value) => !value);
   };
   const primaryCopy = isStandalone
-    ? 'Safari에서 복사한 기록을 홈화면 앱으로 가져올 수 있어요.'
+    ? '새 앱 아이콘은 기록을 복사한 뒤 홈화면 앱을 다시 추가하면 적용돼요.'
     : '홈화면에 추가하기 전에 기록을 복사하면 앱에서도 이어서 사용할 수 있어요.';
-  const title = isStandalone ? '기록을 이어받을 수 있어요' : '홈화면에 추가하면 더 편해요';
+  const title = isStandalone ? '새 앱 아이콘으로 바꿀 수 있어요' : '홈화면에 추가하면 더 편해요';
   const guideCopy = isStandalone
-    ? 'Safari에서 todaymbti.com을 연 뒤 기록 복사를 먼저 눌러주세요.'
+    ? '재설치용 기록을 복사한 뒤 홈화면 앱을 삭제하고, Safari에서 todaymbti.com을 다시 추가한 다음 기록을 가져오세요.'
     : '기록 복사를 누른 뒤 홈화면에 추가하고, 홈화면 앱에서 기록 가져오기를 누르면 이어집니다.';
 
   return (
     <div className="mb-5 w-full rounded-[1.4rem] border border-cyan-300/20 bg-cyan-300/[0.08] px-4 py-4 shadow-[0_18px_45px_rgba(8,47,73,0.22)]">
       <div className="flex items-start gap-3">
         <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-white/15 bg-white/10 p-1">
-          <img src="/app-icon-v173-home.png" alt="" className="h-full w-full rounded-lg object-cover" />
+          <img src="/app-icon-v173-full.png" alt="" className="h-full w-full rounded-lg object-cover" />
         </div>
         <div className="min-w-0 flex-1">
           <p className="text-[13px] font-black text-white break-keep">{title}</p>
@@ -53,13 +53,22 @@ function HomeScreenTipCard({
           </div>
           <div className="mt-3">
             {isStandalone ? (
-              <button
-                type="button"
-                onClick={onImportHomeScreenMigration}
-                className="w-full rounded-2xl border border-cyan-200/20 bg-cyan-300/[0.12] px-3 py-2.5 text-[12px] font-black text-cyan-50 transition hover:bg-cyan-300/[0.18]"
-              >
-                복사한 기록 가져오기
-              </button>
+              <div className="grid gap-2">
+                <button
+                  type="button"
+                  onClick={onCopyHomeScreenMigration}
+                  className="w-full rounded-2xl border border-cyan-200/20 bg-cyan-300/[0.12] px-3 py-2.5 text-[12px] font-black text-cyan-50 transition hover:bg-cyan-300/[0.18]"
+                >
+                  재설치용 기록 복사
+                </button>
+                <button
+                  type="button"
+                  onClick={onImportHomeScreenMigration}
+                  className="w-full rounded-2xl border border-white/10 bg-white/[0.06] px-3 py-2.5 text-[12px] font-black text-slate-100 transition hover:bg-white/[0.1]"
+                >
+                  복사한 기록 가져오기
+                </button>
+              </div>
             ) : (
               <button
                 type="button"
@@ -72,7 +81,11 @@ function HomeScreenTipCard({
           </div>
           {migrationStatus && (
             <p className="mt-2 text-center text-[11px] font-bold text-cyan-100/85 break-keep">
-              {migrationStatus === 'copied' && '기록을 복사했어요. 홈화면 앱에서 기록 가져오기를 눌러주세요.'}
+              {migrationStatus === 'copied' && (
+                isStandalone
+                  ? '기록을 복사했어요. 이제 홈화면 앱을 삭제하고 Safari에서 다시 추가해도 됩니다.'
+                  : '기록을 복사했어요. 홈화면 앱에서 기록 가져오기를 눌러주세요.'
+              )}
               {migrationStatus === 'imported' && '기록을 가져왔어요. 이제 이어서 사용할 수 있어요.'}
               {migrationStatus === 'copy_failed' && '복사에 실패했어요. Safari 권한을 확인해주세요.'}
               {migrationStatus === 'import_failed' && '가져오지 못했어요. Safari에서 먼저 기록 복사를 눌러주세요.'}
