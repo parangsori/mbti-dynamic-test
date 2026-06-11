@@ -100,6 +100,11 @@ export default function QuestionView({
     if (!answerStage) return undefined;
 
     const handleTouchStart = (event) => {
+      if (event.touches?.length !== 1) {
+        touchStartRef.current = null;
+        return;
+      }
+
       const touch = event.touches?.[0];
       if (!touch) return;
       touchStartRef.current = {
@@ -109,6 +114,11 @@ export default function QuestionView({
     };
 
     const handleTouchMove = (event) => {
+      if (event.touches?.length !== 1) {
+        touchStartRef.current = null;
+        return;
+      }
+
       const start = touchStartRef.current;
       const touch = event.touches?.[0];
       if (!start || !touch) return;
@@ -290,7 +300,7 @@ export default function QuestionView({
       <div className="mt-8 flex flex-col gap-3 relative w-full">
         <div
           ref={answerStageRef}
-          className={`relative overflow-hidden rounded-[2rem] border px-3 py-4 shadow-[0_24px_70px_rgba(2,6,23,0.30)] backdrop-blur-xl touch-pan-y transition-colors ${
+          className={`relative overflow-hidden rounded-[2rem] border px-3 py-4 shadow-[0_24px_70px_rgba(2,6,23,0.30)] backdrop-blur-xl [touch-action:pan-y_pinch-zoom] transition-colors ${
             activeDragSide === 'left'
               ? 'border-cyan-300/30 bg-cyan-300/[0.07]'
               : activeDragSide === 'right'
