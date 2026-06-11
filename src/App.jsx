@@ -243,7 +243,13 @@ const isAppleMobileDevice = () => {
   return /iPad|iPhone|iPod/i.test(userAgent) || (platform === 'MacIntel' && window.navigator?.maxTouchPoints > 1);
 };
 
-const shouldShowBootSplash = () => !isStandaloneDisplay() || isAppleMobileDevice();
+const canUseNativeAppleStartupImage = () => {
+  if (typeof window === 'undefined' || !isAppleMobileDevice()) return false;
+  return ['todaymbti.com', 'www.todaymbti.com'].includes(window.location.hostname);
+};
+
+const shouldShowBootSplash = () =>
+  !isStandaloneDisplay() || (isAppleMobileDevice() && !canUseNativeAppleStartupImage());
 
 const readHomeScreenTipHidden = () => {
   try {
