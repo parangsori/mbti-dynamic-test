@@ -331,6 +331,7 @@ export default function App() {
   const [homeScreenTipHidden, setHomeScreenTipHidden] = useState(readHomeScreenTipHidden);
   const [homeScreenTipSessionHidden, setHomeScreenTipSessionHidden] = useState(false);
   const [homeScreenMigrationStatus, setHomeScreenMigrationStatus] = useState('');
+  const [homeScreenMigrationText, setHomeScreenMigrationText] = useState('');
   const [resultBoundaryKey, setResultBoundaryKey] = useState(0);
   const [isBooting, setIsBooting] = useState(true);
 
@@ -491,13 +492,15 @@ export default function App() {
 
     const copied = await copyTextToClipboard(text);
     if (copied) {
+      setHomeScreenMigrationText('');
       setHomeScreenMigrationStatus('copied');
       trackEvent('home_screen_migration_copy', { status: 'copied' });
       return;
     }
 
-    setHomeScreenMigrationStatus('copy_failed');
-    trackEvent('home_screen_migration_copy', { status: 'failed', reason: 'copy_blocked' });
+    setHomeScreenMigrationText(text);
+    setHomeScreenMigrationStatus('manual_copy');
+    trackEvent('home_screen_migration_copy', { status: 'manual_copy', reason: 'copy_blocked' });
   };
 
   const handleImportHomeScreenMigration = async () => {
@@ -793,6 +796,7 @@ export default function App() {
               onCopyHomeScreenMigration={handleCopyHomeScreenMigration}
               onImportHomeScreenMigration={handleImportHomeScreenMigration}
               homeScreenMigrationStatus={homeScreenMigrationStatus}
+              homeScreenMigrationText={homeScreenMigrationText}
               onDismissHomeScreenTip={handleDismissHomeScreenTip}
               onHideHomeScreenTipForever={handleHideHomeScreenTipForever}
             />

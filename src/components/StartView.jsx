@@ -10,6 +10,7 @@ function HomeScreenTipCard({
   onCopyHomeScreenMigration,
   onImportHomeScreenMigration,
   migrationStatus,
+  migrationText,
   onDismiss,
   onHideForever
 }) {
@@ -87,9 +88,25 @@ function HomeScreenTipCard({
                   : '기록을 복사했어요. 홈화면 앱에서 기록 가져오기를 눌러주세요.'
               )}
               {migrationStatus === 'imported' && '기록을 가져왔어요. 이제 이어서 사용할 수 있어요.'}
-              {migrationStatus === 'copy_failed' && '복사에 실패했어요. Safari 권한을 확인해주세요.'}
+              {migrationStatus === 'copy_failed' && '복사에 실패했어요. 브라우저의 클립보드 권한을 확인해주세요.'}
+              {migrationStatus === 'manual_copy' && '브라우저에서 자동 복사가 제한됐어요. 아래 내용을 길게 눌러 전체 선택 후 복사해주세요.'}
               {migrationStatus === 'import_failed' && '가져오지 못했어요. Safari에서 먼저 기록 복사를 눌러주세요.'}
             </p>
+          )}
+          {migrationStatus === 'manual_copy' && migrationText && (
+            <div className="mt-3 rounded-2xl border border-amber-200/20 bg-amber-300/[0.08] p-3">
+              <textarea
+                readOnly
+                value={migrationText}
+                onFocus={(event) => event.currentTarget.select()}
+                onClick={(event) => event.currentTarget.select()}
+                aria-label="재설치용 기록 백업 문자열"
+                className="h-24 w-full resize-none rounded-xl border border-white/10 bg-slate-950/80 p-3 text-[16px] leading-relaxed text-slate-100 outline-none selection:bg-cyan-300/35"
+              />
+              <p className="mt-2 text-[10px] font-semibold leading-relaxed text-amber-100/80 break-keep">
+                개인 기록이 포함되어 있으니 다른 사람에게 보내지 말고, 재설치가 끝날 때까지만 보관해주세요.
+              </p>
+            </div>
           )}
         </div>
       )}
@@ -141,6 +158,7 @@ export default function StartView({
   onCopyHomeScreenMigration,
   onImportHomeScreenMigration,
   homeScreenMigrationStatus,
+  homeScreenMigrationText,
   onDismissHomeScreenTip,
   onHideHomeScreenTipForever
 }) {
@@ -175,6 +193,7 @@ export default function StartView({
           onCopyHomeScreenMigration={onCopyHomeScreenMigration}
           onImportHomeScreenMigration={onImportHomeScreenMigration}
           migrationStatus={homeScreenMigrationStatus}
+          migrationText={homeScreenMigrationText}
           onDismiss={onDismissHomeScreenTip}
           onHideForever={onHideHomeScreenTipForever}
         />
