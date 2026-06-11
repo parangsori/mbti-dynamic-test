@@ -29,7 +29,7 @@ function HomeScreenTipCard({
     <div className="mb-5 w-full rounded-[1.4rem] border border-cyan-300/20 bg-cyan-300/[0.08] px-4 py-4 shadow-[0_18px_45px_rgba(8,47,73,0.22)]">
       <div className="flex items-start gap-3">
         <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-white/15 bg-white/10 p-1">
-          <img src="/service-icon.svg" alt="" className="h-full w-full rounded-lg object-cover" />
+          <img src="/app-icon.png" alt="" className="h-full w-full rounded-lg object-cover" />
         </div>
         <div className="min-w-0 flex-1">
           <p className="text-[13px] font-black text-white break-keep">{title}</p>
@@ -143,7 +143,7 @@ export default function StartView({
         <div className="relative flex h-[7.25rem] w-[7.25rem] items-center justify-center rounded-[2rem] bg-white/[0.045] shadow-[inset_0_1px_0_rgba(255,255,255,0.16),0_24px_70px_rgba(34,211,238,0.16)]">
           <div className="absolute inset-2 rounded-[1.7rem] bg-gradient-to-br from-cyan-300/14 via-white/[0.03] to-brand/14" />
           <div className="relative flex h-24 w-24 items-center justify-center overflow-hidden rounded-[1.65rem] border border-white/15 bg-white/10 p-2 shadow-[0_18px_42px_rgba(15,23,42,0.28)]">
-            <img src="/service-icon.svg" alt="오늘의 MBTI 서비스 아이콘" className="h-full w-full rounded-[1.3rem] object-cover" />
+            <img src="/app-icon.png" alt="오늘의 MBTI 서비스 아이콘" className="h-full w-full rounded-[1.3rem] object-cover" />
           </div>
         </div>
         <div className="flex flex-col items-center gap-1">

@@ -1,8 +1,10 @@
 import { capturePostHogEvent } from './posthog.js';
+import { buildErrorDiagnostics } from './errorDiagnostics.js';
 
 const LOCAL_ERROR_KEY = 'mbti_error_stats';
 const MAX_RECENT_ITEMS = 30;
 const MAX_EVENT_TEXT_LENGTH = 120;
+const APP_VERSION = typeof __APP_VERSION__ === 'undefined' ? 'unknown' : __APP_VERSION__;
 
 const safeNow = () => new Date().toISOString();
 
@@ -93,26 +95,11 @@ export const emitAnalyticsEvent = (name, payload = {}) => {
   });
 };
 
-const serializeError = (error) => {
-  if (!error) {
-    return {
-      name: 'UnknownError',
-      message: 'Unknown error'
-    };
-  }
-
-  return {
-    name: error.name || 'Error',
-    message: error.message || String(error),
-    stack: error.stack || ''
-  };
-};
-
 export const readLocalErrorStats = () => readLocalJson(LOCAL_ERROR_KEY, { counts: {}, recent: [] });
 
 export const captureError = (error, context = {}) => {
-  const details = serializeError(error);
-  const key = context.key || details.name || 'Error';
+  const details = buildErrorDiagnostics({ error, context, appVersion: APP_VERSION });
+  const key = details.key;
   const raw = readLocalErrorStats();
   const counts = {
     ...raw.counts,
@@ -121,7 +108,11 @@ export const captureError = (error, context = {}) => {
   const recent = [
     {
       ...details,
-      context,
+      context: {
+        source: details.source,
+        stage: details.stage,
+        reason: details.reason
+      },
       at: safeNow()
     },
     ...(raw.recent || [])
@@ -130,19 +121,45 @@ export const captureError = (error, context = {}) => {
   writeLocalJson(LOCAL_ERROR_KEY, { counts, recent });
 
   capturePostHogEvent('client_error', {
-    error_key: truncateText(key),
+    error_key: truncateText(details.key),
     error_name: truncateText(details.name),
-    error_source: truncateText(context.source || context.stage || 'app'),
-    error_stage: truncateText(context.stage || ''),
-    error_reason: truncateText(context.reason || ''),
+    error_message: details.message,
+    error_cause: details.cause,
+    error_source: truncateText(details.source),
+    error_stage: truncateText(details.stage),
+    error_reason: truncateText(details.reason),
+    error_resource_type: details.resourceType,
+    error_fingerprint: details.fingerprint,
+    error_filename: details.filename,
+    error_line: details.line,
+    error_column: details.column,
+    error_stack: details.stack,
+    error_component_stack: details.componentStack,
+    app_version: details.appVersion,
     local_error_count: counts[key] || 1,
-    path: canUseWindow() ? window.location.pathname : ''
+    path: canUseWindow() ? window.location.pathname : '',
+    online: canUseNavigator() ? navigator.onLine !== false : true,
+    connection_type: canUseNavigator() ? navigator.connection?.effectiveType || '' : '',
+    visibility_state: typeof document !== 'undefined' ? document.visibilityState || '' : ''
   });
 
   if (canUseWindow()) {
     try {
       if (window.Sentry?.captureException) {
-        window.Sentry.captureException(error || new Error(details.message), { extra: context });
+        const sanitizedError = new Error(details.message);
+        sanitizedError.name = details.name;
+        if (details.stack) sanitizedError.stack = details.stack;
+        window.Sentry.captureException(sanitizedError, {
+          extra: {
+            fingerprint: details.fingerprint,
+            source: details.source,
+            stage: details.stage,
+            filename: details.filename,
+            line: details.line,
+            column: details.column,
+            appVersion: details.appVersion
+          }
+        });
       }
     } catch {}
   }
@@ -151,7 +168,12 @@ export const captureError = (error, context = {}) => {
     type: 'error',
     at: safeNow(),
     error: details,
-    context: getPayloadMeta(context)
+    context: {
+      path: canUseWindow() ? window.location.pathname : '',
+      source: details.source,
+      stage: details.stage,
+      reason: details.reason
+    }
   });
 };
 
@@ -161,6 +183,22 @@ export const installGlobalErrorHandlers = () => {
   if (!canUseWindow() || globalHandlersInstalled) return;
 
   const handleWindowError = (event) => {
+    const resourceTarget = event?.target;
+    const resourceUrl = resourceTarget && resourceTarget !== window
+      ? resourceTarget.currentSrc || resourceTarget.src || resourceTarget.href || ''
+      : '';
+
+    if (resourceUrl) {
+      captureError(new Error(`Failed to load ${resourceTarget?.tagName || 'resource'}`), {
+        key: 'resource_load_error',
+        source: 'window.resource_error',
+        reason: 'resource_load_failure',
+        resourceType: resourceTarget?.tagName || 'resource',
+        resourceUrl
+      });
+      return;
+    }
+
     captureError(event?.error || new Error(event?.message || 'window error'), {
       key: 'window_error',
       source: 'window.error',
@@ -172,14 +210,17 @@ export const installGlobalErrorHandlers = () => {
 
   const handleUnhandledRejection = (event) => {
     const reason = event?.reason;
-    const error = reason instanceof Error ? reason : new Error(typeof reason === 'string' ? reason : 'unhandled rejection');
+    const error = reason instanceof Error
+      ? reason
+      : new Error(typeof reason === 'string' ? reason : reason?.message || reason?.code || 'unhandled rejection');
     captureError(error, {
       key: 'unhandled_rejection',
-      source: 'window.unhandledrejection'
+      source: 'window.unhandledrejection',
+      reason: reason?.code || (reason == null ? 'empty_reason' : typeof reason)
     });
   };
 
-  window.addEventListener('error', handleWindowError);
+  window.addEventListener('error', handleWindowError, true);
   window.addEventListener('unhandledrejection', handleUnhandledRejection);
   globalHandlersInstalled = true;
 };

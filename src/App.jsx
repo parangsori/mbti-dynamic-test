@@ -93,6 +93,7 @@ const HistoryModal = lazy(() => import('./components/HistoryModal.jsx'));
 const VersionModal = lazy(() => import('./components/VersionModal.jsx'));
 const AxisGuideModal = lazy(() => import('./components/AxisGuideModal.jsx'));
 const AccessibilitySettings = lazy(() => import('./components/AccessibilitySettings.jsx'));
+import BootSplashScreen from './components/BootSplashScreen.jsx';
 
 const ANALYSIS_DURATION_MS = 2800;
 const ANALYSIS_STEPS = [
@@ -182,7 +183,7 @@ function AnalysisView() {
         <div className="absolute bottom-[-108px] right-[-70px] h-56 w-56 rounded-full bg-fuchsia-400/16 blur-3xl" />
 
         <div className="relative mx-auto flex h-20 w-20 items-center justify-center overflow-hidden rounded-[1.5rem] border border-cyan-100/20 bg-white/[0.07] p-2 shadow-[0_22px_60px_rgba(34,211,238,0.18)]">
-          <img src="/service-icon.svg" alt="" className="h-full w-full rounded-[1.15rem] object-cover" />
+          <img src="/app-icon.png" alt="" className="h-full w-full rounded-[1.15rem] object-cover" />
           <div className="absolute inset-0 rounded-[1.5rem] bg-gradient-to-br from-white/18 via-transparent to-cyan-300/16" />
         </div>
 
@@ -330,6 +331,14 @@ export default function App() {
   const [homeScreenTipSessionHidden, setHomeScreenTipSessionHidden] = useState(false);
   const [homeScreenMigrationStatus, setHomeScreenMigrationStatus] = useState('');
   const [resultBoundaryKey, setResultBoundaryKey] = useState(0);
+  const [isBooting, setIsBooting] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsBooting(false);
+    }, 2200);
+    return () => clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     const storedHistory = readHistory();
@@ -755,7 +764,8 @@ export default function App() {
         }`}
       >
         <AnimatePresence mode="wait">
-          {step === 'start' && (
+          {isBooting && <BootSplashScreen key="boot-splash" />}
+          {!isBooting && step === 'start' && (
             <StartView
               key="start"
               userName={userName}
@@ -783,7 +793,7 @@ export default function App() {
             />
           )}
 
-          {step === 'question' && activeQuestion && (
+          {!isBooting && step === 'question' && activeQuestion && (
             <QuestionView
               key={`question-${questionPhase}-${currIdx}`}
               currIdx={currIdx}
