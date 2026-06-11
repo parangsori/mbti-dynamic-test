@@ -557,6 +557,10 @@ export default function App() {
   };
 
   const handleStart = () => {
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
+
     const trimmedName = userName.trim();
     writeUserName(trimmedName);
     trackEvent('start_click', {

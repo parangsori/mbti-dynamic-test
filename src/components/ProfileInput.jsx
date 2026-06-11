@@ -68,7 +68,7 @@ export default function ProfileInput({ birthDate, gender, onChangeBirthDate, onC
     onClearProfile?.();
   };
 
-  const selectBaseClass = "w-full appearance-none rounded-xl border bg-slate-800/60 px-3 py-2.5 text-[13px] font-bold text-white outline-none transition-all focus:ring-2 focus:ring-cyan-400/30";
+  const selectBaseClass = "w-full appearance-none rounded-xl border bg-slate-800/60 px-3 py-2.5 text-base font-bold text-white outline-none transition-all focus:ring-2 focus:ring-cyan-400/30 sm:text-[13px]";
   const selectActiveClass = "border-cyan-300/30 bg-cyan-900/20";
   const selectIdleClass = "border-white/10 hover:border-white/20";
 
