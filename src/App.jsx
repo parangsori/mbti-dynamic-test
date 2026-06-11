@@ -333,9 +333,11 @@ export default function App() {
   const [homeScreenMigrationStatus, setHomeScreenMigrationStatus] = useState('');
   const [homeScreenMigrationText, setHomeScreenMigrationText] = useState('');
   const [resultBoundaryKey, setResultBoundaryKey] = useState(0);
-  const [isBooting, setIsBooting] = useState(true);
+  const [isBooting, setIsBooting] = useState(() => !isStandaloneDisplay());
 
   useEffect(() => {
+    if (isStandaloneDisplay()) return undefined;
+
     const timer = setTimeout(() => {
       setIsBooting(false);
     }, 1600);
