@@ -183,7 +183,7 @@ function AnalysisView() {
         <div className="absolute bottom-[-108px] right-[-70px] h-56 w-56 rounded-full bg-fuchsia-400/16 blur-3xl" />
 
         <div className="relative mx-auto flex h-20 w-20 items-center justify-center overflow-hidden rounded-[1.5rem] border border-cyan-100/20 bg-white/[0.07] p-2 shadow-[0_22px_60px_rgba(34,211,238,0.18)]">
-          <img src="/app-icon.png" alt="" className="h-full w-full rounded-[1.15rem] object-cover" />
+          <img src="/app-icon-v173.png" alt="" className="h-full w-full rounded-[1.15rem] object-cover" />
           <div className="absolute inset-0 rounded-[1.5rem] bg-gradient-to-br from-white/18 via-transparent to-cyan-300/16" />
         </div>
 

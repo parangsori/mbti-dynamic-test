@@ -29,7 +29,7 @@ function HomeScreenTipCard({
     <div className="mb-5 w-full rounded-[1.4rem] border border-cyan-300/20 bg-cyan-300/[0.08] px-4 py-4 shadow-[0_18px_45px_rgba(8,47,73,0.22)]">
       <div className="flex items-start gap-3">
         <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-white/15 bg-white/10 p-1">
-          <img src="/app-icon.png" alt="" className="h-full w-full rounded-lg object-cover" />
+          <img src="/app-icon-v173.png" alt="" className="h-full w-full rounded-lg object-cover" />
         </div>
         <div className="min-w-0 flex-1">
           <p className="text-[13px] font-black text-white break-keep">{title}</p>
@@ -141,7 +141,7 @@ export default function StartView({
     >
       <div className="mb-6 flex flex-col items-center">
         <img 
-          src="/brand-logo.png" 
+          src="/brand-logo-v173.png"
           alt="오늘의 MBTI 브랜드 로고" 
           className="w-44 h-44 object-contain drop-shadow-[0_18px_45px_rgba(34,211,238,0.15)]"
         />
