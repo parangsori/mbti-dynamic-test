@@ -7,16 +7,30 @@ export default defineConfig({
   define: {
     __APP_VERSION__: JSON.stringify(packageJson.version)
   },
-  esbuild: {
-    drop: ['console', 'debugger']
-  },
   build: {
     assetsDir: 'assets/build',
-    rollupOptions: {
+    rolldownOptions: {
       output: {
-        manualChunks: {
-          'vendor-react': ['react', 'react-dom'],
-          'vendor-motion': ['framer-motion']
+        codeSplitting: {
+          groups: [
+            {
+              name: 'vendor-react',
+              test: /node_modules[\\/](?:react|react-dom|scheduler)[\\/]/,
+              priority: 20
+            },
+            {
+              name: 'vendor-motion',
+              test: /node_modules[\\/]framer-motion[\\/]/,
+              priority: 10
+            }
+          ]
+        },
+        minify: {
+          compress: {
+            dropConsole: true,
+            dropDebugger: true
+          },
+          mangle: true
         }
       }
     }
