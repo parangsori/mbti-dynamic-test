@@ -27,16 +27,61 @@ html {
 
 :root {
   --app-font-scale: 1;
+  --color-bg-canvas: #080c1e;
+  --color-bg-surface: rgba(15, 23, 42, 0.94);
+  --color-bg-glass: rgba(255, 255, 255, 0.05);
+  --color-border-subtle: rgba(255, 255, 255, 0.1);
+  --color-border-strong: rgba(255, 255, 255, 0.15);
+  --color-text-primary: #f8fafc;
+  --color-text-secondary: #cbd5e1;
+  --color-text-muted: #94a3b8;
+  --radius-control: 1rem;
+  --radius-card: 1.5rem;
+  --radius-panel: 2rem;
 }
 
 body {
-  background-color: #0f172a;
-  color: #f8fafc;
+  background-color: var(--color-bg-canvas);
+  color: var(--color-text-primary);
   font-family: 'Pretendard Variable', 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, 'Helvetica Neue', 'Segoe UI', 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', sans-serif;
   margin: 0;
   -webkit-font-smoothing: antialiased;
   touch-action: pan-y pinch-zoom;
   font-size: calc(16px * var(--app-font-scale));
+}
+
+@layer components {
+  .app-surface-primary {
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-card);
+    background: var(--color-bg-surface);
+    box-shadow: 0 22px 64px rgba(2, 6, 23, 0.32);
+  }
+
+  .app-surface-secondary {
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-card);
+    background: var(--color-bg-glass);
+  }
+
+  .app-button-primary {
+    min-height: 3.5rem;
+    border-radius: 1.35rem;
+    background: linear-gradient(90deg, #a855f7, #06b6d4);
+    color: white;
+    font-weight: 900;
+    box-shadow: 0 16px 38px rgba(34, 211, 238, 0.2);
+    transition: transform 180ms ease, box-shadow 180ms ease, filter 180ms ease;
+  }
+
+  .app-button-primary:hover {
+    filter: brightness(1.06);
+    box-shadow: 0 19px 46px rgba(34, 211, 238, 0.26);
+  }
+
+  .app-button-primary:active {
+    transform: scale(0.985);
+  }
 }
 
 /* 큰 글자에서도 레이아웃이 깨지지 않도록 */

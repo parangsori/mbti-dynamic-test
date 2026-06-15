@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import ProfileInput from './ProfileInput.jsx';
 import ServiceCopyright from './ServiceCopyright.jsx';
@@ -31,7 +31,7 @@ function HomeScreenTipCard({
     : '기록 복사를 누른 뒤 홈화면에 추가하고, 홈화면 앱에서 기록 가져오기를 누르면 이어집니다.';
 
   return (
-    <div className="mb-5 w-full rounded-[1.4rem] border border-cyan-300/20 bg-cyan-300/[0.08] px-4 py-4 shadow-[0_18px_45px_rgba(8,47,73,0.22)]">
+    <div className="app-surface-secondary w-full px-4 py-4">
       <div className="flex items-start gap-3">
         <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-white/15 bg-white/10 p-1">
           <img src="/app-icon-v173-full.png" alt="" className="h-full w-full rounded-lg object-cover" />
@@ -177,79 +177,123 @@ export default function StartView({
   onDismissHomeScreenTip,
   onHideHomeScreenTipForever
 }) {
+  const hasPersonalization = Boolean(userName || birthDate?.year || birthDate?.month || birthDate?.day || gender);
+  const [showPersonalization, setShowPersonalization] = useState(hasPersonalization);
+
+  useEffect(() => {
+    if (hasPersonalization) setShowPersonalization(true);
+  }, [hasPersonalization]);
+
   return (
     <motion.div
       key="start"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
-      className="w-full max-w-[23.5rem] flex flex-col items-center px-6 py-8"
+      className="flex w-full max-w-[23.5rem] flex-col items-center px-5 pb-8 pt-7 sm:px-6"
     >
-      <div className="mb-6 flex flex-col items-center">
-        <img 
+      <div className="mb-4 flex flex-col items-center">
+        <img
           src="/brand-logo-v173-spaced.png"
-          alt="오늘의 MBTI 브랜드 로고" 
-          className="w-44 h-44 object-contain drop-shadow-[0_18px_45px_rgba(34,211,238,0.15)]"
+          alt="오늘의 MBTI 브랜드 로고"
+          className="h-36 w-36 object-contain drop-shadow-[0_18px_45px_rgba(34,211,238,0.18)] min-[390px]:h-40 min-[390px]:w-40"
         />
       </div>
-      <h1 className="mb-3 text-center text-[2.05rem] font-extrabold leading-[1.12] text-white">
+      <h1 className="mb-3 text-center text-[2rem] font-black leading-[1.13] text-white min-[390px]:text-[2.18rem]">
         지금 내 결은 어느 쪽이 더 강할까?
       </h1>
-      <p className="mb-8 text-center font-normal leading-relaxed text-slate-300">
+      <p className="text-center text-[15px] font-medium leading-relaxed text-slate-300">
         12문항으로 오늘의 무드와 성향 흐름을
         <br />
         가볍고 재밌게 확인해보세요
       </p>
-      {showHomeScreenTip && (
-        <HomeScreenTipCard
-          isStandalone={isStandalone}
-          canInstallApp={canInstallApp}
-          onInstallApp={onInstallApp}
-          onCopyHomeScreenMigration={onCopyHomeScreenMigration}
-          onImportHomeScreenMigration={onImportHomeScreenMigration}
-          migrationStatus={homeScreenMigrationStatus}
-          migrationText={homeScreenMigrationText}
-          onDismiss={onDismissHomeScreenTip}
-          onHideForever={onHideHomeScreenTipForever}
-        />
-      )}
-      <div className="w-full bg-white/5 p-2 rounded-3xl mb-4 backdrop-blur-xl border border-white/10 relative shadow-inner">
-        <input
-          value={userName}
-          onChange={(event) => onChangeUserName(event.target.value)}
-          placeholder="이름은 선택이에요 (비워도 바로 시작)"
-          className="w-full bg-transparent text-white placeholder-slate-400 text-center text-xl py-4 outline-none font-semibold"
-          maxLength="10"
-          onKeyPress={(event) => event.key === 'Enter' && onStart()}
-          aria-label="이름 입력"
-        />
-        <div className="absolute inset-x-8 bottom-3 h-[2px] bg-gradient-to-r from-transparent via-cyan-500 to-transparent opacity-50"></div>
-      </div>
-
-      {/* M3: Profile Input (생년월일 + 성별) */}
-      <ProfileInput
-        birthDate={birthDate}
-        gender={gender}
-        onChangeBirthDate={onChangeBirthDate}
-        onChangeGender={onChangeGender}
-        onClearProfile={onClearProfile}
-      />
 
       <button
+        type="button"
         onClick={onStart}
-        className="mt-5 w-[92%] max-w-[19rem] rounded-[1.35rem] bg-gradient-to-r from-brand to-cyan-500 py-4 text-base font-extrabold text-white shadow-[0_14px_34px_rgba(34,211,238,0.2)] transition-all duration-300 hover:scale-[1.01] active:scale-[0.98]"
+        className="app-button-primary mt-7 w-full max-w-[20rem] px-5 py-4 text-[17px]"
       >
         바로 시작하기
       </button>
-      <p className="mt-4 text-[12px] text-slate-400 text-center break-keep">이름과 프로필 없이도 바로 시작할 수 있어요</p>
+      <p className="mt-3 text-center text-[12px] font-medium text-slate-400 break-keep">
+        입력 없이 바로 시작할 수 있어요
+      </p>
 
-      <div className="mt-6 flex items-center gap-4">
-        <button onClick={onOpenHistory} className="text-sm text-slate-400 underline underline-offset-4 hover:text-white transition-colors">
-          🕒 나의 기록 &amp; 활동 보기
+      <section className="app-surface-primary mt-6 w-full overflow-hidden">
+        <button
+          type="button"
+          onClick={() => setShowPersonalization((value) => !value)}
+          aria-expanded={showPersonalization}
+          aria-controls="start-personalization-panel"
+          className="flex min-h-16 w-full items-center justify-between gap-4 px-5 py-4 text-left transition-colors hover:bg-white/[0.04]"
+        >
+          <span className="min-w-0">
+            <span className="block text-[14px] font-black text-white">내 결과 더 섬세하게 보기</span>
+            <span className="mt-1 block text-[11px] font-medium leading-relaxed text-slate-400 break-keep">
+              이름·생년월일·성별은 선택이며 원할 때만 입력해요
+            </span>
+          </span>
+          <span className={`shrink-0 text-[18px] text-cyan-200 transition-transform ${showPersonalization ? 'rotate-180' : ''}`} aria-hidden="true">
+            ⌄
+          </span>
+        </button>
+
+        {showPersonalization && (
+          <div id="start-personalization-panel" className="border-t border-white/10 px-4 pb-5 pt-4 sm:px-5">
+            <label htmlFor="start-user-name" className="mb-2 block text-[11px] font-black tracking-[0.12em] text-slate-400">
+              이름
+            </label>
+            <div className="relative mb-4 rounded-2xl border border-white/10 bg-white/[0.04] px-3">
+              <input
+                id="start-user-name"
+                value={userName}
+                onChange={(event) => onChangeUserName(event.target.value)}
+                placeholder="비워도 괜찮아요"
+                className="min-h-12 w-full bg-transparent px-2 text-[16px] font-bold text-white outline-none placeholder:text-slate-500"
+                maxLength="10"
+                onKeyDown={(event) => event.key === 'Enter' && onStart()}
+              />
+            </div>
+
+            <ProfileInput
+              birthDate={birthDate}
+              gender={gender}
+              onChangeBirthDate={onChangeBirthDate}
+              onChangeGender={onChangeGender}
+              onClearProfile={onClearProfile}
+            />
+          </div>
+        )}
+      </section>
+
+      {showHomeScreenTip && (
+        <div className="mt-4 w-full">
+          <HomeScreenTipCard
+            isStandalone={isStandalone}
+            canInstallApp={canInstallApp}
+            onInstallApp={onInstallApp}
+            onCopyHomeScreenMigration={onCopyHomeScreenMigration}
+            onImportHomeScreenMigration={onImportHomeScreenMigration}
+            migrationStatus={homeScreenMigrationStatus}
+            migrationText={homeScreenMigrationText}
+            onDismiss={onDismissHomeScreenTip}
+            onHideForever={onHideHomeScreenTipForever}
+          />
+        </div>
+      )}
+
+      <div className="mt-5 grid w-full grid-cols-[minmax(0,1fr)_3rem] gap-2">
+        <button
+          type="button"
+          onClick={onOpenHistory}
+          className="min-h-12 rounded-2xl border border-white/10 bg-white/[0.04] px-4 text-[13px] font-bold text-slate-300 transition-colors hover:bg-white/[0.08] hover:text-white"
+        >
+          나의 기록 &amp; 활동 보기
         </button>
         <button
+          type="button"
           onClick={onOpenAccessibility}
-          className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-slate-400 transition-colors hover:bg-white/[0.08] hover:text-white"
+          className="inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] text-slate-400 transition-colors hover:bg-white/[0.08] hover:text-white"
           aria-label="설정 열기"
           title="설정"
         >
@@ -273,7 +317,7 @@ export default function StartView({
         <button
           type="button"
           onClick={onOpenVersion}
-          className="mt-5 rounded-full border border-white/5 bg-black/20 px-3 py-1 text-[11px] font-bold text-slate-600 transition-colors hover:text-slate-400"
+          className="mt-4 min-h-10 rounded-full border border-white/5 bg-black/20 px-4 py-2 text-[11px] font-bold text-slate-500 transition-colors hover:text-slate-300"
         >
           Version {versionLabel}
         </button>

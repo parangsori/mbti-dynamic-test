@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 
 const GENDER_OPTIONS = [
@@ -20,6 +20,12 @@ export default function ProfileInput({ birthDate, gender, onChangeBirthDate, onC
   const [year, setYear] = useState(birthDate?.year || '');
   const [month, setMonth] = useState(birthDate?.month || '');
   const [day, setDay] = useState(birthDate?.day || '');
+
+  useEffect(() => {
+    setYear(birthDate?.year || '');
+    setMonth(birthDate?.month || '');
+    setDay(birthDate?.day || '');
+  }, [birthDate?.day, birthDate?.month, birthDate?.year]);
 
   const days = useMemo(() => {
     const maxDay = getDaysInMonth(year, month);
@@ -77,18 +83,11 @@ export default function ProfileInput({ birthDate, gender, onChangeBirthDate, onC
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.1 }}
-      className="w-full mt-4"
+      className="w-full"
     >
-      <div className="rounded-3xl border border-white/10 bg-white/[0.04] backdrop-blur-xl p-5">
-        <p className="text-[13px] font-bold text-slate-300 mb-2 text-center">
-          입력하시면 오늘 흐름에 더 섬세하게 반영됩니다 <span className="text-slate-500">(선택)</span>
-        </p>
-        <p className="mb-4 text-center text-[11px] font-medium leading-relaxed text-slate-500 break-keep">
-          입력하지 않아도 바로 시작할 수 있어요.
-        </p>
-
+      <div className="border-t border-white/10 pt-4">
         <div className="mb-4">
-          <p className="text-[11px] font-bold text-slate-400 mb-2 tracking-wider uppercase">생년월일</p>
+          <p className="mb-2 text-[11px] font-black tracking-[0.12em] text-slate-400">생년월일</p>
           <div className="grid grid-cols-3 gap-2">
             <div className="relative">
               <select
@@ -132,13 +131,15 @@ export default function ProfileInput({ birthDate, gender, onChangeBirthDate, onC
         </div>
 
         <div>
-          <p className="text-[11px] font-bold text-slate-400 mb-2 tracking-wider uppercase">성별</p>
+          <p className="mb-2 text-[11px] font-black tracking-[0.12em] text-slate-400">성별</p>
           <div className="grid grid-cols-3 gap-2">
             {GENDER_OPTIONS.map((option) => (
               <button
                 key={option.key}
+                type="button"
                 onClick={() => onChangeGender(gender === option.key ? '' : option.key)}
-                className={`rounded-2xl border px-2 py-2.5 text-center text-[12px] font-bold transition-all active:scale-[0.96] ${
+                aria-pressed={gender === option.key}
+                className={`min-h-11 rounded-2xl border px-2 py-2.5 text-center text-[12px] font-bold transition-all active:scale-[0.96] ${
                   gender === option.key
                     ? 'border-cyan-300/40 bg-cyan-300/[0.12] text-cyan-100'
                     : 'border-white/10 bg-white/[0.03] text-slate-300 hover:bg-white/[0.06]'
@@ -154,7 +155,7 @@ export default function ProfileInput({ birthDate, gender, onChangeBirthDate, onC
           <button
             type="button"
             onClick={handleClearProfile}
-            className="mt-4 w-full rounded-2xl border border-white/10 bg-white/[0.03] px-3 py-2.5 text-[12px] font-bold text-slate-400 transition-colors hover:bg-white/[0.06] hover:text-white"
+            className="mt-4 min-h-11 w-full rounded-2xl border border-white/10 bg-white/[0.03] px-3 py-2.5 text-[12px] font-bold text-slate-400 transition-colors hover:bg-white/[0.06] hover:text-white"
           >
             프로필 정보 비우기
           </button>
