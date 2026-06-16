@@ -558,7 +558,9 @@ export const buildQuestionSession = (recentSessions = [], { ageGroup = '' } = {}
 
 export const getFollowupTempoMessage = (index, total) => {
   if (total <= 1) return '결과 정확도를 위해 한 문항만 더 볼게요';
-  if (index === 0) return '결과 정확도를 위해 몇 문항만 더 볼게요';
+  if (index === 0) return '경계에 걸린 축을 조금 더 또렷하게 볼게요';
   if (index === total - 1) return '마지막 보정 질문이에요. 결과가 더 또렷해져요';
-  return '조금만 더 보면 결과가 더 또렷해져요';
+  return total > 2
+    ? '방금 애매했던 선택을 한 번 더 살펴보고 있어요'
+    : '이 답변까지 보면 결과를 더 조심스럽게 읽을 수 있어요';
 };
