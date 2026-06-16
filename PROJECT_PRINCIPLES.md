@@ -275,6 +275,7 @@
 - 2026-06-16: 서비스 디자인 개편 Phase 2로 문항·보정 화면의 진행 정보와 질문 카드 위계를 단순화한 v1.7.6을 준비했다. 문항 상단 이미지는 타입 캐릭터로 재제작하지 않고 기존 맥락 이미지를 유지하되, 무드 컬러·유리 질감·테두리 톤만 결과 화면 방향과 맞춘다. 연령대별 진행 응원 메시지는 12문항 기준으로 중복 없이 보강하고 `npm run test:tempo-copy`로 반복 카피 회귀를 확인한다. 점수 계산, 문항 선택, 보정 판정, 탭·스와이프·키보드 입력 로직은 변경하지 않는다.
 - 2026-06-16: `dev`에서 검증된 v1.7.6 커밋을 `main`에 fast-forward 반영했을 때 GitHub `origin/main`은 최신 SHA를 즉시 가리켰지만 Vercel Production 배포는 몇 분 뒤 지연 생성됐다. 지연 중에는 기존 Production SHA가 남아 있어 배포 완료로 오인하기 쉬우므로, 이후 main 릴리즈는 fast-forward 완료나 Vercel 목록 첫 조회만으로 끝내지 않고 `todaymbti.com` alias와 Production SHA가 `origin/main`과 일치하는지 확인한다. 제한 시간 안에 main Production이 생성되지 않을 때만 검증된 Preview의 Production 승격을 fallback으로 사용한다.
 - 2026-06-16: 보안 점검 P1 패치로 `posthog-js`를 v1.386.8로 올리고 transitive `dompurify`를 v3.4.10으로 정리해 `npm audit --omit=dev` 취약점 0건을 확인했다. 프로필 입력값이 자동 DOM 이벤트에 섞이지 않도록 PostHog DOM autocapture는 끄고, 시작/완료/공유/오류 등 명시 이벤트와 pageview/pageleave는 유지하는 v1.7.7을 준비했다.
+- 2026-06-16: 서비스 디자인 개편 Phase 3로 분석 대기 화면의 반복 단계 모션을 줄이고 진행 막대를 주 신호로 정리한 v1.7.8을 준비했다. 고정 브랜드 캐릭터는 결과 타입 캐릭터가 아니라 결과 진입 전 안내자 역할로 설명하며, 분석 시간·결과 계산·결과 전환 로직은 변경하지 않는다.
 
 ### 다음 채팅에서 먼저 확인할 체크포인트
 

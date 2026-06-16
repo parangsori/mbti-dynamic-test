@@ -101,6 +101,7 @@ const ANALYSIS_STEPS = [
   '성향 축 정리 중',
   '오늘의 결과 준비 중'
 ];
+const ANALYSIS_GUIDE = '브랜드 안내자가 결과 화면으로 넘어가기 전 흐름을 정돈하는 중이에요';
 
 const ScreenFallback = (
   <div className="w-full max-w-sm px-6 py-10">
@@ -178,26 +179,27 @@ function AnalysisView() {
       transition={{ duration: 0.32, ease: 'easeOut' }}
       className="w-full max-w-sm px-6 py-10"
     >
-      <div className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-slate-950/72 px-5 py-8 text-center shadow-[0_26px_80px_rgba(15,23,42,0.46)] backdrop-blur-2xl">
-        <div className="absolute left-1/2 top-[-96px] h-48 w-48 -translate-x-1/2 rounded-full bg-cyan-400/20 blur-3xl" />
-        <div className="absolute bottom-[-108px] right-[-70px] h-56 w-56 rounded-full bg-fuchsia-400/16 blur-3xl" />
+      <div className="relative overflow-hidden rounded-[2rem] border border-white/[0.12] bg-slate-950/74 px-5 py-8 text-center shadow-[0_26px_80px_rgba(15,23,42,0.46)] backdrop-blur-2xl">
+        <div className="absolute left-1/2 top-[-104px] h-48 w-48 -translate-x-1/2 rounded-full bg-cyan-400/18 blur-3xl" />
+        <div className="absolute bottom-[-112px] right-[-76px] h-56 w-56 rounded-full bg-fuchsia-400/14 blur-3xl" />
+        <div className="absolute inset-x-6 top-6 h-px bg-gradient-to-r from-transparent via-white/18 to-transparent" />
 
         <img
           src="/brand-character-v173.png"
-          alt=""
-          className="relative mx-auto h-24 w-24 object-contain drop-shadow-[0_18px_42px_rgba(34,211,238,0.28)]"
+          alt="오늘의 MBTI 안내 캐릭터"
+          className="relative mx-auto h-24 w-24 object-contain drop-shadow-[0_18px_42px_rgba(34,211,238,0.24)]"
         />
 
-        <p className="relative mt-5 text-[11px] font-black uppercase tracking-[0.18em] text-cyan-100/80">오늘의 MBTI</p>
+        <p className="relative mt-5 text-[11px] font-black uppercase tracking-[0.18em] text-cyan-100/80">결과 준비</p>
         <h2 className="relative mt-3 text-[23px] font-black leading-tight text-white break-keep">
           방금 고른 선택들로 지금의 성향을 정리하고 있어요
         </h2>
         <p className="relative mt-3 text-[13px] font-semibold leading-relaxed text-slate-300 break-keep">
-          조금만 기다리시면 지금의 MBTI가 분석됩니다
+          {ANALYSIS_GUIDE}
         </p>
 
         <div className="relative mt-7">
-          <div className="h-3.5 overflow-hidden rounded-full border border-white/10 bg-white/[0.06]">
+          <div className="h-3 overflow-hidden rounded-full border border-white/10 bg-white/[0.06]" aria-label="결과 준비 진행 중">
             <motion.div
               className="h-full rounded-full bg-gradient-to-r from-cyan-300 via-brand to-pink-300 shadow-[0_0_24px_rgba(34,211,238,0.45)]"
               initial={{ width: '6%' }}
@@ -205,22 +207,20 @@ function AnalysisView() {
               transition={{ duration: ANALYSIS_DURATION_MS / 1000, ease: 'easeInOut' }}
             />
           </div>
-          <div className="mt-4 grid grid-cols-1 gap-2">
+          <div className="mt-5 grid grid-cols-1 gap-2 text-left">
             {ANALYSIS_STEPS.map((label, index) => (
-              <motion.div
+              <div
                 key={label}
-                initial={{ opacity: 0.42, y: 6 }}
-                animate={{ opacity: [0.5, 1, 0.72], y: 0 }}
-                transition={{
-                  delay: index * 0.45,
-                  duration: 1,
-                  repeat: Infinity,
-                  repeatDelay: 1.2
-                }}
-                className="rounded-2xl border border-white/10 bg-white/[0.045] px-3 py-2 text-[10px] font-black text-slate-200 break-keep"
+                className="flex items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.04] px-3 py-2.5 text-[11px] font-black text-slate-200 break-keep"
               >
+                <span
+                  className={`h-2 w-2 shrink-0 rounded-full ${
+                    index === ANALYSIS_STEPS.length - 1 ? 'bg-pink-200/90' : 'bg-cyan-200/90'
+                  }`}
+                  aria-hidden="true"
+                />
                 {label}
-              </motion.div>
+              </div>
             ))}
           </div>
         </div>
