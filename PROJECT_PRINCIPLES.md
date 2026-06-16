@@ -31,6 +31,7 @@
 - 정확도 회귀 검증: `npm run test:accuracy`
 - 모바일/외부기기 확인이 필요할 때: [MOBILE_TESTING.md](./MOBILE_TESTING.md)
 - 기능/버그 패치는 기본적으로 `dev` 브랜치에서 먼저 작업하고 검증한 뒤 `main`에 반영한다.
+- `dev`에서 이미 Vercel Preview로 배포된 커밋을 `main`에 반영할 때는 fast-forward 병합만으로 릴리즈를 끝내지 않는다. 동일 SHA가 이미 Preview에 있으면 Vercel Production 배포가 몇 분 늦게 생성될 수 있으므로, Production SHA가 `origin/main`과 일치할 때까지 확인하고 제한 시간 안에 반영되지 않을 때만 검증된 Preview의 Production 승격을 fallback으로 사용한다.
 
 ## 2. 개발 원칙
 
@@ -40,6 +41,7 @@
 - 요청한 문제를 고치기 위해 다른 영역에 영향이 갈 수 있으면, 그 영향을 먼저 인지하고 정상 동작 영역을 보호한다.
 - "이 변경을 위해 다른 쪽도 같이 흔들리는 구조"는 가능한 한 피한다.
 - 사용자가 명시적으로 예외를 요청하지 않는 한, 구현 작업은 `dev`에서 시작한다. `main`에서 먼저 진행한 예외 작업은 완료 후 반드시 `dev`에도 같은 커밋을 반영한다.
+- `dev` 검증 완료 후 `main`에 반영할 때는 Vercel 자동 Production 배포가 실제로 생성됐는지 별도로 확인한다. `origin/main`과 Vercel Current Production의 commit SHA가 다르면 배포 완료로 보지 않는다.
 
 ### 회귀 방지 원칙
 
@@ -271,6 +273,7 @@
 - 2026-06-11: 반복 테스트에서 익숙한 문항이 자주 다시 보인다는 체감 제보를 재현했다. 문항 후보가 소진되는 과정에서 신선도가 낮아지던 선택 로직을 조정하고, 연령대별 반복 사용 품질 검증을 강화한 v1.7.4를 준비했다.
 - 2026-06-16: 서비스 디자인 개편 Phase 1로 시작 화면의 핵심 CTA를 선택 입력보다 먼저 배치하고, 이름·생년월일·성별을 접을 수 있는 개인화 영역으로 통합한 v1.7.5를 준비했다. 홈화면 설치·기록 이전 안내는 시작을 막지 않는 보조 흐름으로 이동했으며, 기존 프로필이 있으면 개인화 영역이 자동으로 열리고 입력 없이 시작하는 흐름도 그대로 유지한다.
 - 2026-06-16: 서비스 디자인 개편 Phase 2로 문항·보정 화면의 진행 정보와 질문 카드 위계를 단순화한 v1.7.6을 준비했다. 문항 상단 이미지는 타입 캐릭터로 재제작하지 않고 기존 맥락 이미지를 유지하되, 무드 컬러·유리 질감·테두리 톤만 결과 화면 방향과 맞춘다. 연령대별 진행 응원 메시지는 12문항 기준으로 중복 없이 보강하고 `npm run test:tempo-copy`로 반복 카피 회귀를 확인한다. 점수 계산, 문항 선택, 보정 판정, 탭·스와이프·키보드 입력 로직은 변경하지 않는다.
+- 2026-06-16: `dev`에서 검증된 v1.7.6 커밋을 `main`에 fast-forward 반영했을 때 GitHub `origin/main`은 최신 SHA를 즉시 가리켰지만 Vercel Production 배포는 몇 분 뒤 지연 생성됐다. 지연 중에는 기존 Production SHA가 남아 있어 배포 완료로 오인하기 쉬우므로, 이후 main 릴리즈는 fast-forward 완료나 Vercel 목록 첫 조회만으로 끝내지 않고 `todaymbti.com` alias와 Production SHA가 `origin/main`과 일치하는지 확인한다. 제한 시간 안에 main Production이 생성되지 않을 때만 검증된 Preview의 Production 승격을 fallback으로 사용한다.
 
 ### 다음 채팅에서 먼저 확인할 체크포인트
 
@@ -283,6 +286,7 @@
 - admin/운영 대시보드 요청이면 `admin/README.md`와 `admin/DEPLOYMENT_CHECKLIST.md`를 함께 확인하고, Cloudflare Access와 Vercel 환경변수 상태를 먼저 점검한다.
 - admin 도메인 문제는 Cloudflare DNS `admin` CNAME target, Proxy 상태, Vercel domain 상태, Access application 정책 순서로 확인한다.
 - dev 실서비스 QA는 고정 주소 `https://dev-mbti.beatblue.net`을 우선 사용한다. 접속 불가 또는 오래된 배포가 보이면 Cloudflare Access 정책, Cloudflare DNS `dev-mbti` Proxy 상태, Vercel domain의 `gitBranch: dev`, Preview(dev) `VITE_PUBLIC_SERVICE_URL` 순서로 점검한다.
+- main 반영 후 운영 배포 확인은 `origin/main` SHA와 Vercel Current Production SHA를 비교해 판단한다. Vercel 목록에 새 Production이 없거나 Production SHA가 이전 커밋이면 몇 분간 재조회하고, 제한 시간 안에도 맞지 않을 때만 promote fallback 또는 main merge 방식 변경 필요 여부를 판단한다.
 
 ### 운영 로그 갱신 원칙
 
