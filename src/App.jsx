@@ -184,11 +184,14 @@ function AnalysisView() {
         <div className="absolute bottom-[-112px] right-[-76px] h-56 w-56 rounded-full bg-fuchsia-400/14 blur-3xl" />
         <div className="absolute inset-x-6 top-6 h-px bg-gradient-to-r from-transparent via-white/18 to-transparent" />
 
-        <img
-          src="/brand-character-v173.png"
-          alt="오늘의 MBTI 안내 캐릭터"
-          className="relative mx-auto h-24 w-24 object-contain drop-shadow-[0_18px_42px_rgba(34,211,238,0.24)]"
-        />
+        <div className="relative mx-auto h-24 w-24">
+          <div className="absolute inset-2 rounded-full bg-cyan-300/16 blur-2xl" aria-hidden="true" />
+          <img
+            src="/brand-character-v173.png"
+            alt="오늘의 MBTI 안내 캐릭터"
+            className="relative h-full w-full rounded-full object-contain"
+          />
+        </div>
 
         <p className="relative mt-5 text-[11px] font-black uppercase tracking-[0.18em] text-cyan-100/80">결과 준비</p>
         <h2 className="relative mt-3 text-[23px] font-black leading-tight text-white break-keep">
