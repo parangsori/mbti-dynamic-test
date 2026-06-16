@@ -15,7 +15,8 @@ export const initPostHog = () => {
     api_host: import.meta.env.VITE_POSTHOG_HOST || 'https://us.i.posthog.com',
     defaults: '2026-01-30',
     person_profiles: 'identified_only',
-    autocapture: true,
+    autocapture: false,
+    autocapture_opt_out: true,
     capture_pageview: true,
     capture_pageleave: true
   });

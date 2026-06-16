@@ -19,6 +19,15 @@ export const COMPATIBILITY = {
 
 export const CHANGELOG = [
   {
+    version: 'v1.7.7',
+    date: '2026.06.16',
+    updates: [
+      '운영 보안 점검 결과를 반영해 취약 의존성을 최신 안전 버전으로 정리',
+      '프로필 입력값이 자동 이벤트 수집에 섞이지 않도록 PostHog DOM 자동수집을 끄고 명시 이벤트 중심으로 유지',
+      '기존 시작, 완료, 공유, 오류 진단 지표는 유지하면서 개인정보 최소수집 기준을 강화'
+    ]
+  },
+  {
     version: 'v1.7.6',
     date: '2026.06.16',
     updates: [
