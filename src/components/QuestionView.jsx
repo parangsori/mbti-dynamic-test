@@ -39,6 +39,7 @@ export default function QuestionView({
   questionDirection,
   tempoMessage,
   contextVisual,
+  phase = 'base',
   canGoBack,
   onAnswer,
   onMiddleAnswer,
@@ -67,6 +68,8 @@ export default function QuestionView({
   const secondOption = question.options[1];
   const contextKey = contextVisual?.key || 'daily';
   const contextImage = CONTEXT_IMAGES[contextKey] || CONTEXT_IMAGES.daily;
+  const isFollowupPhase = phase === 'followup';
+  const isFirstQuestion = currIdx === 0;
 
   useEffect(() => {
     const handleKeyDown = (event) => {
@@ -214,9 +217,11 @@ export default function QuestionView({
     onAnswer(option, 'tap');
   };
 
-  // Progress calculation
   const progress = ((currIdx + 1) / totalQuestions) * 100;
   const progressPrev = (currIdx / totalQuestions) * 100;
+  const answerHelpText = isFirstQuestion
+    ? '카드를 좌우로 밀거나 원하는 답변을 눌러도 돼요'
+    : '답변을 누르거나 카드 방향으로 가볍게 밀어주세요';
 
   return (
     <motion.div
@@ -224,48 +229,54 @@ export default function QuestionView({
       initial={{ opacity: 0, x: 50 }}
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -50 }}
-      className="w-full min-h-[100dvh] flex flex-col max-w-[23.5rem] pt-8 pb-8 px-5"
+      className="w-full min-h-[100dvh] flex flex-col max-w-[23.5rem] pt-6 pb-8 px-5"
     >
-      {/* Enhanced Progress Bar */}
-      <div className="w-full mb-3">
-        <div className="flex justify-between items-end mb-2.5 text-slate-300 font-semibold">
-          <span className="text-2xl bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-brand tracking-widest italic">{questionLabel || `Q${currIdx + 1}`}</span>
-          <span className="text-sm font-medium bg-white/10 px-3 py-1 rounded-full">{counterText || `${currIdx + 1} / ${totalQuestions}`}</span>
+      <div className="w-full mb-3 rounded-[1.45rem] border border-white/10 bg-white/[0.045] px-4 py-3 shadow-[0_18px_48px_rgba(2,6,23,0.24)] backdrop-blur-xl">
+        <div className="flex items-center justify-between gap-3 text-slate-300 font-semibold">
+          <div className="min-w-0">
+            <span className={`inline-flex rounded-full border px-3 py-1 text-[11px] font-black tracking-[0.12em] ${
+              isFollowupPhase
+                ? 'border-fuchsia-200/25 bg-fuchsia-300/10 text-fuchsia-100'
+                : 'border-cyan-200/25 bg-cyan-300/10 text-cyan-100'
+            }`}>
+              {questionLabel || `Q${currIdx + 1}`}
+            </span>
+          </div>
+          <span className="shrink-0 rounded-full bg-slate-950/30 px-3 py-1 text-[12px] font-bold text-slate-200">
+            {counterText || `${currIdx + 1} / ${totalQuestions}`}
+          </span>
         </div>
 
-        {/* Dynamic Progress Bar with step indicators */}
-        <div className="relative">
-          <div className="h-3 w-full bg-slate-800 rounded-full overflow-hidden border border-white/5 progress-glow">
+        <div className="relative mt-3">
+          <div className="h-2 w-full bg-slate-950/50 rounded-full overflow-hidden border border-white/5">
             <motion.div
               className="h-full bg-gradient-to-r from-cyan-400 via-brand to-pink-400 relative"
               initial={{ width: `${progressPrev}%` }}
               animate={{ width: `${progress}%` }}
               transition={{ duration: 0.6, type: 'spring', stiffness: 100 }}
             >
-              {/* Shimmer effect */}
               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-[shimmer_2s_infinite] bg-[length:200%_100%]" />
             </motion.div>
           </div>
 
-          {/* Step dots */}
-          <div className="flex justify-between mt-1.5 px-0.5">
+          <div className="flex justify-between mt-2 px-0.5" aria-hidden="true">
             {Array.from({ length: totalQuestions }, (_, i) => (
               <div
                 key={i}
-                className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${
+                className={`h-1 rounded-full transition-all duration-300 ${
                   i < currIdx + 1
-                    ? 'bg-cyan-400 shadow-[0_0_4px_rgba(34,211,238,0.6)]'
+                    ? 'w-3 bg-cyan-300 shadow-[0_0_4px_rgba(34,211,238,0.55)]'
                     : i === currIdx + 1
-                      ? 'bg-slate-500'
-                      : 'bg-slate-700'
-                } ${i === currIdx ? 'dot-pop scale-150' : ''}`}
+                      ? 'w-2 bg-slate-500'
+                      : 'w-1.5 bg-slate-700'
+                } ${i === currIdx ? 'dot-pop' : ''}`}
               />
             ))}
           </div>
         </div>
 
-        <p className="mt-2.5 text-[12px] text-center font-semibold text-cyan-200/90 break-keep">{tempoMessage}</p>
-        {phaseHint && <p className="mt-2 text-[11px] text-center text-slate-400 break-keep">{phaseHint}</p>}
+        <p className="mt-2.5 text-[12px] text-center font-semibold text-cyan-100/90 break-keep">{tempoMessage}</p>
+        {phaseHint && <p className="mt-1.5 text-[11px] text-center text-slate-400 break-keep">{phaseHint}</p>}
       </div>
 
       <div className="w-full">
@@ -278,18 +289,19 @@ export default function QuestionView({
             transition={{ duration: 0.35, ease: 'easeOut' }}
             className="w-full"
           >
-            <section className="relative overflow-hidden rounded-[1.65rem] border border-white/10 bg-white/[0.06] shadow-[0_22px_60px_rgba(2,6,23,0.32)] backdrop-blur-xl">
-              <div className="relative h-28 w-full overflow-hidden">
-                <img src={contextImage} alt={contextVisual?.alt || '질문 분위기'} className="h-full w-full object-cover" draggable="false" />
-                <div className="absolute inset-0 bg-gradient-to-b from-black/5 via-transparent to-slate-950/72" />
-                <span className="absolute left-4 top-4 rounded-full border border-white/15 bg-black/25 px-3 py-1 text-[10px] font-black tracking-[0.14em] text-white/90 backdrop-blur-md">
+            <section className="question-card-shell relative overflow-hidden rounded-[1.65rem] border border-white/10 bg-slate-950/[0.58] shadow-[0_22px_60px_rgba(2,6,23,0.34)] backdrop-blur-xl">
+              <div className="relative h-20 w-full overflow-hidden">
+                <img src={contextImage} alt={contextVisual?.alt || '질문 분위기'} className="h-full w-full object-cover opacity-[0.82] saturate-[0.92]" draggable="false" />
+                <div className="absolute inset-0 bg-gradient-to-br from-cyan-300/16 via-brand/10 to-fuchsia-300/18 mix-blend-screen" />
+                <div className="absolute inset-0 bg-gradient-to-b from-slate-950/12 via-slate-950/26 to-slate-950/82" />
+                <span className="absolute left-4 top-3 rounded-full border border-white/15 bg-slate-950/34 px-3 py-1 text-[10px] font-black tracking-[0.14em] text-white/90 backdrop-blur-md">
                   {contextVisual?.label || '일상 선택'}
                 </span>
               </div>
-              <div className="px-5 py-6">
-                <h2 className="text-[20px] font-extrabold text-white leading-snug break-keep text-center">{question.q}</h2>
-                <p className="mt-4 text-center text-[11px] font-semibold text-slate-400 break-keep">
-                  질문을 읽고 아래 답변 카드를 골라주세요
+              <div className="px-5 py-5">
+                <h2 className="text-[21px] font-extrabold text-white leading-snug break-keep text-center">{question.q}</h2>
+                <p className="mt-3 text-center text-[11px] font-semibold text-slate-400 break-keep">
+                  가장 가까운 쪽을 골라주세요
                 </p>
               </div>
             </section>
@@ -297,10 +309,10 @@ export default function QuestionView({
         </AnimatePresence>
       </div>
 
-      <div className="mt-8 flex flex-col gap-3 relative w-full">
+      <div className="mt-5 flex flex-col gap-3 relative w-full">
         <div
           ref={answerStageRef}
-          className={`relative overflow-hidden rounded-[2rem] border px-3 py-4 shadow-[0_24px_70px_rgba(2,6,23,0.30)] backdrop-blur-xl [touch-action:pan-y_pinch-zoom] transition-colors ${
+          className={`relative overflow-hidden rounded-[2rem] border px-3 py-3.5 shadow-[0_24px_70px_rgba(2,6,23,0.30)] backdrop-blur-xl [touch-action:pan-y_pinch-zoom] transition-colors ${
             activeDragSide === 'left'
               ? 'border-cyan-300/30 bg-cyan-300/[0.07]'
               : activeDragSide === 'right'
@@ -353,7 +365,8 @@ export default function QuestionView({
                     opacity: isFlyingOut ? 0 : isOtherFlyingOut ? 0.3 : isTransitioning ? 0.4 : isMuted ? 0.7 : 1
                   }}
                   transition={{ type: 'spring', stiffness: 650, damping: 20 }}
-                  className={`relative flex h-[7rem] w-[78%] flex-col justify-between overflow-hidden rounded-2xl border px-4 py-3.5 text-center shadow-lg transition-colors active:scale-[0.98] ${
+                  aria-label={`${side === 'left' ? '왼쪽 답변' : '오른쪽 답변'}: ${option.text}`}
+                  className={`relative flex min-h-[6.25rem] w-[82%] flex-col justify-center overflow-hidden rounded-2xl border px-4 py-4 text-center shadow-lg transition-colors active:scale-[0.98] ${
                     side === 'left' ? 'self-start' : 'self-end'
                   } ${
                     isActive || hasSwipeFeedback
@@ -363,7 +376,6 @@ export default function QuestionView({
                       : 'border-white/10 bg-slate-900/60 text-white hover:bg-white/10'
                   } ${hasFlash ? 'answer-selected' : ''}`}
                 >
-                  {/* Haptic feedback ripple */}
                   {hasFlash && (
                     <motion.div
                       initial={{ scale: 0, opacity: 0.6 }}
@@ -373,25 +385,22 @@ export default function QuestionView({
                     />
                   )}
                   <span className={`pointer-events-none absolute inset-y-3 ${side === 'left' ? 'left-0 bg-cyan-300/45' : 'right-0 bg-fuchsia-300/45'} w-1 rounded-full`} />
-                  <div className={`flex items-center ${side === 'left' ? 'justify-start' : 'justify-end'}`}>
+                  <div className={`mb-2 flex items-center ${side === 'left' ? 'justify-start' : 'justify-end'}`}>
                     <span className={`rounded-full px-2.5 py-1 text-[10px] font-black tracking-[0.14em] ${
                       side === 'left' ? 'bg-cyan-300/10 text-cyan-100' : 'bg-fuchsia-300/10 text-fuchsia-100'
                     }`}>
-                      {side === 'left' ? '← 왼쪽' : '오른쪽 →'}
+                      {side === 'left' ? 'A 선택' : 'B 선택'}
                     </span>
                   </div>
-                  <span className="mt-2.5 flex flex-1 items-center justify-center text-[15px] font-semibold leading-snug break-words">
+                  <span className="flex flex-1 items-center justify-center text-[15px] font-semibold leading-snug break-words">
                     {option.text}
-                  </span>
-                  <span className={`mt-2.5 text-[10px] font-semibold text-slate-400 ${side === 'left' ? 'text-left' : 'text-right'}`}>
-                    {side === 'left' ? '← 밀기' : '밀기 →'}
                   </span>
                 </motion.button>
               );
             })}
           </div>
           <p className="relative mt-3 text-center text-[11px] font-semibold text-slate-500 break-keep">
-            카드를 좌우로 밀거나 원하는 답변을 눌러도 돼요
+            {answerHelpText}
           </p>
         </div>
 
@@ -428,7 +437,7 @@ export default function QuestionView({
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, scale: 0.8 }}
               transition={{ type: 'spring', damping: 12, stiffness: 200 }}
-              className="absolute top-[45%] left-0 w-full text-center z-[100] pointer-events-none -translate-y-1/2"
+              className="absolute top-[52%] left-0 w-full text-center z-[100] pointer-events-none -translate-y-1/2"
             >
               <span className="inline-block px-5 py-3 bg-gradient-to-r from-pink-500 to-brand rounded-full text-white text-[15px] font-bold shadow-xl shadow-brand/40 whitespace-nowrap">
                 {microCopy}

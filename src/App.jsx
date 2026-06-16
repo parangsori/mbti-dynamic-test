@@ -824,6 +824,7 @@ export default function App() {
               questionDirection={questionDirection}
               tempoMessage={getTempoForCurrentQuestion()}
               phaseHint={questionPhaseHint}
+              phase={questionPhase}
               questionLabel={questionPhase === 'followup' ? `보정 ${currIdx + 1}` : undefined}
               counterText={
                 questionPhase === 'followup'
