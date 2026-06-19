@@ -890,6 +890,11 @@ export default function App() {
                 historyData={historyData}
                 isPremiumUser={isPremiumUser}
                 getHistoryEntryNote={getHistoryEntryNote}
+                trackEvent={trackEvent}
+                onStartTest={() => {
+                  setShowHistory(false);
+                  handleStart();
+                }}
                 onClose={() => setShowHistory(false)}
                 onClearData={handleClearLocalData}
               />

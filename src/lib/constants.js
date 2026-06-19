@@ -19,6 +19,14 @@ export const COMPATIBILITY = {
 
 export const CHANGELOG = [
   {
+    version: 'v1.7.9',
+    date: '2026.06.19',
+    updates: [
+      '기록 화면을 최근 흐름 중심으로 정리',
+      '프리미엄 분석 미리보기 추가'
+    ]
+  },
+  {
     version: 'v1.7.8',
     date: '2026.06.16',
     updates: [

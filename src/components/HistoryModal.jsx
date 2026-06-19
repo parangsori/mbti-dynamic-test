@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 
 const THEME_LABELS = {
-  spark: '반짝임',
+  spark: '불꽃',
   wave: '흐름',
   neon: '선명함',
   steady: '차분함',
@@ -15,6 +15,50 @@ const THEME_LABELS = {
 const getThemeLabel = (themeKey = '') => THEME_LABELS[themeKey] || themeKey || '오늘 무드';
 
 const getEntryKey = (entry = {}, idx = 0) => entry.localEntryId || entry.createdAt || `${entry.mbti || 'result'}-${idx}`;
+const FREE_HISTORY_LIMIT = 7;
+const PREMIUM_PREVIEW_ITEMS = [
+  '7일 성향 변화 그래프',
+  '축별 안정성/변동성',
+  '같은 타입 안의 미세한 차이',
+  '30일 변화 리포트'
+];
+
+const getHistoryStageCopy = (historyCount = 0) => {
+  if (historyCount === 0) {
+    return {
+      eyebrow: '첫 기록 준비',
+      title: '오늘 결과가 첫 기준점이 됩니다',
+      body: '테스트를 한 번 남겨두면 다음 결과부터 내 흐름이 이어지는지, 달라지는지 볼 수 있어요.',
+      ctaLabel: '오늘 테스트 시작하기',
+      ctaKind: 'start_first_history'
+    };
+  }
+  if (historyCount < 3) {
+    return {
+      eyebrow: '흐름 시작',
+      title: '비교가 막 시작됐어요',
+      body: '기록이 조금 더 쌓이면 같은 타입 안의 무드 차이와 흔들리는 축이 더 잘 보여요.',
+      ctaLabel: '다음 결과도 남기기',
+      ctaKind: 'continue_history'
+    };
+  }
+  if (historyCount < FREE_HISTORY_LIMIT) {
+    return {
+      eyebrow: '최근 흐름',
+      title: '최근 패턴이 보이기 시작했어요',
+      body: '최근 결과를 기준으로 자주 나온 타입과 가장 잘 움직이는 축을 가볍게 확인할 수 있어요.',
+      ctaLabel: '7일 흐름 미리보기',
+      ctaKind: 'preview_7d'
+    };
+  }
+  return {
+    eyebrow: '7일 흐름',
+    title: '프리미엄 분석으로 확장하기 좋은 상태예요',
+    body: '최근 기록이 충분히 쌓여 7일 흐름, 축별 변화, 같은 타입 안의 차이를 더 깊게 볼 수 있어요.',
+    ctaLabel: '내 패턴 더 자세히 보기',
+    ctaKind: 'preview_premium'
+  };
+};
 
 const getSnapshotBadge = (entry = {}, isPremiumUser = false) => {
   if (!entry.resultSnapshotVersion) {
@@ -148,15 +192,114 @@ function HistoryDetailModal({ entry, getHistoryEntryNote, onClose }) {
   );
 }
 
-function ActivityMetricCard({ title, value, description }) {
+function FlowMetricCard({ title, value, description }) {
   return (
-    <div className="flex min-h-[10rem] flex-col rounded-2xl border border-white/10 bg-white/5 px-4 py-4">
-      <div className="flex min-h-[2.4rem] items-start">
-        <p className="text-[11px] font-bold leading-snug tracking-[0.12em] text-slate-400 uppercase break-keep">{title}</p>
-      </div>
+    <div className="rounded-2xl border border-white/10 bg-white/[0.045] px-4 py-4">
+      <p className="text-[11px] font-bold leading-snug tracking-[0.12em] text-slate-400 uppercase break-keep">{title}</p>
       <p className="mt-1 text-2xl font-black leading-none text-white">{value}</p>
       <p className="mt-3 text-[11px] leading-relaxed text-slate-300 break-keep">{description}</p>
     </div>
+  );
+}
+
+function RecentFlowStrip({ historyData }) {
+  const recent = historyData.slice(0, FREE_HISTORY_LIMIT);
+  if (!recent.length) return null;
+
+  return (
+    <div className="rounded-[1.35rem] border border-white/10 bg-black/20 px-4 py-4">
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-[11px] font-black tracking-[0.15em] text-slate-400 uppercase">최근 기록</p>
+        <span className="rounded-full border border-white/10 bg-white/[0.05] px-2.5 py-1 text-[10px] font-bold text-slate-300">
+          최근 {recent.length}개
+        </span>
+      </div>
+      <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
+        {recent.map((item, idx) => (
+          <div
+            key={getEntryKey(item, idx)}
+            className="min-w-[4.6rem] rounded-2xl border border-white/10 bg-white/[0.045] px-3 py-3 text-center"
+          >
+            <p className="text-[17px] font-black leading-none text-white">{item.mbti || '-'}</p>
+            <p className="mt-2 text-[10px] font-semibold text-slate-400">{item.date || '기록'}</p>
+            {item.themeKey && <span className="mt-2 inline-block h-2 w-2 rounded-full bg-cyan-200/80" aria-hidden="true" />}
+          </div>
+        ))}
+      </div>
+      <p className="mt-3 text-center text-[11px] font-bold text-cyan-100/80 break-keep">
+        아래로 더 내려 프리미엄 분석 미리보기를 확인해보세요 ↓
+      </p>
+    </div>
+  );
+}
+
+function EmptyHistoryState({ stageCopy, onStartTest }) {
+  return (
+    <div className="rounded-[1.5rem] border border-cyan-300/20 bg-cyan-300/[0.08] px-5 py-6 text-center">
+      <p className="text-[11px] font-black tracking-[0.17em] text-cyan-100 uppercase">{stageCopy.eyebrow}</p>
+      <h4 className="mt-2 text-lg font-black text-white break-keep">{stageCopy.title}</h4>
+      <p className="mt-3 text-[13px] leading-relaxed text-cyan-50/90 break-keep">{stageCopy.body}</p>
+      <button
+        type="button"
+        onClick={onStartTest}
+        className="mt-5 min-h-12 w-full rounded-2xl border border-cyan-200/20 bg-cyan-300/[0.15] px-4 py-3 text-[13px] font-black text-cyan-50 transition hover:bg-cyan-300/[0.22]"
+      >
+        {stageCopy.ctaLabel}
+      </button>
+    </div>
+  );
+}
+
+function HistoryPremiumTeaser({ stageCopy, historyCount, topType, volatileAxis, onCtaClick }) {
+  if (historyCount === 0) return null;
+
+  return (
+    <section className="rounded-[1.6rem] border border-amber-200/20 bg-[linear-gradient(135deg,rgba(251,191,36,0.12),rgba(255,255,255,0.035))] px-4 py-4 shadow-[0_20px_56px_rgba(2,6,23,0.2)]">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-[11px] font-black tracking-[0.17em] text-amber-100 uppercase">프리미엄 미리보기</p>
+          <h4 className="mt-2 text-[17px] font-black leading-tight text-white break-keep">{stageCopy.title}</h4>
+        </div>
+        <span className="shrink-0 rounded-full border border-amber-200/20 bg-amber-300/[0.12] px-3 py-1.5 text-[10px] font-black text-amber-50">
+          {historyCount}회 기록
+        </span>
+      </div>
+
+      <p className="mt-3 text-[13px] font-semibold leading-relaxed text-slate-200 break-keep">{stageCopy.body}</p>
+
+      <div className="mt-4 grid grid-cols-2 gap-3">
+        <div className="rounded-2xl border border-white/10 bg-black/20 px-3 py-3">
+          <p className="text-[10px] font-black tracking-[0.14em] text-slate-400 uppercase">자주 나온 타입</p>
+          <p className="mt-2 text-2xl font-black text-white">{topType || '-'}</p>
+        </div>
+        <div className="rounded-2xl border border-white/10 bg-black/20 px-3 py-3">
+          <p className="text-[10px] font-black tracking-[0.14em] text-slate-400 uppercase">움직인 축</p>
+          <p className="mt-2 text-lg font-black text-white">{volatileAxis || '안정적'}</p>
+        </div>
+      </div>
+
+      <div className="mt-4 rounded-2xl border border-white/10 bg-slate-950/35 px-3 py-3">
+        <p className="text-[10px] font-black tracking-[0.14em] text-slate-400 uppercase">열릴 수 있는 분석</p>
+        <div className="mt-2 flex flex-wrap gap-2">
+          {PREMIUM_PREVIEW_ITEMS.map((item) => (
+            <span key={item} className="rounded-full border border-white/10 bg-white/[0.045] px-3 py-1.5 text-[11px] font-bold text-slate-200">
+              {item}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      <button
+        type="button"
+        onClick={() => onCtaClick(stageCopy)}
+        className="mt-4 min-h-12 w-full rounded-2xl border border-amber-200/20 bg-amber-300/[0.13] px-4 py-3 text-[13px] font-black text-amber-50 transition hover:bg-amber-300/[0.2]"
+      >
+        {stageCopy.ctaLabel}
+      </button>
+      <p className="mt-2 text-center text-[11px] font-semibold text-amber-50/70 break-keep">
+        결과와 기본 공유는 계속 무료로 사용할 수 있어요.
+      </p>
+    </section>
   );
 }
 
@@ -167,11 +310,21 @@ export default function HistoryModal({
   historyData,
   isPremiumUser = false,
   getHistoryEntryNote,
+  trackEvent,
+  onStartTest,
   onClose,
   onClearData
 }) {
   const [selectedEntry, setSelectedEntry] = useState(null);
   const [lockNote, setLockNote] = useState('');
+  const historyCount = historyData.length;
+  const recentHistory = historyData.slice(0, FREE_HISTORY_LIMIT);
+  const hiddenHistoryCount = Math.max(0, historyData.length - recentHistory.length);
+  const latestEntry = historyData[0];
+  const stageCopy = getHistoryStageCopy(historyCount);
+  const topType = latestHistoryInsights?.topType?.mbti || latestEntry?.mbti || '';
+  const volatileAxis = latestHistoryInsights?.mostVolatile?.flips ? latestHistoryInsights.mostVolatile.pair : '';
+  const summaryCopy = latestHistoryComparison?.title || activitySummary.recentFlowNote || '기록이 쌓이면 나의 흐름이 더 선명해져요.';
 
   useEffect(() => {
     const handleKeyDown = (event) => {
@@ -187,7 +340,26 @@ export default function HistoryModal({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [onClose, selectedEntry]);
 
+  useEffect(() => {
+    if (historyCount === 0) return;
+    trackEvent?.('history_premium_teaser_viewed', {
+      historyCount,
+      source: 'history_modal',
+      variant: 'phase4a_history_teaser',
+      topType: topType || '',
+      mostVolatileAxis: volatileAxis || 'stable',
+      isPremiumUser
+    });
+  }, [historyCount, isPremiumUser, topType, trackEvent, volatileAxis]);
+
   const handleHistoryEntryClick = (item) => {
+    trackEvent?.('history_item_clicked', {
+      historyCount,
+      source: 'history_modal',
+      hasSnapshot: Boolean(item.resultSnapshotVersion),
+      isPremiumUser
+    });
+
     if (isPremiumUser && item.resultSnapshotVersion) {
       setSelectedEntry(item);
       setLockNote('');
@@ -197,6 +369,29 @@ export default function HistoryModal({
     setLockNote(item.resultSnapshotVersion
       ? '이전 결과 상세는 프리미엄에서 열려요. 지금은 요약 기록만 확인할 수 있습니다.'
       : '이 기록은 예전 형식이라 상세 스냅샷이 없어요. 새 결과부터 상세 재열람 준비가 저장됩니다.');
+  };
+
+  const handleStartFromHistory = () => {
+    trackEvent?.('history_empty_cta_clicked', {
+      historyCount,
+      source: 'history_modal',
+      ctaKind: stageCopy.ctaKind
+    });
+    onClose();
+    onStartTest?.();
+  };
+
+  const handlePremiumCta = (copy) => {
+    trackEvent?.('history_premium_cta_clicked', {
+      historyCount,
+      source: 'history_modal',
+      variant: 'phase4a_history_teaser',
+      ctaKind: copy.ctaKind,
+      topType: topType || '',
+      mostVolatileAxis: volatileAxis || 'stable',
+      isPremiumUser
+    });
+    setLockNote('프리미엄 분석은 준비 중이에요. 지금은 클릭 관심도를 확인하고, 결과와 기본 기록은 계속 무료로 열어두고 있습니다.');
   };
 
   return (
@@ -219,7 +414,7 @@ export default function HistoryModal({
 
         <div className="relative z-10 flex items-center justify-between px-5 pt-5 pb-4 border-b border-white/10 bg-slate-900/95 backdrop-blur-sm">
           <div className="flex items-center gap-3">
-            <h3 className="text-xl font-black text-white flex items-center gap-2">🕒 나의 기록 & 활동</h3>
+            <h3 className="text-xl font-black text-white flex items-center gap-2">나의 기록</h3>
             <button
               onClick={onClearData}
               className="inline-flex items-center justify-center rounded-full border border-rose-400/15 bg-rose-500/8 px-3 py-1.5 text-[11px] font-bold text-rose-200 hover:bg-rose-500/14 transition-colors"
@@ -237,89 +432,59 @@ export default function HistoryModal({
         </div>
 
         <div className="flex-1 overflow-y-auto px-5 py-5">
-          <div className="mb-4 rounded-2xl border border-cyan-400/20 bg-cyan-400/10 px-4 py-4">
-            <p className="text-[11px] font-bold tracking-[0.2em] text-cyan-100 uppercase">나의 활동 리포트</p>
-            <p className="mt-2 text-[15px] font-semibold leading-relaxed text-white break-keep">{activitySummary.headline}</p>
-            <p className="mt-2 text-[12px] leading-relaxed text-cyan-50/90 break-keep">{activitySummary.subline}</p>
-            <p className="mt-3 text-[11px] leading-relaxed text-cyan-100/70 break-keep">{activitySummary.localNote}</p>
+          <div className="mb-4 rounded-[1.6rem] border border-cyan-300/20 bg-[linear-gradient(135deg,rgba(34,211,238,0.14),rgba(255,255,255,0.035))] px-4 py-5">
+            <p className="text-[11px] font-black tracking-[0.18em] text-cyan-100 uppercase">{stageCopy.eyebrow}</p>
+            <h4 className="mt-2 text-xl font-black leading-tight text-white break-keep">{stageCopy.title}</h4>
+            <p className="mt-3 text-[13px] font-semibold leading-relaxed text-cyan-50/90 break-keep">{summaryCopy}</p>
+            <p className="mt-2 text-[12px] leading-relaxed text-slate-300 break-keep">{stageCopy.body}</p>
           </div>
-
-          <div className="grid grid-cols-3 gap-3 mb-4">
-            <ActivityMetricCard title="테스트 횟수" value={activitySummary.starts} description="지금까지 이 브라우저에서 해본 횟수" />
-            <ActivityMetricCard title="다시 해본 횟수" value={activitySummary.restarts} description="결과를 보고 다시 시작한 횟수" />
-            <ActivityMetricCard title="저장·공유" value={activitySummary.saveOrShare} description="결과 카드를 남긴 횟수" />
-          </div>
-
-          <div className="grid grid-cols-2 gap-3 mb-4">
-            <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-4">
-              <p className="text-[11px] text-slate-400 font-bold tracking-[0.15em] uppercase">완료율</p>
-              <p className="mt-2 text-2xl font-black text-white">{activitySummary.completionRate}%</p>
-              <p className="mt-1 text-[11px] text-slate-300 break-keep">{activitySummary.funnelNote}</p>
-            </div>
-            <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-4">
-              <p className="text-[11px] text-slate-400 font-bold tracking-[0.15em] uppercase">시스템 상태</p>
-              <p className="mt-2 text-lg font-black text-white">{activitySummary.totalErrors > 0 ? `오류 ${activitySummary.totalErrors}건` : '안정적'}</p>
-              <p className="mt-1 text-[11px] text-slate-300 break-keep">{activitySummary.systemNote}</p>
-            </div>
-          </div>
-
-          {latestHistoryComparison && (
-            <div className="mb-4 rounded-2xl border border-cyan-400/20 bg-cyan-400/10 px-4 py-4">
-              <p className="text-sm font-bold text-cyan-100 break-keep">{latestHistoryComparison.title}</p>
-              <p className="mt-2 text-[12px] leading-relaxed text-slate-300 break-keep">{latestHistoryComparison.body}</p>
-            </div>
-          )}
 
           {latestHistoryInsights && (
             <div className="grid grid-cols-2 gap-3 mb-4">
-              <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-4">
-                <p className="text-[11px] text-slate-400 font-bold tracking-[0.15em] uppercase">가장 자주 나온 흐름</p>
-                <p className="mt-2 text-2xl font-black text-white">{latestHistoryInsights.topType?.mbti || '-'}</p>
-                <p className="mt-1 text-[11px] text-slate-300 break-keep">{activitySummary.topTypeNote}</p>
-              </div>
-              <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-4">
-                <p className="text-[11px] text-slate-400 font-bold tracking-[0.15em] uppercase">가장 잘 흔들리는 축</p>
-                <p className="mt-2 text-lg font-black text-white">{latestHistoryInsights.mostVolatile?.pair || '-'}</p>
-                <p className="mt-1 text-[11px] text-slate-300 break-keep">{activitySummary.volatilityNote}</p>
-              </div>
+              <FlowMetricCard title="자주 나온 흐름" value={latestHistoryInsights.topType?.mbti || '-'} description={activitySummary.topTypeNote} />
+              <FlowMetricCard title="움직인 축" value={latestHistoryInsights.mostVolatile?.flips ? latestHistoryInsights.mostVolatile.pair : '안정적'} description={activitySummary.volatilityNote} />
             </div>
           )}
 
-          {activitySummary.recentFlowNote && (
-            <div className="mb-4 rounded-2xl border border-white/10 bg-white/5 px-4 py-4">
-              <p className="text-[11px] text-slate-400 font-bold tracking-[0.15em] uppercase">최근 흐름</p>
-              <p className="mt-2 text-[13px] leading-relaxed text-white break-keep">{activitySummary.recentFlowNote}</p>
-              <p className="mt-2 text-[11px] text-slate-300 break-keep">{activitySummary.activityNote}</p>
-            </div>
-          )}
+          <div className="mb-4 grid grid-cols-3 gap-2">
+            <FlowMetricCard title="기록" value={historyCount} description="이 브라우저에 남은 결과" />
+            <FlowMetricCard title="테스트" value={activitySummary.starts} description="지금까지 시작한 횟수" />
+            <FlowMetricCard title="저장·공유" value={activitySummary.saveOrShare} description="카드로 남긴 횟수" />
+          </div>
 
-          <div className="mb-4 rounded-2xl border border-white/10 bg-white/5 px-4 py-4">
-            <p className="text-[11px] text-slate-400 font-bold tracking-[0.15em] uppercase">운영에서 볼 포인트</p>
-            <div className="mt-3 flex flex-wrap gap-2">
-              <span className="rounded-full border border-white/10 bg-black/20 px-3 py-1 text-[11px] font-semibold text-slate-200">시작 {activitySummary.starts}</span>
-              <span className="rounded-full border border-white/10 bg-black/20 px-3 py-1 text-[11px] font-semibold text-slate-200">결과 도달 {activitySummary.completions}</span>
-              <span className="rounded-full border border-white/10 bg-black/20 px-3 py-1 text-[11px] font-semibold text-slate-200">보정 진입 {activitySummary.followupStarts}</span>
-              <span className="rounded-full border border-white/10 bg-black/20 px-3 py-1 text-[11px] font-semibold text-slate-200">복사 {activitySummary.copied}</span>
-              <span className="rounded-full border border-white/10 bg-black/20 px-3 py-1 text-[11px] font-semibold text-slate-200">저장·공유 {activitySummary.saveOrShare}</span>
-            </div>
+          <div className="mb-4">
+            <RecentFlowStrip historyData={historyData} />
+          </div>
+
+          <div className="mb-4">
+            <HistoryPremiumTeaser
+              stageCopy={stageCopy}
+              historyCount={historyCount}
+              topType={topType}
+              volatileAxis={volatileAxis}
+              onCtaClick={handlePremiumCta}
+            />
           </div>
 
           <div className="flex flex-col gap-3 pr-1">
-            {historyData.length === 0 ? (
-              <p className="text-slate-400 text-center py-8 text-sm">
-                아직 기록이 많지 않아요.
-                <br />
-                몇 번 더 해보면 나만의 흐름이 더 또렷하게 보여요.
-              </p>
+            {historyCount === 0 ? (
+              <EmptyHistoryState stageCopy={stageCopy} onStartTest={handleStartFromHistory} />
             ) : (
               <>
-                <p className="text-[11px] text-slate-400 font-bold tracking-[0.15em] uppercase px-1">이전 결과 요약</p>
+                <div className="flex items-center justify-between gap-3 px-1">
+                  <p className="text-[11px] text-slate-400 font-bold tracking-[0.15em] uppercase">최근 결과 요약</p>
+                  {hiddenHistoryCount > 0 && (
+                    <span className="rounded-full border border-amber-200/20 bg-amber-300/[0.08] px-2.5 py-1 text-[10px] font-bold text-amber-100">
+                      이전 {hiddenHistoryCount}개는 프리미엄 분석 후보
+                    </span>
+                  )}
+                </div>
                 {lockNote && (
                   <div className="rounded-2xl border border-amber-300/20 bg-amber-300/[0.08] px-4 py-3">
                     <p className="text-[12px] font-bold leading-relaxed text-amber-100 break-keep">{lockNote}</p>
                   </div>
                 )}
-                {historyData.map((item, idx) => (
+                {(isPremiumUser ? historyData : recentHistory).map((item, idx) => (
                   <HistoryEntryButton
                     key={getEntryKey(item, idx)}
                     item={item}
