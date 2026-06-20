@@ -1073,6 +1073,69 @@ export default function App() {
     return list[currIdx] || null;
   };
 
+  const createServerQuestionSnapshot = () => ({
+    serverSession: true,
+    userName,
+    questions,
+    followupQuestions,
+    currIdx,
+    scores,
+    questionPhase,
+    recentSessions: recentSessionsSnapshot,
+    sessionQuestionIds,
+    neutralSignals,
+    neutralQuestionIds,
+    questionContextSummary,
+    serverSessionActive,
+    serverSessionToken,
+    serverSessionAnswers,
+    serverFallbackQuestions: {
+      base: serverFallbackQuestionsRef.current.base,
+      followup: serverFallbackQuestionsRef.current.followup
+    }
+  });
+
+  const handleServerQuestionBack = () => {
+    if (!lastAnswerSnapshot?.serverSession || isTransitioning || transitionLockRef.current) return;
+
+    const snapshot = lastAnswerSnapshot;
+    setUserName(snapshot.userName || '');
+    setQuestions(snapshot.questions || []);
+    setFollowupQuestions(snapshot.followupQuestions || []);
+    setCurrIdx(snapshot.currIdx || 0);
+    setScores(snapshot.scores || createEmptyScores());
+    setQuestionPhase(snapshot.questionPhase || 'base');
+    setRecentSessionsSnapshot(snapshot.recentSessions || []);
+    setSessionQuestionIds(snapshot.sessionQuestionIds || []);
+    setNeutralSignals(snapshot.neutralSignals || createEmptyNeutralSignals());
+    setNeutralQuestionIds(snapshot.neutralQuestionIds || []);
+    setQuestionContextSummary(snapshot.questionContextSummary || null);
+    setServerSessionActive(Boolean(snapshot.serverSessionActive));
+    setServerSessionToken(snapshot.serverSessionToken || '');
+    setServerSessionAnswers(snapshot.serverSessionAnswers || []);
+    serverFallbackQuestionsRef.current = {
+      base: snapshot.serverFallbackQuestions?.base || [],
+      followup: snapshot.serverFallbackQuestions?.followup || []
+    };
+    setMicroCopy('');
+    setQuestionDirection(-1);
+    setStep('question');
+    setLastAnswerSnapshot(null);
+    transitionLockRef.current = false;
+
+    const restoredFallbackQuestions = snapshot.questionPhase === 'followup'
+      ? snapshot.serverFallbackQuestions?.followup || []
+      : snapshot.serverFallbackQuestions?.base || [];
+    const restoredQuestion = restoredFallbackQuestions[snapshot.currIdx || 0];
+    trackEvent('question_back', {
+      phase: snapshot.questionPhase || 'base',
+      questionId: restoredQuestion?.id || '',
+      axis: restoredQuestion?._axis || '',
+      index: (snapshot.currIdx || 0) + 1,
+      mode: 'server_session'
+    });
+  };
+
   const getFallbackStateAfterAnswer = (optionId) => {
     const fallbackQuestion = getFallbackQuestionForCurrentStep();
     if (!fallbackQuestion) {
@@ -1113,7 +1176,7 @@ export default function App() {
     if (!serverSessionActive || isTransitioning || transitionLockRef.current) return;
     transitionLockRef.current = true;
     setIsTransitioning(true);
-    setLastAnswerSnapshot(null);
+    setLastAnswerSnapshot(createServerQuestionSnapshot());
     setMicroCopy('');
     setQuestionDirection(method?.includes('left') ? -1 : 1);
     trackEvent('question_answer', {
@@ -1299,7 +1362,7 @@ export default function App() {
               showMiddleOption={questionPhase === 'base' && Boolean(activeQuestion.allowMiddle)}
               middleLabel="둘 다 비슷해요"
               contextVisual={activeQuestionContextVisual}
-              canGoBack={!serverSessionActive && Boolean(lastAnswerSnapshot)}
+              canGoBack={serverSessionActive ? Boolean(lastAnswerSnapshot?.serverSession) : Boolean(lastAnswerSnapshot)}
               onAnswer={(option, method) => (
                 serverSessionActive
                   ? handleServerAnswer(option.id, method)
@@ -1310,7 +1373,11 @@ export default function App() {
                   ? handleServerAnswer(SERVER_MIDDLE_OPTION_ID, method)
                   : handleMiddleAnswer(method, answerActionContext)
               )}
-              onBack={() => handleQuestionBack({ setUserName, setStep, trackEvent })}
+              onBack={() => (
+                serverSessionActive
+                  ? handleServerQuestionBack()
+                  : handleQuestionBack({ setUserName, setStep, trackEvent })
+              )}
             />
           )}
 
