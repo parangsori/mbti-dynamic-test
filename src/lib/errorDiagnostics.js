@@ -2,6 +2,7 @@ const MAX_MESSAGE_LENGTH = 300;
 const MAX_STACK_LENGTH = 900;
 const MAX_STACK_LINES = 6;
 const MAX_FILENAME_LENGTH = 180;
+const OPAQUE_SCRIPT_MESSAGE = 'Script error.';
 
 const stripUrlDetails = (value) =>
   value.replace(/\bhttps?:\/\/[^\s)"']+/gi, (rawUrl) => {
@@ -65,11 +66,12 @@ const hashText = (value) => {
 };
 
 export const buildErrorDiagnostics = ({ error, context = {}, appVersion = 'unknown' }) => {
-  const name = sanitizeDiagnosticText(error?.name || 'Error', 80) || 'Error';
+  const isOpaqueScriptError = context.opaque === true || context.reason === 'browser_opaque_script_error';
+  const name = sanitizeDiagnosticText(context.errorName || error?.name || 'Error', 80) || 'Error';
   const message = sanitizeDiagnosticText(error?.message || String(error || 'Unknown error'));
-  const cause = sanitizeDiagnosticText(error?.cause?.message || error?.cause || '', 180);
+  const cause = sanitizeDiagnosticText(context.cause || error?.cause?.message || error?.cause || '', 180);
   const filename = sanitizeErrorFilename(context.filename || context.resourceUrl || '');
-  const stack = sanitizeErrorStack(error?.stack || '');
+  const stack = isOpaqueScriptError ? '' : sanitizeErrorStack(error?.stack || '');
   const componentStack = sanitizeErrorStack(context.componentStack || '');
   const key = sanitizeDiagnosticText(context.key || name || 'Error', 120) || 'Error';
   const source = sanitizeDiagnosticText(context.source || context.stage || 'app', 120) || 'app';
@@ -81,7 +83,7 @@ export const buildErrorDiagnostics = ({ error, context = {}, appVersion = 'unkno
   const fingerprintSource = [
     key,
     name,
-    message,
+    isOpaqueScriptError ? OPAQUE_SCRIPT_MESSAGE : message,
     cause,
     source,
     filename,
@@ -103,6 +105,7 @@ export const buildErrorDiagnostics = ({ error, context = {}, appVersion = 'unkno
     column,
     stack,
     componentStack,
+    opaque: isOpaqueScriptError,
     fingerprint: `err_${hashText(fingerprintSource)}`,
     appVersion: sanitizeDiagnosticText(appVersion, 40) || 'unknown'
   };

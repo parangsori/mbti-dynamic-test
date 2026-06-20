@@ -19,6 +19,14 @@ export const COMPATIBILITY = {
 
 export const CHANGELOG = [
   {
+    version: 'v1.7.10',
+    date: '2026.06.20',
+    updates: [
+      '운영 중 발생하는 오류를 더 안정적으로 분류하고 확인할 수 있도록 진단 기준을 보강',
+      '서비스 안정성 점검에 필요한 수집 기반과 관련 보안 패치를 최신 상태로 정리'
+    ]
+  },
+  {
     version: 'v1.7.9',
     date: '2026.06.19',
     updates: [

@@ -28,6 +28,18 @@ const writeLocalJson = (key, value) => {
 const canUseNavigator = () => typeof navigator !== 'undefined';
 const canUseWindow = () => typeof window !== 'undefined';
 const truncateText = (value) => String(value || '').slice(0, MAX_EVENT_TEXT_LENGTH);
+const getPageAgeMs = () => {
+  if (typeof performance === 'undefined' || typeof performance.now !== 'function') return 0;
+  return Math.max(0, Math.round(performance.now()));
+};
+const isStandaloneDisplay = () => {
+  if (!canUseWindow()) return false;
+  try {
+    return window.navigator?.standalone === true || window.matchMedia?.('(display-mode: standalone)')?.matches === true;
+  } catch {
+    return false;
+  }
+};
 
 const sendPayload = (endpoint, payload) => {
   if (!endpoint || !canUseNavigator()) return;
@@ -135,12 +147,15 @@ export const captureError = (error, context = {}) => {
     error_column: details.column,
     error_stack: details.stack,
     error_component_stack: details.componentStack,
+    error_opaque: details.opaque,
     app_version: details.appVersion,
     local_error_count: counts[key] || 1,
     path: canUseWindow() ? window.location.pathname : '',
     online: canUseNavigator() ? navigator.onLine !== false : true,
     connection_type: canUseNavigator() ? navigator.connection?.effectiveType || '' : '',
-    visibility_state: typeof document !== 'undefined' ? document.visibilityState || '' : ''
+    visibility_state: typeof document !== 'undefined' ? document.visibilityState || '' : '',
+    page_age_ms: getPageAgeMs(),
+    standalone_display: isStandaloneDisplay()
   });
 
   if (canUseWindow()) {
@@ -199,9 +214,14 @@ export const installGlobalErrorHandlers = () => {
       return;
     }
 
+    const isOpaqueScriptError = !event?.error && event?.message === 'Script error.';
+
     captureError(event?.error || new Error(event?.message || 'window error'), {
-      key: 'window_error',
+      key: isOpaqueScriptError ? 'opaque_script_error' : 'window_error',
       source: 'window.error',
+      reason: isOpaqueScriptError ? 'browser_opaque_script_error' : '',
+      cause: isOpaqueScriptError ? 'Browser hid the original script error details.' : '',
+      opaque: isOpaqueScriptError,
       filename: event?.filename,
       lineno: event?.lineno,
       colno: event?.colno
