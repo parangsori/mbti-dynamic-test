@@ -69,7 +69,12 @@ const buildAnswerKey = (questions = []) => Object.fromEntries(
 const createSessionToken = (payload, secret) => sealJson(payload, secret, { aad: SESSION_AAD });
 
 const readSessionToken = (token, secret) => {
-  const payload = openJson(token, secret, { aad: SESSION_AAD });
+  let payload;
+  try {
+    payload = openJson(token, secret, { aad: SESSION_AAD });
+  } catch {
+    throw new Error('invalid_token');
+  }
   if (!payload || payload.version !== 1) throw new Error('invalid_session');
   if (!Number.isFinite(payload.expiresAt) || payload.expiresAt < getNow()) throw new Error('expired_session');
   return payload;
