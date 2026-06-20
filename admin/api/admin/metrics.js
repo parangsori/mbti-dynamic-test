@@ -17,7 +17,12 @@ const POSTHOG_EVENTS = [
   'client_error',
   'result_server_sync_success',
   'result_server_sync_fail',
-  'result_server_sync_skipped'
+  'result_server_sync_skipped',
+  'session_api_start_ok',
+  'session_api_complete_ok',
+  'session_api_fallback',
+  'session_api_error',
+  'followup_start'
 ];
 
 const RANGE_DAYS = {
@@ -330,6 +335,37 @@ ORDER BY lastSeen DESC, total DESC
 LIMIT 20
 `;
 
+const durationMsSql = () => `toFloatOrZero(toString(properties['durationMs']))`;
+
+const buildSessionPerformanceQuery = (days) => {
+  const durationMs = durationMsSql();
+
+  return `
+SELECT
+  event,
+  coalesce(nullIf(toString(properties['stage']), ''), if(event = 'session_api_start_ok', 'start', if(event = 'session_api_complete_ok', 'complete', ''))) AS stage,
+  coalesce(nullIf(toString(properties['status']), ''), '') AS status,
+  coalesce(nullIf(toString(properties['phase']), ''), '') AS phase,
+  coalesce(nullIf(toString(properties['display_mode']), ''), 'unknown') AS displayMode,
+  coalesce(nullIf(toString(properties['$device_type']), ''), '알 수 없음') AS deviceType,
+  coalesce(nullIf(toString(properties['$browser']), ''), '알 수 없음') AS browser,
+  coalesce(nullIf(toString(properties['$os']), ''), '알 수 없음') AS os,
+  count() AS total,
+  count(DISTINCT distinct_id) AS actors,
+  countIf(${durationMs} > 0) AS durationSamples,
+  round(avgIf(${durationMs}, ${durationMs} > 0)) AS avgMs,
+  round(quantileIf(0.95)(${durationMs}, ${durationMs} > 0)) AS p95Ms,
+  countIf(${durationMs} >= 1200) AS slow1200,
+  countIf(${durationMs} >= 2000) AS slow2000
+FROM events
+${kstDateWindowSql(days)}
+  AND event IN ('session_api_start_ok', 'session_api_complete_ok', 'session_api_fallback', 'session_api_error')
+GROUP BY event, stage, status, phase, displayMode, deviceType, browser, os
+ORDER BY slow2000 DESC, slow1200 DESC, p95Ms DESC, total DESC
+LIMIT 24
+`;
+};
+
 const rowsToCounts = (rows = []) =>
   rows.reduce((acc, row) => {
     const [event, total, actors] = row;
@@ -424,9 +460,77 @@ const rowsToErrors = (rows = []) =>
     lastSeen: lastSeen || ''
   }));
 
+const weightedAverage = (items, valueKey, weightKey = 'durationSamples') => {
+  const weighted = items.reduce((acc, item) => {
+    const weight = Number(item[weightKey]) || 0;
+    return {
+      total: acc.total + ((Number(item[valueKey]) || 0) * weight),
+      weight: acc.weight + weight
+    };
+  }, { total: 0, weight: 0 });
+
+  return weighted.weight > 0 ? Math.round(weighted.total / weighted.weight) : 0;
+};
+
+const rowsToSessionPerformance = (rows = []) => {
+  const items = rows.map(([
+    event,
+    stage,
+    status,
+    phase,
+    displayMode,
+    deviceType,
+    browser,
+    os,
+    total,
+    actors,
+    durationSamples,
+    avgMs,
+    p95Ms,
+    slow1200,
+    slow2000
+  ]) => ({
+    event: event || '',
+    stage: stage || '',
+    status: status || '',
+    phase: phase || '',
+    displayMode: displayMode || 'unknown',
+    deviceType: deviceType || '알 수 없음',
+    browser: browser || '알 수 없음',
+    os: os || '알 수 없음',
+    total: Number(total) || 0,
+    actors: Number(actors) || 0,
+    durationSamples: Number(durationSamples) || 0,
+    avgMs: Number(avgMs) || 0,
+    p95Ms: Number(p95Ms) || 0,
+    slow1200: Number(slow1200) || 0,
+    slow2000: Number(slow2000) || 0
+  }));
+  const startItems = items.filter((item) => item.event === 'session_api_start_ok');
+  const completeItems = items.filter((item) => item.event === 'session_api_complete_ok');
+  const errorItems = items.filter((item) => item.event === 'session_api_error');
+  const fallbackItems = items.filter((item) => item.event === 'session_api_fallback');
+
+  return {
+    summary: {
+      starts: startItems.reduce((sum, item) => sum + item.total, 0),
+      completes: completeItems.reduce((sum, item) => sum + item.total, 0),
+      errors: errorItems.reduce((sum, item) => sum + item.total, 0),
+      fallbacks: fallbackItems.reduce((sum, item) => sum + item.total, 0),
+      startAvgMs: weightedAverage(startItems, 'avgMs'),
+      startP95Ms: Math.max(0, ...startItems.map((item) => item.p95Ms || 0)),
+      completeAvgMs: weightedAverage(completeItems, 'avgMs'),
+      completeP95Ms: Math.max(0, ...completeItems.map((item) => item.p95Ms || 0)),
+      slowStarts: startItems.reduce((sum, item) => sum + item.slow1200, 0),
+      slowCompletes: completeItems.reduce((sum, item) => sum + item.slow1200, 0)
+    },
+    items
+  };
+};
+
 const percent = (value, base) => (base > 0 ? Math.round((value / base) * 100) : 0);
 
-const buildNotes = ({ starts, completions, shares, installs, standaloneActors, errorTotal, serverSyncFailures, imageSaveFailures }) => {
+const buildNotes = ({ starts, completions, shares, installs, standaloneActors, errorTotal, serverSyncFailures, imageSaveFailures, sessionPerformance }) => {
   const notes = [];
   if (starts === 0) {
     notes.push('아직 시작 이벤트가 적어서 유입 품질 판단은 더 쌓인 뒤 보는 게 좋아요.');
@@ -456,10 +560,14 @@ const buildNotes = ({ starts, completions, shares, installs, standaloneActors, e
     notes.push('결과 카드 저장/공유 실패 이벤트가 있습니다. 브라우저별 공유 API 지원 여부를 먼저 확인해주세요.');
   }
 
+  if ((sessionPerformance?.summary?.slowStarts || 0) > 0 || (sessionPerformance?.summary?.slowCompletes || 0) > 0) {
+    notes.push('서버 세션 응답이 1.2초 이상 걸린 이벤트가 있습니다. 기기/브라우저별 p95와 fallback 여부를 같이 확인하세요.');
+  }
+
   return notes;
 };
 
-const buildMetrics = ({ range, counts, daily, locations, devices, referrers, errors }) => {
+const buildMetrics = ({ range, counts, daily, locations, devices, referrers, errors, sessionPerformance }) => {
   const pageviews = counts.$pageview?.total || 0;
   const visitors = counts.$pageview?.actors || 0;
   const starts = counts.start_click?.total || 0;
@@ -544,6 +652,7 @@ const buildMetrics = ({ range, counts, daily, locations, devices, referrers, err
       skipped: serverSyncSkipped,
       successRate: percent(serverSyncSuccess, syncAttempts)
     },
+    sessionPerformance,
     errors: {
       total: clientErrors,
       actors: clientErrorActors,
@@ -555,7 +664,7 @@ const buildMetrics = ({ range, counts, daily, locations, devices, referrers, err
       referrers
     },
     daily,
-    notes: buildNotes({ starts, completions, shares, installs, standaloneActors, errorTotal: clientErrors, serverSyncFailures, imageSaveFailures })
+    notes: buildNotes({ starts, completions, shares, installs, standaloneActors, errorTotal: clientErrors, serverSyncFailures, imageSaveFailures, sessionPerformance })
   };
 };
 
@@ -578,13 +687,14 @@ export default async function handler(req, res) {
   const days = RANGE_DAYS[range];
 
   try {
-    const [eventCounts, dailyCounts, locationCounts, deviceCounts, referrerCounts, errorCounts] = await Promise.all([
+    const [eventCounts, dailyCounts, locationCounts, deviceCounts, referrerCounts, errorCounts, sessionPerformanceCounts] = await Promise.all([
       runPostHogQuery(buildEventCountQuery(days)),
       runPostHogQuery(buildDailyQuery(days)),
       runPostHogQuery(buildLocationQuery(days)),
       runPostHogQuery(buildDeviceQuery(days)),
       runPostHogQuery(buildReferrerQuery(days)),
-      runPostHogQuery(buildErrorQuery(days))
+      runPostHogQuery(buildErrorQuery(days)),
+      runPostHogQuery(buildSessionPerformanceQuery(days))
     ]);
 
     const metrics = buildMetrics({
@@ -594,7 +704,8 @@ export default async function handler(req, res) {
       locations: rowsToLocations(locationCounts.results),
       devices: rowsToDevices(deviceCounts.results),
       referrers: rowsToReferrers(referrerCounts.results),
-      errors: rowsToErrors(errorCounts.results)
+      errors: rowsToErrors(errorCounts.results),
+      sessionPerformance: rowsToSessionPerformance(sessionPerformanceCounts.results)
     });
 
     return json(res, 200, metrics);

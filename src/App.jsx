@@ -287,6 +287,14 @@ const isStandaloneDisplay = () => {
   return window.matchMedia?.('(display-mode: standalone)').matches || window.navigator?.standalone === true;
 };
 
+const getSessionApiEventMeta = () => {
+  const standaloneDisplay = isStandaloneDisplay();
+  return {
+    standalone_display: standaloneDisplay,
+    display_mode: standaloneDisplay ? 'standalone' : 'browser'
+  };
+};
+
 const isAppleMobileDevice = () => {
   if (typeof window === 'undefined') return false;
   const userAgent = window.navigator?.userAgent || '';
@@ -706,6 +714,7 @@ export default function App() {
     transitionLockRef.current = false;
     setStep('question');
     trackEvent('session_api_start_ok', {
+      ...getSessionApiEventMeta(),
       durationMs: Math.round(performance.now() - startedAt),
       questionCount: session.questions.length
     });
@@ -742,11 +751,13 @@ export default function App() {
             stage: 'session_start'
           });
           trackEvent('session_api_error', {
+            ...getSessionApiEventMeta(),
             stage: 'start',
             durationMs: Math.round(performance.now() - startedAt),
             reason: error?.message || 'unknown'
           });
           trackEvent('session_api_fallback', {
+            ...getSessionApiEventMeta(),
             stage: 'start',
             durationMs: Math.round(performance.now() - startedAt)
           });
@@ -863,7 +874,7 @@ export default function App() {
     setStep('analysis');
   };
 
-  const finishServerSession = (serverResult) => {
+  const finishServerSession = (serverResult, meta = {}) => {
     const finalScores = scoresFromServerResult(serverResult);
     const fallbackQuestions = [
       ...serverFallbackQuestionsRef.current.base,
@@ -897,6 +908,9 @@ export default function App() {
       questionContextTop: nextQuestionContextSummary.topTag
     });
     trackEvent('session_api_complete_ok', {
+      ...getSessionApiEventMeta(),
+      ...meta,
+      status: 'complete',
       usedFollowup: Boolean(serverResult.usedFollowup)
     });
     setScores(finalScores);
@@ -974,6 +988,9 @@ export default function App() {
     nextNeutralSignals,
     nextNeutralQuestionIds
   }) => {
+    const startedAt = performance.now();
+    const phase = questionPhase;
+
     try {
       const response = await completeServerSession({
         sessionToken: serverSessionToken,
@@ -1004,12 +1021,21 @@ export default function App() {
           count: responseQuestions.length,
           neutralCount: nextNeutralQuestionIds.length
         });
-        trackEvent('session_api_complete_ok', { status: 'needs_followup' });
+        trackEvent('session_api_complete_ok', {
+          ...getSessionApiEventMeta(),
+          status: 'needs_followup',
+          phase,
+          durationMs: Math.round(performance.now() - startedAt),
+          followupCount: responseQuestions.length
+        });
         return;
       }
 
       if (response.status === 'complete' && response.result) {
-        finishServerSession(response.result);
+        finishServerSession(response.result, {
+          phase,
+          durationMs: Math.round(performance.now() - startedAt)
+        });
         return;
       }
 
@@ -1019,7 +1045,19 @@ export default function App() {
         key: 'session_api_complete_error',
         stage: 'session_complete'
       });
-      trackEvent('session_api_fallback', { stage: 'complete' });
+      trackEvent('session_api_error', {
+        ...getSessionApiEventMeta(),
+        stage: 'complete',
+        phase,
+        durationMs: Math.round(performance.now() - startedAt),
+        reason: error?.message || 'unknown'
+      });
+      trackEvent('session_api_fallback', {
+        ...getSessionApiEventMeta(),
+        stage: 'complete',
+        phase,
+        durationMs: Math.round(performance.now() - startedAt)
+      });
       continueWithClientFallback({
         nextScores,
         nextNeutralSignals,
@@ -1152,6 +1190,16 @@ export default function App() {
 
   const activeQuestionContextVisual = activeQuestion ? getQuestionContextVisual(activeQuestion) : null;
   const followupHasNeutralReview = questionPhase === 'followup' && followupQuestions.some((item) => (item.trigger?.neutralCount || 0) > 0);
+  const activeQuestionTotal = questionPhase === 'followup' ? followupQuestions.length : questions.length;
+  const isWaitingForServerPhase = serverSessionActive
+    && isTransitioning
+    && activeQuestionTotal > 0
+    && currIdx + 1 >= activeQuestionTotal;
+  const serverTransitionMessage = isWaitingForServerPhase
+    ? questionPhase === 'followup'
+      ? '결과를 준비하고 있어요'
+      : '다음 흐름을 확인하고 있어요'
+    : '';
   const questionPhaseHint =
     questionPhase === 'followup'
       ? followupHasNeutralReview
@@ -1237,6 +1285,7 @@ export default function App() {
               question={activeQuestion}
               microCopy={microCopy}
               isTransitioning={isTransitioning}
+              transitionMessage={serverTransitionMessage}
               questionDirection={questionDirection}
               tempoMessage={getTempoForCurrentQuestion()}
               phaseHint={questionPhaseHint}

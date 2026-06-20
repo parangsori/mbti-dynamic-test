@@ -36,6 +36,7 @@ export default function QuestionView({
   middleLabel,
   microCopy,
   isTransitioning,
+  transitionMessage,
   questionDirection,
   tempoMessage,
   contextVisual,
@@ -229,6 +230,7 @@ export default function QuestionView({
       initial={{ opacity: 0, x: 50 }}
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -50 }}
+      aria-busy={isTransitioning}
       className="w-full min-h-[100dvh] flex flex-col max-w-[23.5rem] pt-6 pb-8 px-5"
     >
       <div className="w-full mb-3 rounded-[1.45rem] border border-white/10 bg-white/[0.045] px-4 py-3 shadow-[0_18px_48px_rgba(2,6,23,0.24)] backdrop-blur-xl">
@@ -399,8 +401,8 @@ export default function QuestionView({
               );
             })}
           </div>
-          <p className="relative mt-3 text-center text-[11px] font-semibold text-slate-500 break-keep">
-            {answerHelpText}
+          <p className="relative mt-3 text-center text-[11px] font-semibold text-slate-500 break-keep" role={transitionMessage && isTransitioning ? 'status' : undefined}>
+            {transitionMessage && isTransitioning ? transitionMessage : answerHelpText}
           </p>
         </div>
 

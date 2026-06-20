@@ -11,6 +11,13 @@ const DASHBOARD_TIME_ZONE_LABEL = '한국 시간(KST)';
 
 const formatNumber = (value) => new Intl.NumberFormat('ko-KR').format(Number(value) || 0);
 
+const formatDuration = (value) => {
+  const ms = Number(value) || 0;
+  if (!ms) return '0ms';
+  if (ms >= 1000) return `${(ms / 1000).toFixed(ms >= 10_000 ? 0 : 1)}초`;
+  return `${formatNumber(ms)}ms`;
+};
+
 const formatTime = (iso) => {
   if (!iso) return '';
   const formatted = new Intl.DateTimeFormat('ko-KR', {
@@ -152,6 +159,62 @@ function ErrorDiagnostics({ items = [] }) {
                 {item.stack && <pre>{item.stack}</pre>}
                 {item.componentStack && <pre>{item.componentStack}</pre>}
               </article>
+            );
+          })}
+        </div>
+      )}
+    </section>
+  );
+}
+
+function SessionPerformance({ data }) {
+  const summary = data?.summary || {};
+  const items = data?.items || [];
+
+  return (
+    <section className="panel">
+      <div className="panel-title">
+        <div>
+          <p>서버 세션 성능</p>
+          <h2>시작/보정/결과 전환 지연</h2>
+        </div>
+      </div>
+
+      <dl className="stat-list stat-list-grid">
+        <div><dt>시작 평균</dt><dd>{formatDuration(summary.startAvgMs)}</dd></div>
+        <div><dt>시작 p95</dt><dd>{formatDuration(summary.startP95Ms)}</dd></div>
+        <div><dt>완료 평균</dt><dd>{formatDuration(summary.completeAvgMs)}</dd></div>
+        <div><dt>완료 p95</dt><dd>{formatDuration(summary.completeP95Ms)}</dd></div>
+        <div><dt>시작 느림</dt><dd>{formatNumber(summary.slowStarts)}</dd></div>
+        <div><dt>완료 느림</dt><dd>{formatNumber(summary.slowCompletes)}</dd></div>
+        <div><dt>Fallback</dt><dd>{formatNumber(summary.fallbacks)}</dd></div>
+        <div><dt>오류</dt><dd>{formatNumber(summary.errors)}</dd></div>
+      </dl>
+
+      {items.length === 0 ? (
+        <p className="empty-text">아직 서버 세션 성능 이벤트가 없습니다.</p>
+      ) : (
+        <div className="insight-list">
+          {items.slice(0, 8).map((item, index) => {
+            const label = item.event === 'session_api_start_ok'
+              ? '시작'
+              : item.status === 'needs_followup'
+                ? '보정 전환'
+                : item.event === 'session_api_complete_ok'
+                  ? '결과 전환'
+                  : item.event === 'session_api_fallback'
+                    ? 'Fallback'
+                    : '오류';
+            const mode = item.displayMode === 'standalone' ? 'PWA' : '브라우저';
+
+            return (
+              <div className="insight-row" key={`${item.event}-${item.status}-${item.browser}-${item.os}-${index}`}>
+                <div>
+                  <strong>{label} · {mode}</strong>
+                  <span>{item.deviceType} · {item.browser} · {item.os} · {formatNumber(item.actors)}명</span>
+                </div>
+                <em>{formatDuration(item.p95Ms || item.avgMs)}</em>
+              </div>
             );
           })}
         </div>
@@ -443,6 +506,8 @@ export default function App() {
               <div><dt>성공률</dt><dd>{metrics.sync?.successRate || 0}%</dd></div>
             </dl>
           </section>
+
+          <SessionPerformance data={metrics.sessionPerformance} />
 
           <DailyPulse daily={metrics.daily} />
 
