@@ -95,6 +95,8 @@ This repository is currently public for demonstration and documentation purposes
 No open-source license has been granted yet.  
 Please do not copy, redistribute, or use this project for commercial purposes without explicit permission.
 
+See [LICENSE](./LICENSE) for the repository's proprietary terms.
+
 A reusable open-source template may be separated from this project in the future.
 
 © 2026 todaymbti.com. All rights reserved.
