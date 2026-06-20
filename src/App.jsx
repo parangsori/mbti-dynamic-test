@@ -383,6 +383,7 @@ export default function App() {
   const [serverSessionActive, setServerSessionActive] = useState(false);
   const [serverSessionToken, setServerSessionToken] = useState('');
   const [serverSessionAnswers, setServerSessionAnswers] = useState([]);
+  const [isStartingSession, setIsStartingSession] = useState(false);
   const serverFallbackQuestionsRef = useRef({
     base: [],
     followup: []
@@ -630,6 +631,7 @@ export default function App() {
     setServerSessionActive(false);
     setServerSessionToken('');
     setServerSessionAnswers([]);
+    setIsStartingSession(false);
     serverFallbackQuestionsRef.current = { base: [], followup: [] };
     transitionLockRef.current = false;
     setStep('start');
@@ -672,7 +674,7 @@ export default function App() {
     });
   };
 
-  const startServerBackedSession = async ({ trimmedName, recentSessions }) => {
+  const startServerBackedSession = async ({ trimmedName, recentSessions, startedAt }) => {
     const session = await startServerSession({ recentSessions, ageGroup });
     if (!session?.sessionToken || !Array.isArray(session.questions) || !session.questions.length) {
       throw new Error('invalid_server_session_start');
@@ -703,43 +705,62 @@ export default function App() {
     setLastAnswerSnapshot(null);
     transitionLockRef.current = false;
     setStep('question');
-    trackEvent('session_api_start_ok');
+    trackEvent('session_api_start_ok', {
+      durationMs: Math.round(performance.now() - startedAt),
+      questionCount: session.questions.length
+    });
   };
 
   const handleStart = async () => {
+    if (isStartingSession) return;
+    const startedAt = performance.now();
+    setIsStartingSession(true);
+
     if (document.activeElement instanceof HTMLElement) {
       document.activeElement.blur();
     }
 
-    const trimmedName = userName.trim();
-    writeUserName(trimmedName);
-    trackEvent('start_click', {
-      hasName: Boolean(trimmedName),
-      hasProfile: Boolean(ageGroup || gender),
-      ageGroup: ageGroup || '',
-      hasGender: Boolean(gender)
-    });
+    try {
+      const trimmedName = userName.trim();
+      writeUserName(trimmedName);
+      trackEvent('start_click', {
+        hasName: Boolean(trimmedName),
+        hasProfile: Boolean(ageGroup || gender),
+        ageGroup: ageGroup || '',
+        hasGender: Boolean(gender)
+      });
 
-    const recentSessions = readRecentSessions();
+      const recentSessions = readRecentSessions();
 
-    if (isServerSessionEnabled()) {
-      try {
-        await startServerBackedSession({ trimmedName, recentSessions });
-        return;
-      } catch (error) {
-        captureError(error, {
-          key: 'session_api_start_error',
-          stage: 'session_start'
-        });
-        trackEvent('session_api_fallback', { stage: 'start' });
+      if (isServerSessionEnabled()) {
+        try {
+          await startServerBackedSession({ trimmedName, recentSessions, startedAt });
+          return;
+        } catch (error) {
+          captureError(error, {
+            key: 'session_api_start_error',
+            stage: 'session_start'
+          });
+          trackEvent('session_api_error', {
+            stage: 'start',
+            durationMs: Math.round(performance.now() - startedAt),
+            reason: error?.message || 'unknown'
+          });
+          trackEvent('session_api_fallback', {
+            stage: 'start',
+            durationMs: Math.round(performance.now() - startedAt)
+          });
+        }
       }
-    }
 
-    startLocalSession({
-      trimmedName,
-      recentSessions,
-      sessionQuestions: buildQuestionSession(recentSessions, { ageGroup })
-    });
+      startLocalSession({
+        trimmedName,
+        recentSessions,
+        sessionQuestions: buildQuestionSession(recentSessions, { ageGroup })
+      });
+    } finally {
+      setIsStartingSession(false);
+    }
   };
 
   const handleResumeSession = () => {
@@ -1204,6 +1225,7 @@ export default function App() {
               homeScreenMigrationText={homeScreenMigrationText}
               onDismissHomeScreenTip={handleDismissHomeScreenTip}
               onHideHomeScreenTipForever={handleHideHomeScreenTipForever}
+              isStarting={isStartingSession}
             />
           )}
 

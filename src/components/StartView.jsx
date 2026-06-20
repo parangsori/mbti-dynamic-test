@@ -175,7 +175,8 @@ export default function StartView({
   homeScreenMigrationStatus,
   homeScreenMigrationText,
   onDismissHomeScreenTip,
-  onHideHomeScreenTipForever
+  onHideHomeScreenTipForever,
+  isStarting = false
 }) {
   const hasPersonalization = Boolean(userName || birthDate?.year || birthDate?.month || birthDate?.day || gender);
   const [showPersonalization, setShowPersonalization] = useState(hasPersonalization);
@@ -211,9 +212,11 @@ export default function StartView({
       <button
         type="button"
         onClick={onStart}
-        className="app-button-primary mt-7 w-full max-w-[20rem] px-5 py-4 text-[17px]"
+        disabled={isStarting}
+        aria-busy={isStarting}
+        className="app-button-primary mt-7 w-full max-w-[20rem] px-5 py-4 text-[17px] disabled:cursor-wait disabled:opacity-75"
       >
-        바로 시작하기
+        {isStarting ? '문항 준비 중...' : '바로 시작하기'}
       </button>
       <p className="mt-3 text-center text-[12px] font-medium text-slate-400 break-keep">
         입력 없이 바로 시작할 수 있어요
