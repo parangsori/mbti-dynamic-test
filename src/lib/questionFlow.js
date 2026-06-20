@@ -556,6 +556,50 @@ export const buildQuestionSession = (recentSessions = [], { ageGroup = '' } = {}
   });
 };
 
+export const getScoredQuestionById = (questionId, { ageGroup = '' } = {}) => {
+  if (!questionId) return null;
+
+  const axisKeys = ['EI', 'SN', 'TF', 'JP'];
+  for (const axis of axisKeys) {
+    const basePool = QUESTIONS_DB[axis] || [];
+    const extPool = QUESTIONS_EXTENDED?.[axis] || [];
+    const baseMeta = QUESTIONS_META[axis] || [];
+    const extMeta = QUESTIONS_META_EXTENDED?.[axis] || [];
+    const pool = [...basePool, ...extPool];
+    const meta = [...baseMeta, ...extMeta];
+
+    for (let index = 0; index < pool.length; index += 1) {
+      const enriched = applyQuestionAgeVariant({
+        ...pool[index],
+        id: meta[index]?.id || `${axis}_${index + 1}`,
+        familyId: meta[index]?.familyId || `${axis}_${index + 1}`,
+        role: meta[index]?.role,
+        weight: meta[index]?.weight || 1,
+        contextTag: meta[index]?.contextTag || pool[index].contextTag,
+        lifeTag: meta[index]?.lifeTag || pool[index].lifeTag,
+        ageFit: Array.isArray(meta[index]?.ageFit) ? meta[index].ageFit : pool[index].ageFit,
+        allowMiddleCandidate: meta[index]?.allowMiddleCandidate || false,
+        _axis: axis
+      }, ageGroup);
+      if (enriched.id === questionId) return enriched;
+    }
+  }
+
+  for (const axis of axisKeys) {
+    const followup = (FOLLOWUP_QUESTIONS[axis] || []).find((question) => question.id === questionId);
+    if (followup) {
+      return {
+        ...followup,
+        contextTag: followup.contextTag || 'calibration',
+        role: followup.role || 'followup',
+        _axis: axis
+      };
+    }
+  }
+
+  return null;
+};
+
 export const getFollowupTempoMessage = (index, total) => {
   if (total <= 1) return '결과 정확도를 위해 한 문항만 더 볼게요';
   if (index === 0) return '경계에 걸린 축을 조금 더 또렷하게 볼게요';

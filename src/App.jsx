@@ -1,10 +1,11 @@
-import { Component, lazy, Suspense, useEffect, useState } from 'react';
+import { Component, lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import StartView from './components/StartView.jsx';
 import QuestionView from './components/QuestionView.jsx';
 import PullToRefreshIndicator from './components/PullToRefreshIndicator.jsx';
 import { AXIS_GUIDE, CHANGELOG, DEFAULT_USERNAME, QUESTION_TEMPO_COPY } from './lib/constants.js';
 import {
+  buildFollowupQuestions,
   buildQuestionSession,
   createEmptyNeutralSignals,
   createEmptyScores,
@@ -12,6 +13,7 @@ import {
   getFollowupTempoMessage,
   getQuestionContextVisual,
   getQuestionTempoMessage,
+  getScoredQuestionById,
   summarizeQuestionContext
 } from './lib/questionFlow.js';
 import { summarizeActivityReport } from './lib/activityReport.js';
@@ -38,6 +40,11 @@ import {
 import { captureError, installGlobalErrorHandlers } from './lib/observability.js';
 import { getHistoryComparison, getHistoryEntryNote, getHistoryInsights } from './lib/historyAnalysis.js';
 import { useSessionFlow } from './hooks/useSessionFlow.js';
+import {
+  completeServerSession,
+  isServerSessionEnabled,
+  startServerSession
+} from './lib/serverSession.js';
 // Accessibility helpers are loaded inline to avoid dual-import warning
 const loadAccessibilitySettings = () => {
   try {
@@ -96,12 +103,53 @@ const AccessibilitySettings = lazy(() => import('./components/AccessibilitySetti
 import BootSplashScreen from './components/BootSplashScreen.jsx';
 
 const ANALYSIS_DURATION_MS = 2800;
+const SERVER_MIDDLE_OPTION_ID = 'middle';
+const SERVER_OPTION_INDEX_PATTERN = /^opt_.+_(\d+)$/;
 const ANALYSIS_STEPS = [
   '답변 흐름 확인 중',
   '성향 축 정리 중',
   '오늘의 결과 준비 중'
 ];
 const ANALYSIS_GUIDE = '브랜드 안내자가 결과 화면으로 넘어가기 전 흐름을 정돈하는 중이에요';
+
+const getServerOptionIndex = (optionId = '') => {
+  const match = String(optionId).match(SERVER_OPTION_INDEX_PATTERN);
+  return match ? Math.max(0, Number(match[1]) - 1) : -1;
+};
+
+const hydrateServerQuestionForFallback = (question, ageGroup = '') => {
+  const rawQuestion = getScoredQuestionById(question?.id, { ageGroup });
+  if (!rawQuestion) return question;
+
+  return {
+    ...question,
+    familyId: rawQuestion.familyId,
+    role: rawQuestion.role,
+    weight: rawQuestion.weight || 1,
+    contextTag: question.contextTag || rawQuestion.contextTag,
+    lifeTag: rawQuestion.lifeTag,
+    ageFit: rawQuestion.ageFit,
+    _axis: rawQuestion._axis,
+    options: (question.options || []).map((option) => {
+      const optionIndex = getServerOptionIndex(option.id);
+      const rawOption = rawQuestion.options?.[optionIndex] || rawQuestion.options?.find((item) => item.text === option.text);
+      return {
+        ...option,
+        type: rawOption?.type,
+        micro: option.micro || rawOption?.micro || ''
+      };
+    })
+  };
+};
+
+const scoresFromServerResult = (result = {}) => {
+  const nextScores = createEmptyScores();
+  (result.spectrum || []).forEach((axis) => {
+    if (axis.left) nextScores[axis.left] = Number(axis.leftScore) || 0;
+    if (axis.right) nextScores[axis.right] = Number(axis.rightScore) || 0;
+  });
+  return nextScores;
+};
 
 const ScreenFallback = (
   <div className="w-full max-w-sm px-6 py-10">
@@ -309,6 +357,7 @@ export default function App() {
     microCopy,
     setMicroCopy,
     isTransitioning,
+    setIsTransitioning,
     questionDirection,
     setQuestionDirection,
     questionPhase,
@@ -317,6 +366,7 @@ export default function App() {
     setRecentSessionsSnapshot,
     sessionQuestionIds,
     setSessionQuestionIds,
+    neutralSignals,
     setNeutralSignals,
     neutralQuestionIds,
     setNeutralQuestionIds,
@@ -330,6 +380,13 @@ export default function App() {
     handleMiddleAnswer,
     handleQuestionBack
   } = useSessionFlow();
+  const [serverSessionActive, setServerSessionActive] = useState(false);
+  const [serverSessionToken, setServerSessionToken] = useState('');
+  const [serverSessionAnswers, setServerSessionAnswers] = useState([]);
+  const serverFallbackQuestionsRef = useRef({
+    base: [],
+    followup: []
+  });
 
   // M3: Profile state (birthDate-based)
   const [birthDate, setBirthDate] = useState(() => readProfile().birthDate || null);
@@ -570,28 +627,21 @@ export default function App() {
     setNeutralQuestionIds([]);
     setQuestionContextSummary(null);
     setLastAnswerSnapshot(null);
+    setServerSessionActive(false);
+    setServerSessionToken('');
+    setServerSessionAnswers([]);
+    serverFallbackQuestionsRef.current = { base: [], followup: [] };
     transitionLockRef.current = false;
     setStep('start');
   };
 
-  const handleStart = () => {
-    if (document.activeElement instanceof HTMLElement) {
-      document.activeElement.blur();
-    }
-
-    const trimmedName = userName.trim();
-    writeUserName(trimmedName);
-    trackEvent('start_click', {
-      hasName: Boolean(trimmedName),
-      hasProfile: Boolean(ageGroup || gender),
-      ageGroup: ageGroup || '',
-      hasGender: Boolean(gender)
-    });
-
-    const recentSessions = readRecentSessions();
-    const sessionQuestions = buildQuestionSession(recentSessions, { ageGroup });
+  const startLocalSession = ({ trimmedName, recentSessions, sessionQuestions }) => {
     const thisSession = sessionQuestions.map((question) => question.id);
 
+    setServerSessionActive(false);
+    setServerSessionToken('');
+    setServerSessionAnswers([]);
+    serverFallbackQuestionsRef.current = { base: [], followup: [] };
     setQuestions(sessionQuestions);
     setFollowupQuestions([]);
     setScores(createEmptyScores());
@@ -619,6 +669,76 @@ export default function App() {
       sessionQuestionIds: thisSession,
       neutralSignals: createEmptyNeutralSignals(),
       neutralQuestionIds: []
+    });
+  };
+
+  const startServerBackedSession = async ({ trimmedName, recentSessions }) => {
+    const session = await startServerSession({ recentSessions, ageGroup });
+    if (!session?.sessionToken || !Array.isArray(session.questions) || !session.questions.length) {
+      throw new Error('invalid_server_session_start');
+    }
+
+    const fallbackQuestions = session.questions.map((question) => hydrateServerQuestionForFallback(question, ageGroup));
+    const thisSession = session.questions.map((question) => question.id);
+
+    serverFallbackQuestionsRef.current = {
+      base: fallbackQuestions,
+      followup: []
+    };
+    setServerSessionActive(true);
+    setServerSessionToken(session.sessionToken);
+    setServerSessionAnswers([]);
+    setQuestions(session.questions);
+    setFollowupQuestions([]);
+    setScores(createEmptyScores());
+    setCurrIdx(0);
+    setMicroCopy('');
+    setQuestionDirection(1);
+    setQuestionPhase('base');
+    setRecentSessionsSnapshot(recentSessions);
+    setSessionQuestionIds(thisSession);
+    setNeutralSignals(createEmptyNeutralSignals());
+    setNeutralQuestionIds([]);
+    setQuestionContextSummary(null);
+    setLastAnswerSnapshot(null);
+    transitionLockRef.current = false;
+    setStep('question');
+    trackEvent('session_api_start_ok');
+  };
+
+  const handleStart = async () => {
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
+
+    const trimmedName = userName.trim();
+    writeUserName(trimmedName);
+    trackEvent('start_click', {
+      hasName: Boolean(trimmedName),
+      hasProfile: Boolean(ageGroup || gender),
+      ageGroup: ageGroup || '',
+      hasGender: Boolean(gender)
+    });
+
+    const recentSessions = readRecentSessions();
+
+    if (isServerSessionEnabled()) {
+      try {
+        await startServerBackedSession({ trimmedName, recentSessions });
+        return;
+      } catch (error) {
+        captureError(error, {
+          key: 'session_api_start_error',
+          stage: 'session_start'
+        });
+        trackEvent('session_api_fallback', { stage: 'start' });
+      }
+    }
+
+    startLocalSession({
+      trimmedName,
+      recentSessions,
+      sessionQuestions: buildQuestionSession(recentSessions, { ageGroup })
     });
   };
 
@@ -720,6 +840,277 @@ export default function App() {
       });
     });
     setStep('analysis');
+  };
+
+  const finishServerSession = (serverResult) => {
+    const finalScores = scoresFromServerResult(serverResult);
+    const fallbackQuestions = [
+      ...serverFallbackQuestionsRef.current.base,
+      ...serverFallbackQuestionsRef.current.followup
+    ];
+    const finalSessionIds = serverResult.sessionQuestionIds || sessionQuestionIds;
+    const nextQuestionContextSummary = serverResult.questionContextSummary || summarizeQuestionContext(
+      serverFallbackQuestionsRef.current.base,
+      serverFallbackQuestionsRef.current.followup
+    );
+    const sessionSnapshot = createRecentSessionSnapshot({
+      questions: fallbackQuestions,
+      ids: finalSessionIds,
+      ageGroup
+    });
+
+    setQuestionContextSummary(nextQuestionContextSummary);
+    writeRecentSessions([sessionSnapshot, ...recentSessionsSnapshot].slice(0, 12));
+    writePendingResult({
+      scores: finalScores,
+      userName,
+      questionContextSummary: nextQuestionContextSummary,
+      neutralCount: serverResult.neutralCount || 0,
+      followupCount: serverFallbackQuestionsRef.current.followup.length,
+      usedFollowup: Boolean(serverResult.usedFollowup)
+    });
+    trackEvent('complete_test', {
+      usedFollowup: Boolean(serverResult.usedFollowup),
+      followupCount: serverFallbackQuestionsRef.current.followup.length,
+      neutralCount: serverResult.neutralCount || 0,
+      questionContextTop: nextQuestionContextSummary.topTag
+    });
+    trackEvent('session_api_complete_ok', {
+      usedFollowup: Boolean(serverResult.usedFollowup)
+    });
+    setScores(finalScores);
+    setServerSessionActive(false);
+    setServerSessionToken('');
+    setServerSessionAnswers([]);
+    setLastAnswerSnapshot(null);
+    transitionLockRef.current = false;
+    setResultBoundaryKey((value) => value + 1);
+    trackEvent('analysis_view', {
+      questionContextTop: nextQuestionContextSummary.topTag
+    });
+    preloadResultView().catch((error) => {
+      captureError(error, {
+        key: 'result_screen_preload_error',
+        stage: 'result_preload'
+      });
+    });
+    setStep('analysis');
+  };
+
+  const continueWithClientFallback = ({
+    nextScores,
+    nextNeutralSignals,
+    nextNeutralQuestionIds
+  }) => {
+    setServerSessionActive(false);
+    setServerSessionToken('');
+    setServerSessionAnswers([]);
+
+    if (questionPhase === 'base') {
+      const nextFollowupQuestions = buildFollowupQuestions(
+        nextScores,
+        recentSessionsSnapshot,
+        sessionQuestionIds,
+        nextNeutralSignals
+      );
+
+      if (nextFollowupQuestions.length > 0) {
+        const nextSessionIds = [...sessionQuestionIds, ...nextFollowupQuestions.map((item) => item.id)];
+        trackEvent('followup_start', {
+          count: nextFollowupQuestions.length,
+          neutralCount: nextNeutralQuestionIds.length
+        });
+        setQuestions(serverFallbackQuestionsRef.current.base);
+        setFollowupQuestions(nextFollowupQuestions);
+        setQuestionPhase('followup');
+        setCurrIdx(0);
+        setSessionQuestionIds(nextSessionIds);
+        setScores(nextScores);
+        setNeutralSignals(nextNeutralSignals);
+        setNeutralQuestionIds(nextNeutralQuestionIds);
+        writeActiveSession({
+          userName,
+          questions: serverFallbackQuestionsRef.current.base,
+          followupQuestions: nextFollowupQuestions,
+          currIdx: 0,
+          scores: nextScores,
+          questionPhase: 'followup',
+          recentSessions: recentSessionsSnapshot,
+          sessionQuestionIds: nextSessionIds,
+          neutralSignals: nextNeutralSignals,
+          neutralQuestionIds: nextNeutralQuestionIds
+        });
+        return;
+      }
+    }
+
+    finishSession(nextScores);
+  };
+
+  const completeServerPhase = async ({
+    answers,
+    nextScores,
+    nextNeutralSignals,
+    nextNeutralQuestionIds
+  }) => {
+    try {
+      const response = await completeServerSession({
+        sessionToken: serverSessionToken,
+        answers,
+        historyData,
+        userName,
+        defaultUserName: DEFAULT_USERNAME
+      });
+
+      if (response.status === 'needs_followup') {
+        const responseQuestions = response.questions || [];
+        const fallbackFollowups = responseQuestions.map((question) => hydrateServerQuestionForFallback(question, ageGroup));
+        const nextSessionIds = [...sessionQuestionIds, ...responseQuestions.map((question) => question.id)];
+        serverFallbackQuestionsRef.current = {
+          ...serverFallbackQuestionsRef.current,
+          followup: fallbackFollowups
+        };
+        setServerSessionToken(response.sessionToken || '');
+        setServerSessionAnswers([]);
+        setFollowupQuestions(responseQuestions);
+        setQuestionPhase('followup');
+        setCurrIdx(0);
+        setSessionQuestionIds(nextSessionIds);
+        setScores(nextScores);
+        setNeutralSignals(nextNeutralSignals);
+        setNeutralQuestionIds(nextNeutralQuestionIds);
+        trackEvent('followup_start', {
+          count: responseQuestions.length,
+          neutralCount: nextNeutralQuestionIds.length
+        });
+        trackEvent('session_api_complete_ok', { status: 'needs_followup' });
+        return;
+      }
+
+      if (response.status === 'complete' && response.result) {
+        finishServerSession(response.result);
+        return;
+      }
+
+      throw new Error('invalid_server_session_complete');
+    } catch (error) {
+      captureError(error, {
+        key: 'session_api_complete_error',
+        stage: 'session_complete'
+      });
+      trackEvent('session_api_fallback', { stage: 'complete' });
+      continueWithClientFallback({
+        nextScores,
+        nextNeutralSignals,
+        nextNeutralQuestionIds
+      });
+    }
+  };
+
+  const getFallbackQuestionForCurrentStep = () => {
+    const list = questionPhase === 'followup'
+      ? serverFallbackQuestionsRef.current.followup
+      : serverFallbackQuestionsRef.current.base;
+    return list[currIdx] || null;
+  };
+
+  const getFallbackStateAfterAnswer = (optionId) => {
+    const fallbackQuestion = getFallbackQuestionForCurrentStep();
+    if (!fallbackQuestion) {
+      return {
+        nextScores: scores,
+        nextNeutralSignals: createEmptyNeutralSignals(),
+        nextNeutralQuestionIds: neutralQuestionIds
+      };
+    }
+
+    if (optionId === SERVER_MIDDLE_OPTION_ID) {
+      const axisCode = fallbackQuestion._axis;
+      const nextNeutralSignals = axisCode
+        ? { ...neutralSignals, [axisCode]: (neutralSignals[axisCode] || 0) + 1 }
+        : neutralSignals;
+      return {
+        nextScores: scores,
+        nextNeutralSignals,
+        nextNeutralQuestionIds: fallbackQuestion.id
+          ? [...neutralQuestionIds, fallbackQuestion.id]
+          : neutralQuestionIds
+      };
+    }
+
+    const optionIndex = getServerOptionIndex(optionId);
+    const fallbackOption = fallbackQuestion.options?.[optionIndex];
+    const type = fallbackOption?.type;
+    const weight = fallbackQuestion.weight || 1;
+    return {
+      nextScores: type ? { ...scores, [type]: (scores[type] || 0) + weight } : scores,
+      nextNeutralSignals: neutralSignals,
+      nextNeutralQuestionIds: neutralQuestionIds,
+      microText: fallbackOption?.micro || ''
+    };
+  };
+
+  const handleServerAnswer = (optionId, method = 'tap') => {
+    if (!serverSessionActive || isTransitioning || transitionLockRef.current) return;
+    transitionLockRef.current = true;
+    setIsTransitioning(true);
+    setLastAnswerSnapshot(null);
+    setMicroCopy('');
+    setQuestionDirection(method?.includes('left') ? -1 : 1);
+    trackEvent('question_answer', {
+      method,
+      phase: questionPhase,
+      questionId: activeQuestion?.id || '',
+      axis: '',
+      index: currIdx + 1
+    });
+
+    const {
+      nextScores,
+      nextNeutralSignals,
+      nextNeutralQuestionIds,
+      microText = ''
+    } = getFallbackStateAfterAnswer(optionId);
+    const nextAnswers = [
+      ...serverSessionAnswers,
+      {
+        questionId: activeQuestion.id,
+        optionId
+      }
+    ];
+
+    setServerSessionAnswers(nextAnswers);
+    setScores(nextScores);
+    setNeutralSignals(nextNeutralSignals);
+    setNeutralQuestionIds(nextNeutralQuestionIds);
+    setMicroCopy(microText);
+
+    setTimeout(() => {
+      setMicroCopy('');
+      const activeTotal = questionPhase === 'followup' ? followupQuestions.length : questions.length;
+      if (currIdx + 1 >= activeTotal) {
+        completeServerPhase({
+          answers: nextAnswers,
+          nextScores,
+          nextNeutralSignals,
+          nextNeutralQuestionIds
+        }).finally(() => {
+          transitionLockRef.current = false;
+          setIsTransitioning(false);
+        });
+        return;
+      }
+
+      const nextIdx = currIdx + 1;
+      if (questionPhase === 'base') {
+        if (nextIdx === 3) trackEvent('question_reach_3');
+        if (nextIdx === 6) trackEvent('question_reach_6');
+        if (nextIdx === 9) trackEvent('question_reach_9');
+      }
+      setCurrIdx(nextIdx);
+      transitionLockRef.current = false;
+      setIsTransitioning(false);
+    }, 800);
   };
 
   useEffect(() => {
@@ -837,9 +1228,17 @@ export default function App() {
               showMiddleOption={questionPhase === 'base' && Boolean(activeQuestion.allowMiddle)}
               middleLabel="둘 다 비슷해요"
               contextVisual={activeQuestionContextVisual}
-              canGoBack={Boolean(lastAnswerSnapshot)}
-              onAnswer={(option, method) => handleQuestionAnswer(option, method, answerActionContext)}
-              onMiddleAnswer={(method) => handleMiddleAnswer(method, answerActionContext)}
+              canGoBack={!serverSessionActive && Boolean(lastAnswerSnapshot)}
+              onAnswer={(option, method) => (
+                serverSessionActive
+                  ? handleServerAnswer(option.id, method)
+                  : handleQuestionAnswer(option, method, answerActionContext)
+              )}
+              onMiddleAnswer={(method) => (
+                serverSessionActive
+                  ? handleServerAnswer(SERVER_MIDDLE_OPTION_ID, method)
+                  : handleMiddleAnswer(method, answerActionContext)
+              )}
               onBack={() => handleQuestionBack({ setUserName, setStep, trackEvent })}
             />
           )}
