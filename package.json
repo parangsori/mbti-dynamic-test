@@ -13,7 +13,10 @@
     "test:freshness": "node scripts/checkRepeatFreshness.mjs",
     "test:tempo-copy": "node scripts/checkTempoCopyFreshness.mjs",
     "test:error-diagnostics": "node scripts/checkErrorDiagnostics.mjs",
-    "test:security": "node scripts/checkSecurityGuards.mjs"
+    "test:security": "node scripts/checkSecurityGuards.mjs",
+    "test:content-vault": "node scripts/checkContentVault.mjs",
+    "test:server-session": "node scripts/checkServerSessionApi.mjs",
+    "vault:build": "node scripts/buildContentVault.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.105.4",

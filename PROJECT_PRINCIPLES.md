@@ -32,6 +32,7 @@
 - 모바일/외부기기 확인이 필요할 때: [MOBILE_TESTING.md](./MOBILE_TESTING.md)
 - 기능/버그 패치는 기본적으로 `dev` 브랜치에서 먼저 작업하고 검증한 뒤 `main`에 반영한다.
 - `dev`에서 이미 Vercel Preview로 배포된 커밋을 `main`에 반영할 때는 fast-forward 병합만으로 릴리즈를 끝내지 않는다. 동일 SHA가 이미 Preview에 있으면 Vercel Production 배포가 몇 분 늦게 생성될 수 있으므로, Production SHA가 `origin/main`과 일치할 때까지 확인하고 제한 시간 안에 반영되지 않을 때만 검증된 Preview의 Production 승격을 fallback으로 사용한다.
+- 제품 고유 문항, 결과 문구, 캐릭터 애셋, 프리미엄 분석 규칙은 공개 템플릿과 분리해 보호한다. 공개 가능한 예시는 sanitized template repo로 유지하고, 실제 제품 repo는 proprietary/all-rights-reserved 기준으로 운영한다.
 
 ## 2. 개발 원칙
 
@@ -66,6 +67,7 @@
 - 메인 사용자 서비스의 PostHog 브라우저 SDK에는 `phc_` Project token만 `VITE_POSTHOG_KEY`로 넣는다. `phx_` Personal API Key를 `VITE_` 변수에 넣으면 프론트 번들에 노출되므로 즉시 폐기/재발급한다.
 - 메인 사용자 서비스의 PostHog 수집 호스트는 reverse proxy `VITE_POSTHOG_HOST=https://e.beatblue.net`을 사용한다.
 - Supabase 클라이언트에는 publishable/anon key만 `VITE_SUPABASE_*` 변수로 둔다. service role key, secret key, DB password는 절대 `VITE_` 변수나 프론트 번들에 두지 않는다.
+- `CONTENT_VAULT_KEY`, `SESSION_TOKEN_SECRET`은 서버 전용 환경변수로만 둔다. 이 값들은 콘텐츠 vault 복호화와 서버 세션 토큰 보호에 사용하며, 절대 `VITE_` 변수로 만들지 않는다.
 - Supabase 결과 저장은 로컬 기록의 보조 백업으로만 시작한다. 서버 저장 성공 여부 때문에 테스트 완료, 결과 표시, 공유 카드 저장 흐름이 막히면 안 된다.
 - 클라이언트는 임의 HogQL/query를 서버로 보낼 수 없어야 하며, 서버리스 API는 코드에 고정된 집계 쿼리만 실행한다.
 - 운영 대시보드는 집계 숫자만 표시한다. 사용자별 이벤트 원문, distinct id, 이름, 생년월일, 원본 프로필 데이터는 응답하거나 화면에 노출하지 않는다.

@@ -82,6 +82,12 @@ The project is shared publicly for demonstration, documentation, and development
 
 Service-specific logic, assets, and production-related materials may remain protected or be excluded from future open-source releases.
 
+## Product IP boundary
+
+This repository may be used to document the product-building process, but todaymbti.com-specific questions, result logic, character assets, brand materials, and production configuration are proprietary service assets.
+
+Any future public template should use sanitized sample content, placeholder assets, and non-production configuration instead of the live service materials.
+
 ## License
 
 This repository is currently public for demonstration and documentation purposes.

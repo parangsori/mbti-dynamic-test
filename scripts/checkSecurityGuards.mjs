@@ -117,4 +117,23 @@ runInvalidKeyGuardCheck();
 runValueSizeGuardCheck();
 runTotalSizeGuardCheck();
 
+const runServerSecretNameGuardCheck = () => {
+  const forbiddenClientSecretNames = [
+    'VITE_CONTENT_VAULT_KEY',
+    'VITE_SESSION_TOKEN_SECRET',
+    'VITE_POSTHOG_PERSONAL_API_KEY',
+    'VITE_SUPABASE_SERVICE_ROLE_KEY'
+  ];
+
+  forbiddenClientSecretNames.forEach((name) => {
+    assert.equal(
+      process.env[name],
+      undefined,
+      `${name} must not be configured as a browser-exposed VITE_ variable`
+    );
+  });
+};
+
+runServerSecretNameGuardCheck();
+
 console.log('Security guard checks passed.');
