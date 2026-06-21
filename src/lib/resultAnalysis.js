@@ -1,4 +1,4 @@
-import { BADGES, MBTI_RESULTS } from '../data/mbtiData.js';
+import { BADGES, MBTI_RESULTS } from '../../data.js';
 import { getSpiritMeta } from '../data/spiritMeta.js';
 import { COMPATIBILITY } from './constants.js';
 import {

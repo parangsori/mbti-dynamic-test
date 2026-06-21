@@ -391,6 +391,8 @@ export default function App() {
   const [serverSessionActive, setServerSessionActive] = useState(false);
   const [serverSessionToken, setServerSessionToken] = useState('');
   const [serverSessionAnswers, setServerSessionAnswers] = useState([]);
+  const [serverResultDisplayModel, setServerResultDisplayModel] = useState(null);
+  const [serverResultCurrentEntry, setServerResultCurrentEntry] = useState(null);
   const [isStartingSession, setIsStartingSession] = useState(false);
   const serverFallbackQuestionsRef = useRef({
     base: [],
@@ -432,6 +434,8 @@ export default function App() {
       setUserName(pendingResult.userName || '');
       setScores(pendingResult.scores || createEmptyScores());
       setQuestionContextSummary(pendingResult.questionContextSummary || null);
+      setServerResultDisplayModel(pendingResult.displayModel || null);
+      setServerResultCurrentEntry(pendingResult.currentEntry || null);
       setNeutralQuestionIds(Array.from({ length: pendingResult.neutralCount || 0 }, (_, index) => `pending-neutral-${index}`));
       setFollowupQuestions(Array.from({ length: pendingResult.followupCount || 0 }, (_, index) => ({ id: `pending-followup-${index}` })));
       setRecoverableSession(null);
@@ -629,6 +633,8 @@ export default function App() {
     trackEvent('restart_click');
     clearActiveSession();
     clearPendingResult();
+    setServerResultDisplayModel(null);
+    setServerResultCurrentEntry(null);
     setFollowupQuestions([]);
     setQuestionPhase('base');
     setSessionQuestionIds([]);
@@ -651,6 +657,8 @@ export default function App() {
     setServerSessionActive(false);
     setServerSessionToken('');
     setServerSessionAnswers([]);
+    setServerResultDisplayModel(null);
+    setServerResultCurrentEntry(null);
     serverFallbackQuestionsRef.current = { base: [], followup: [] };
     setQuestions(sessionQuestions);
     setFollowupQuestions([]);
@@ -698,6 +706,8 @@ export default function App() {
     setServerSessionActive(true);
     setServerSessionToken(session.sessionToken);
     setServerSessionAnswers([]);
+    setServerResultDisplayModel(null);
+    setServerResultCurrentEntry(null);
     setQuestions(session.questions);
     setFollowupQuestions([]);
     setScores(createEmptyScores());
@@ -876,6 +886,8 @@ export default function App() {
 
   const finishServerSession = (serverResult, meta = {}) => {
     const finalScores = scoresFromServerResult(serverResult);
+    const nextDisplayModel = serverResult.displayModel || null;
+    const nextCurrentEntry = serverResult.currentEntry || null;
     const fallbackQuestions = [
       ...serverFallbackQuestionsRef.current.base,
       ...serverFallbackQuestionsRef.current.followup
@@ -899,7 +911,9 @@ export default function App() {
       questionContextSummary: nextQuestionContextSummary,
       neutralCount: serverResult.neutralCount || 0,
       followupCount: serverFallbackQuestionsRef.current.followup.length,
-      usedFollowup: Boolean(serverResult.usedFollowup)
+      usedFollowup: Boolean(serverResult.usedFollowup),
+      displayModel: nextDisplayModel,
+      currentEntry: nextCurrentEntry
     });
     trackEvent('complete_test', {
       usedFollowup: Boolean(serverResult.usedFollowup),
@@ -914,6 +928,8 @@ export default function App() {
       usedFollowup: Boolean(serverResult.usedFollowup)
     });
     setScores(finalScores);
+    setServerResultDisplayModel(nextDisplayModel);
+    setServerResultCurrentEntry(nextCurrentEntry);
     setServerSessionActive(false);
     setServerSessionToken('');
     setServerSessionAnswers([]);
@@ -940,6 +956,8 @@ export default function App() {
     setServerSessionActive(false);
     setServerSessionToken('');
     setServerSessionAnswers([]);
+    setServerResultDisplayModel(null);
+    setServerResultCurrentEntry(null);
 
     if (questionPhase === 'base') {
       const nextFollowupQuestions = buildFollowupQuestions(
@@ -1248,7 +1266,6 @@ export default function App() {
 
   const handleResultReady = () => {
     clearActiveSession();
-    clearPendingResult();
   };
 
   const activeQuestionContextVisual = activeQuestion ? getQuestionContextVisual(activeQuestion) : null;
@@ -1401,6 +1418,8 @@ export default function App() {
                   neutralCount={neutralQuestionIds.length}
                   usedFollowup={followupQuestions.length > 0}
                   questionContextSummary={questionContextSummary}
+                  serverDisplayModel={serverResultDisplayModel}
+                  serverCurrentEntry={serverResultCurrentEntry}
                   ageGroup={ageGroup}
                   gender={gender}
                 />

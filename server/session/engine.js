@@ -5,6 +5,7 @@ import {
   createEmptyScores,
   summarizeQuestionContext
 } from '../../src/lib/questionFlow.js';
+import { buildResultViewModel } from '../../src/lib/resultAnalysis.js';
 import { BADGES, MBTI_RESULTS } from '../../data.js';
 import { sealJson, openJson } from '../security/crypto.js';
 
@@ -32,6 +33,15 @@ const sanitizeAgeGroup = (value) =>
   ['child', 'teen', '20s', '30s', '40s', '50s'].includes(value) ? value : '';
 
 const sanitizeHistoryData = (value) => Array.isArray(value) ? value.slice(0, 30) : [];
+
+const createCurrentEntry = () => {
+  const now = new Date();
+  return {
+    createdAt: now.toISOString(),
+    date: now.toLocaleDateString('ko-KR', { month: 'short', day: 'numeric', weekday: 'short' }),
+    time: now.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false })
+  };
+};
 
 const makeOptionId = (questionId, index) => `${OPTION_ID_PREFIX}_${questionId}_${index + 1}`;
 
@@ -160,6 +170,21 @@ const buildResult = ({ tokenPayload, scores, neutralQuestionIds = [], historyDat
   const axisNarratives = spectrum.map(toAxisNarrative);
   const strongestAxis = [...axisNarratives].sort((a, b) => b.intensity - a.intensity)[0];
   const displayName = String(userName || '').trim() || defaultUserName;
+  const currentEntry = createCurrentEntry();
+  const displayModel = {
+    ...buildResultViewModel({
+      scores,
+      historyData,
+      currentEntry,
+      userName,
+      defaultUserName,
+      ageGroup: tokenPayload.ageGroup || '',
+      neutralCount: neutralQuestionIds.length,
+      usedFollowup,
+      questionContextSummary
+    }),
+    questionContextSummary
+  };
 
   return {
     status: 'complete',
@@ -178,7 +203,9 @@ const buildResult = ({ tokenPayload, scores, neutralQuestionIds = [], historyDat
       neutralCount: neutralQuestionIds.length,
       usedFollowup,
       historyCount: historyData.length,
-      sessionQuestionIds: allQuestions.map((question) => question.id)
+      sessionQuestionIds: allQuestions.map((question) => question.id),
+      currentEntry,
+      displayModel
     }
   };
 };

@@ -715,6 +715,8 @@ export default function ResultView({
   neutralCount = 0,
   usedFollowup = false,
   questionContextSummary = null,
+  serverDisplayModel = null,
+  serverCurrentEntry = null,
   ageGroup = '',
   gender = ''
 }) {
@@ -727,11 +729,13 @@ export default function ResultView({
 
   if (!currentEntryRef.current) {
     const now = new Date();
-    currentEntryRef.current = {
-      createdAt: now.toISOString(),
-      date: now.toLocaleDateString('ko-KR', { month: 'short', day: 'numeric', weekday: 'short' }),
-      time: now.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false })
-    };
+    currentEntryRef.current = serverCurrentEntry && typeof serverCurrentEntry === 'object'
+      ? serverCurrentEntry
+      : {
+          createdAt: now.toISOString(),
+          date: now.toLocaleDateString('ko-KR', { month: 'short', day: 'numeric', weekday: 'short' }),
+          time: now.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false })
+        };
   }
 
   const {
@@ -770,17 +774,21 @@ export default function ResultView({
     neutralReviewNote,
     questionContextInsight,
     topChangeChip
-  } = useMemo(() => buildResultViewModel({
-    scores,
-    historyData,
-    currentEntry: currentEntryRef.current,
-    userName,
-    defaultUserName,
-    ageGroup,
-    neutralCount,
-    usedFollowup,
-    questionContextSummary
-  }), [ageGroup, defaultUserName, historyData, neutralCount, questionContextSummary, scores, usedFollowup, userName]);
+  } = useMemo(() => (
+    serverDisplayModel && typeof serverDisplayModel === 'object'
+      ? serverDisplayModel
+      : buildResultViewModel({
+          scores,
+          historyData,
+          currentEntry: currentEntryRef.current,
+          userName,
+          defaultUserName,
+          ageGroup,
+          neutralCount,
+          usedFollowup,
+          questionContextSummary
+        })
+  ), [ageGroup, defaultUserName, historyData, neutralCount, questionContextSummary, scores, serverDisplayModel, usedFollowup, userName]);
 
   const resolvedImageSrc = spirit.asset || (info.image ? IMAGE_BASE64[info.image] || info.image : '');
   const themeClasses = getThemeClasses(presentation.themeKey);
