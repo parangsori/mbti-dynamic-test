@@ -30,6 +30,7 @@
 - 기본 빌드 검증: `npm run build`
 - 정확도 회귀 검증: `npm run test:accuracy`
 - 모바일/외부기기 확인이 필요할 때: [MOBILE_TESTING.md](./MOBILE_TESTING.md)
+- 실제 진행 관리는 로컬 전용 [PROJECT_BOARD.md](./PROJECT_BOARD.md)를 기준으로 확인한다. 이 파일은 현재 진행/계획을 담으므로 Git에 추적하지 않는다. `PROJECT_PRINCIPLES.md`는 원칙, 안전 기준, 최근 운영 로그를 유지하고, Active/Next/Inbox/Blocked/Done 상태는 보드에 기록한다.
 - 기능/버그 패치는 기본적으로 `dev` 브랜치에서 먼저 작업하고 검증한 뒤 `main`에 반영한다.
 - `dev`에서 이미 Vercel Preview로 배포된 커밋을 `main`에 반영할 때는 fast-forward 병합만으로 릴리즈를 끝내지 않는다. 동일 SHA가 이미 Preview에 있으면 Vercel Production 배포가 몇 분 늦게 생성될 수 있으므로, Production SHA가 `origin/main`과 일치할 때까지 확인하고 제한 시간 안에 반영되지 않을 때만 검증된 Preview의 Production 승격을 fallback으로 사용한다.
 - 제품 고유 문항, 결과 문구, 캐릭터 애셋, 프리미엄 분석 규칙은 공개 템플릿과 분리해 보호한다. 공개 가능한 예시는 sanitized template repo로 유지하고, 실제 제품 repo는 proprietary/all-rights-reserved 기준으로 운영한다.
@@ -279,9 +280,11 @@
 - 2026-06-16: 보안 점검 P1 패치로 `posthog-js`를 v1.386.8로 올리고 transitive `dompurify`를 v3.4.10으로 정리해 `npm audit --omit=dev` 취약점 0건을 확인했다. 프로필 입력값이 자동 DOM 이벤트에 섞이지 않도록 PostHog DOM autocapture는 끄고, 시작/완료/공유/오류 등 명시 이벤트와 pageview/pageleave는 유지하는 v1.7.7을 준비했다.
 - 2026-06-16: 서비스 디자인 개편 Phase 3로 분석 대기 화면의 반복 단계 모션을 줄이고 진행 막대를 주 신호로 정리한 v1.7.8을 준비했다. 고정 브랜드 캐릭터는 결과 타입 캐릭터가 아니라 결과 진입 전 안내자 역할로 설명하며, 분석 시간·결과 계산·결과 전환 로직은 변경하지 않는다.
 - 2026-06-19: 서비스 디자인 개편 Phase 4-A로 기록 화면을 최근 흐름 중심으로 재정리하고, 결제 없이 프리미엄 분석 관심도만 측정하는 v1.7.9를 준비했다. 결과 화면 구조와 결제/권한/백엔드 로직은 변경하지 않는다.
+- 2026-06-21: 여러 작업 흐름이 교차될 때 추적이 흐려지지 않도록 로컬 전용 `PROJECT_BOARD.md` 운영 방식을 추가했다. 이 파일은 현재 진행/계획을 담으므로 Git에 추적하지 않고, 이 문서는 원칙과 운영 로그 중심으로 유지한다.
 
 ### 다음 채팅에서 먼저 확인할 체크포인트
 
+- 로컬 전용 `PROJECT_BOARD.md`에서 현재 Active, Next, Inbox, Blocked를 먼저 확인한다. 이 파일은 Git에 추적하지 않는다.
 - 이번 요청이 결과 화면, 공유 카드, 질문 출제, 기록/히스토리, 버전/운영 중 어디에 속하는지 먼저 분류한다.
 - 관련 백업 폴더가 있는지 확인한다.
 - 이번 수정이 기존 정상 동작 영역에 영향을 줄 가능성이 있는지 먼저 판단한다.

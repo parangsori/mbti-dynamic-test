@@ -7,3 +7,6 @@ admin/dist/
 
 # 내부 검토 리포트 (로컬 참고용, 푸시 금지)
 moodtype-lab-review-report.*
+
+# 로컬 작업 운영판 (현재 진행/계획 포함, 푸시 금지)
+PROJECT_BOARD.md
