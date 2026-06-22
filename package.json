@@ -15,6 +15,7 @@
     "test:tempo-copy": "node scripts/checkTempoCopyFreshness.mjs",
     "test:error-diagnostics": "node scripts/checkErrorDiagnostics.mjs",
     "test:security": "node scripts/checkSecurityGuards.mjs",
+    "check:bundle-leak": "node scripts/checkBundleLeakBaseline.mjs",
     "test:content-vault": "node scripts/checkContentVault.mjs",
     "test:server-session": "node scripts/checkServerSessionApi.mjs",
     "vault:build": "node scripts/buildContentVault.mjs"
