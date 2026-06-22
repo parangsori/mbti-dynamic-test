@@ -1,6 +1,17 @@
 {
   "redirects": [
     {
+      "source": "/",
+      "has": [
+        {
+          "type": "host",
+          "value": "mbti-dynamic-test.vercel.app"
+        }
+      ],
+      "destination": "https://todaymbti.com/",
+      "permanent": true
+    },
+    {
       "source": "/:path*",
       "has": [
         {
