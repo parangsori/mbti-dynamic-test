@@ -31,7 +31,7 @@ The goal is not only to build a personality test, but also to document a repeata
 - MBTI-style personality test structure
 - Lightweight JavaScript implementation
 - Simple question and result flow
-- Customizable content structure
+- Service-specific content structure under active iteration
 - Suitable for lightweight web and PWA-style experiences
 - Designed to support AI-assisted development workflows
 
@@ -78,9 +78,9 @@ Planned improvements include:
 
 This repository is currently in an early public stage.
 
-The project is shared publicly for demonstration, documentation, and development-process transparency. Some parts may later be separated into a reusable open-source template after the project structure is cleaned up.
+The project is shared publicly for demonstration, documentation, and development-process transparency. It is not an open-source template or reusable starter.
 
-Service-specific logic, assets, and production-related materials may remain protected or be excluded from future open-source releases.
+Service-specific logic, assets, and production-related materials remain protected. A separate sanitized public template may be created later with mock content, placeholder assets, and its own license terms.
 
 ## Product IP boundary
 
@@ -97,6 +97,6 @@ Please do not copy, redistribute, or use this project for commercial purposes wi
 
 See [LICENSE](./LICENSE) for the repository's proprietary terms.
 
-A reusable open-source template may be separated from this project in the future.
+A reusable public template may be separated from this project in the future under separate terms.
 
 © 2026 todaymbti.com. All rights reserved.
