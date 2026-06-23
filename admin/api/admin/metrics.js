@@ -7,6 +7,7 @@ const POSTHOG_EVENTS = [
   'result_view',
   'share_copy',
   'result_image_share',
+  'result_image_link_share',
   'result_image_save',
   'result_image_download_fallback',
   'result_image_text_share',
@@ -251,7 +252,7 @@ SELECT
   count() AS total
 FROM events
 ${kstDateWindowSql(days)}
-  AND event IN ('$pageview', 'start_click', 'complete_test', 'share_copy', 'result_image_share', 'result_image_save', 'result_image_download_fallback', 'result_image_text_share', 'result_image_save_fail')
+  AND event IN ('$pageview', 'start_click', 'complete_test', 'share_copy', 'result_image_share', 'result_image_link_share', 'result_image_save', 'result_image_download_fallback', 'result_image_text_share', 'result_image_save_fail')
 GROUP BY day, event
 ORDER BY day ASC
 `;
@@ -576,7 +577,7 @@ const buildMetrics = ({ range, counts, daily, locations, devices, referrers, err
   const completionActors = counts.complete_test?.actors || 0;
   const resultViews = counts.result_view?.total || 0;
   const shareCopies = counts.share_copy?.total || 0;
-  const imageShares = counts.result_image_share?.total || 0;
+  const imageShares = (counts.result_image_share?.total || 0) + (counts.result_image_link_share?.total || 0);
   const imageSaves = counts.result_image_save?.total || 0;
   const downloadFallbacks = counts.result_image_download_fallback?.total || 0;
   const textShares = counts.result_image_text_share?.total || 0;
@@ -585,6 +586,7 @@ const buildMetrics = ({ range, counts, daily, locations, devices, referrers, err
   const shareActors = Math.max(
     counts.share_copy?.actors || 0,
     counts.result_image_share?.actors || 0,
+    counts.result_image_link_share?.actors || 0,
     counts.result_image_save?.actors || 0,
     counts.result_image_text_share?.actors || 0
   );
