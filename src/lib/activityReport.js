@@ -11,6 +11,7 @@ const DEFAULT_COUNTS = {
   question_reach_9: 0,
   result_image_save: 0,
   result_image_share: 0,
+  result_image_link_share: 0,
   result_image_download_fallback: 0,
   result_image_text_share: 0,
   result_image_save_fail: 0,
@@ -32,7 +33,7 @@ export const summarizeActivityReport = (
   const followupStarts = counts.followup_start;
   const progressTouches = counts.question_reach_3 + counts.question_reach_6 + counts.question_reach_9;
   const saved = counts.result_image_save;
-  const shared = counts.result_image_share;
+  const shared = counts.result_image_share + counts.result_image_link_share;
   const textShared = counts.result_image_text_share;
   const downloadFallbacks = counts.result_image_download_fallback;
   const copied = counts.share_copy;

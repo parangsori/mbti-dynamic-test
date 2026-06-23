@@ -229,7 +229,7 @@ function DailyPulse({ daily = [] }) {
     if (item.event === '$pageview') acc[item.day].pageview += item.count;
     if (item.event === 'start_click') acc[item.day].start += item.count;
     if (item.event === 'complete_test') acc[item.day].complete += item.count;
-    if (['share_copy', 'result_image_share', 'result_image_save', 'result_image_text_share'].includes(item.event)) acc[item.day].share += item.count;
+    if (['share_copy', 'result_image_share', 'result_image_link_share', 'result_image_save', 'result_image_text_share'].includes(item.event)) acc[item.day].share += item.count;
     return acc;
   }, {});
   const rows = Object.values(totalsByDay).slice(-7);
