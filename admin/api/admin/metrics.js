@@ -36,6 +36,7 @@ const DASHBOARD_TIME_ZONE = 'Asia/Seoul';
 const RATE_LIMIT_WINDOW_MS = 60_000;
 const RATE_LIMIT_MAX = 30;
 const JWKS_CACHE_MS = 5 * 60_000;
+const POSTHOG_QUERY_TIMEOUT_MS = 12_000;
 
 const requestBuckets = new Map();
 let cachedJwks = null;
@@ -196,19 +197,32 @@ const runPostHogQuery = async (query) => {
     throw error;
   }
 
-  const response = await fetch(`${apiHost}/api/projects/${projectId}/query/`, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      query: {
-        kind: 'HogQLQuery',
-        query
-      }
-    })
-  });
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), POSTHOG_QUERY_TIMEOUT_MS);
+
+  let response;
+  try {
+    response = await fetch(`${apiHost}/api/projects/${projectId}/query/`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json'
+      },
+      signal: controller.signal,
+      body: JSON.stringify({
+        query: {
+          kind: 'HogQLQuery',
+          query
+        }
+      })
+    });
+  } catch (error) {
+    const queryError = new Error(error?.name === 'AbortError' ? 'posthog_query_timeout' : 'posthog_query_failed');
+    queryError.status = 503;
+    throw queryError;
+  } finally {
+    clearTimeout(timeout);
+  }
 
   if (!response.ok) {
     const error = new Error('posthog_query_failed');
@@ -217,6 +231,20 @@ const runPostHogQuery = async (query) => {
   }
 
   return response.json();
+};
+
+const optionalQuery = async (query, warningKey) => {
+  try {
+    return {
+      data: await runPostHogQuery(query),
+      warning: null
+    };
+  } catch {
+    return {
+      data: { results: [] },
+      warning: warningKey
+    };
+  }
 };
 
 const eventListSql = () => POSTHOG_EVENTS.map((event) => `'${event.replace(/'/g, "''")}'`).join(', ');
@@ -568,7 +596,7 @@ const buildNotes = ({ starts, completions, shares, installs, standaloneActors, e
   return notes;
 };
 
-const buildMetrics = ({ range, counts, daily, locations, devices, referrers, errors, sessionPerformance }) => {
+const buildMetrics = ({ range, counts, daily, locations, devices, referrers, errors, sessionPerformance, warnings = [] }) => {
   const pageviews = counts.$pageview?.total || 0;
   const visitors = counts.$pageview?.actors || 0;
   const starts = counts.start_click?.total || 0;
@@ -666,6 +694,7 @@ const buildMetrics = ({ range, counts, daily, locations, devices, referrers, err
       referrers
     },
     daily,
+    warnings,
     notes: buildNotes({ starts, completions, shares, installs, standaloneActors, errorTotal: clientErrors, serverSyncFailures, imageSaveFailures, sessionPerformance })
   };
 };
@@ -689,25 +718,36 @@ export default async function handler(req, res) {
   const days = RANGE_DAYS[range];
 
   try {
-    const [eventCounts, dailyCounts, locationCounts, deviceCounts, referrerCounts, errorCounts, sessionPerformanceCounts] = await Promise.all([
+    const [
+      eventCounts,
+      dailyCounts,
+      sessionPerformanceCounts,
+      locationCounts,
+      deviceCounts,
+      referrerCounts,
+      errorCounts
+    ] = await Promise.all([
       runPostHogQuery(buildEventCountQuery(days)),
       runPostHogQuery(buildDailyQuery(days)),
-      runPostHogQuery(buildLocationQuery(days)),
-      runPostHogQuery(buildDeviceQuery(days)),
-      runPostHogQuery(buildReferrerQuery(days)),
-      runPostHogQuery(buildErrorQuery(days)),
-      runPostHogQuery(buildSessionPerformanceQuery(days))
+      runPostHogQuery(buildSessionPerformanceQuery(days)),
+      optionalQuery(buildLocationQuery(days), 'location_metrics_unavailable'),
+      optionalQuery(buildDeviceQuery(days), 'device_metrics_unavailable'),
+      optionalQuery(buildReferrerQuery(days), 'referrer_metrics_unavailable'),
+      optionalQuery(buildErrorQuery(days), 'error_metrics_unavailable')
     ]);
+    const optionalResults = [locationCounts, deviceCounts, referrerCounts, errorCounts];
+    const warnings = optionalResults.map((result) => result.warning).filter(Boolean);
 
     const metrics = buildMetrics({
       range,
       counts: rowsToCounts(eventCounts.results),
       daily: rowsToDaily(dailyCounts.results),
-      locations: rowsToLocations(locationCounts.results),
-      devices: rowsToDevices(deviceCounts.results),
-      referrers: rowsToReferrers(referrerCounts.results),
-      errors: rowsToErrors(errorCounts.results),
-      sessionPerformance: rowsToSessionPerformance(sessionPerformanceCounts.results)
+      locations: rowsToLocations(locationCounts.data.results),
+      devices: rowsToDevices(deviceCounts.data.results),
+      referrers: rowsToReferrers(referrerCounts.data.results),
+      errors: rowsToErrors(errorCounts.data.results),
+      sessionPerformance: rowsToSessionPerformance(sessionPerformanceCounts.results),
+      warnings
     });
 
     return json(res, 200, metrics);

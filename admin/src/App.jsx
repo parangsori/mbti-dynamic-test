@@ -295,9 +295,10 @@ export default function App() {
   const [tokenVersion, setTokenVersion] = useState(0);
   const [refreshVersion, setRefreshVersion] = useState(0);
 
-  const summary = metrics?.summary || {};
-  const lastUpdated = useMemo(() => formatTime(metrics?.generatedAt), [metrics?.generatedAt]);
-  const isRefreshing = status === 'loading' && Boolean(metrics);
+  const visibleMetrics = metrics?.range === range ? metrics : null;
+  const summary = visibleMetrics?.summary || {};
+  const lastUpdated = useMemo(() => formatTime(visibleMetrics?.generatedAt), [visibleMetrics?.generatedAt]);
+  const isRefreshing = status === 'loading' && Boolean(visibleMetrics);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -387,7 +388,7 @@ export default function App() {
         </div>
       </header>
 
-      {status === 'loading' && !metrics && (
+      {status === 'loading' && !visibleMetrics && (
         <section className="state-card">
           <strong>지표를 불러오는 중입니다.</strong>
           <p>PostHog 집계 쿼리를 확인하고 있어요.</p>
@@ -412,8 +413,15 @@ export default function App() {
         </button>
       )}
 
-      {metrics && (
+      {visibleMetrics && (
         <>
+          {visibleMetrics.warnings?.length > 0 && (
+            <section className="state-card">
+              <strong>일부 보조 지표를 불러오지 못했습니다.</strong>
+              <p>핵심 지표는 표시 중이며, 위치/기기/유입/오류 세부 섹션은 일시적으로 비어 있을 수 있습니다.</p>
+            </section>
+          )}
+
           <section className="summary-grid">
             <MetricCard label="방문자" value={formatNumber(summary.visitors)} caption={`${formatNumber(summary.pageviews)} 페이지뷰`} />
             <MetricCard label="시작률" value={`${summary.visitors ? Math.round((summary.startActors / summary.visitors) * 100) : 0}%`} caption={`${formatNumber(summary.starts)}회 시작`} tone="blue" />
@@ -423,7 +431,7 @@ export default function App() {
             <MetricCard label="오류" value={formatNumber(summary.clientErrors)} caption={`${formatNumber(summary.clientErrorActors)}명 영향`} tone={summary.clientErrors ? 'red' : 'green'} />
           </section>
 
-          <Funnel items={metrics.funnel} />
+          <Funnel items={visibleMetrics.funnel} />
 
           <section className="split-grid">
             <section className="panel compact">
@@ -434,12 +442,12 @@ export default function App() {
                 </div>
               </div>
               <dl className="stat-list">
-                <div><dt>텍스트 복사</dt><dd>{formatNumber(metrics.sharing?.copies)}</dd></div>
-                <div><dt>이미지 공유</dt><dd>{formatNumber(metrics.sharing?.imageShares)}</dd></div>
-                <div><dt>이미지 저장</dt><dd>{formatNumber(metrics.sharing?.imageSaves)}</dd></div>
-                <div><dt>텍스트만 공유</dt><dd>{formatNumber(metrics.sharing?.textShares)}</dd></div>
-                <div><dt>다운로드 fallback</dt><dd>{formatNumber(metrics.sharing?.downloadFallbacks)}</dd></div>
-                <div><dt>저장/공유 실패</dt><dd>{formatNumber(metrics.sharing?.imageSaveFailures)}</dd></div>
+                <div><dt>텍스트 복사</dt><dd>{formatNumber(visibleMetrics.sharing?.copies)}</dd></div>
+                <div><dt>이미지 공유</dt><dd>{formatNumber(visibleMetrics.sharing?.imageShares)}</dd></div>
+                <div><dt>이미지 저장</dt><dd>{formatNumber(visibleMetrics.sharing?.imageSaves)}</dd></div>
+                <div><dt>텍스트만 공유</dt><dd>{formatNumber(visibleMetrics.sharing?.textShares)}</dd></div>
+                <div><dt>다운로드 fallback</dt><dd>{formatNumber(visibleMetrics.sharing?.downloadFallbacks)}</dd></div>
+                <div><dt>저장/공유 실패</dt><dd>{formatNumber(visibleMetrics.sharing?.imageSaveFailures)}</dd></div>
               </dl>
             </section>
 
@@ -451,11 +459,11 @@ export default function App() {
                 </div>
               </div>
               <dl className="stat-list">
-                <div><dt>설치 안내</dt><dd>{formatNumber(metrics.install?.prompts)}</dd></div>
-                <div><dt>설치 완료</dt><dd>{formatNumber(metrics.install?.accepted)}</dd></div>
-                <div><dt>수락률</dt><dd>{metrics.install?.rate || 0}%</dd></div>
-                <div><dt>홈화면 실행</dt><dd>{formatNumber(metrics.install?.standaloneOpens)}</dd></div>
-                <div><dt>실행자</dt><dd>{formatNumber(metrics.install?.standaloneActors)}</dd></div>
+                <div><dt>설치 안내</dt><dd>{formatNumber(visibleMetrics.install?.prompts)}</dd></div>
+                <div><dt>설치 완료</dt><dd>{formatNumber(visibleMetrics.install?.accepted)}</dd></div>
+                <div><dt>수락률</dt><dd>{visibleMetrics.install?.rate || 0}%</dd></div>
+                <div><dt>홈화면 실행</dt><dd>{formatNumber(visibleMetrics.install?.standaloneOpens)}</dd></div>
+                <div><dt>실행자</dt><dd>{formatNumber(visibleMetrics.install?.standaloneActors)}</dd></div>
               </dl>
             </section>
           </section>
@@ -464,7 +472,7 @@ export default function App() {
             <InsightList
               eyebrow="위치"
               title="어디서 들어오는지"
-              items={metrics.acquisition?.locations || []}
+              items={visibleMetrics.acquisition?.locations || []}
               emptyText="아직 위치 집계 데이터가 없습니다."
               getPrimary={(item) => item.city && item.city !== '알 수 없음' ? `${item.city}, ${item.country}` : item.country}
               getSecondary={(item) => `${formatNumber(item.actors)}명 기준`}
@@ -472,7 +480,7 @@ export default function App() {
             <InsightList
               eyebrow="기기"
               title="어떤 환경에서 쓰는지"
-              items={metrics.acquisition?.devices || []}
+              items={visibleMetrics.acquisition?.devices || []}
               emptyText="아직 기기 집계 데이터가 없습니다."
               getPrimary={(item) => item.deviceType}
               getSecondary={(item) => `${item.browser} · ${item.os} · ${formatNumber(item.actors)}명`}
@@ -483,14 +491,14 @@ export default function App() {
             <InsightList
               eyebrow="유입"
               title="어디서 발견되는지"
-              items={metrics.acquisition?.referrers || []}
+              items={visibleMetrics.acquisition?.referrers || []}
               emptyText="아직 유입 출처 데이터가 없습니다."
               getPrimary={(item) => item.source}
               getSecondary={(item) => `${formatNumber(item.actors)}명 기준`}
             />
           </section>
 
-          <ErrorDiagnostics items={metrics.errors?.items || []} />
+          <ErrorDiagnostics items={visibleMetrics.errors?.items || []} />
 
           <section className="panel compact">
             <div className="panel-title">
@@ -500,16 +508,16 @@ export default function App() {
               </div>
             </div>
             <dl className="stat-list stat-list-grid">
-              <div><dt>성공</dt><dd>{formatNumber(metrics.sync?.success)}</dd></div>
-              <div><dt>실패</dt><dd>{formatNumber(metrics.sync?.failures)}</dd></div>
-              <div><dt>미설정/스킵</dt><dd>{formatNumber(metrics.sync?.skipped)}</dd></div>
-              <div><dt>성공률</dt><dd>{metrics.sync?.successRate || 0}%</dd></div>
+              <div><dt>성공</dt><dd>{formatNumber(visibleMetrics.sync?.success)}</dd></div>
+              <div><dt>실패</dt><dd>{formatNumber(visibleMetrics.sync?.failures)}</dd></div>
+              <div><dt>미설정/스킵</dt><dd>{formatNumber(visibleMetrics.sync?.skipped)}</dd></div>
+              <div><dt>성공률</dt><dd>{visibleMetrics.sync?.successRate || 0}%</dd></div>
             </dl>
           </section>
 
-          <SessionPerformance data={metrics.sessionPerformance} />
+          <SessionPerformance data={visibleMetrics.sessionPerformance} />
 
-          <DailyPulse daily={metrics.daily} />
+          <DailyPulse daily={visibleMetrics.daily} />
 
           <section className="panel">
             <div className="panel-title">
@@ -519,7 +527,7 @@ export default function App() {
               </div>
             </div>
             <div className="note-list">
-              {(metrics.notes || []).map((note) => (
+              {(visibleMetrics.notes || []).map((note) => (
                 <p key={note}>{note}</p>
               ))}
             </div>
