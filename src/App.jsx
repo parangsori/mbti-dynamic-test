@@ -5,7 +5,6 @@ import QuestionView from './components/QuestionView.jsx';
 import PullToRefreshIndicator from './components/PullToRefreshIndicator.jsx';
 import { AXIS_GUIDE, CHANGELOG, DEFAULT_USERNAME, QUESTION_TEMPO_COPY } from './lib/constants.js';
 import {
-  buildFollowupQuestions,
   buildQuestionSession,
   createEmptyNeutralSignals,
   createEmptyScores,
@@ -948,63 +947,56 @@ export default function App() {
     setStep('analysis');
   };
 
-  const continueWithClientFallback = ({
-    nextScores,
-    nextNeutralSignals,
-    nextNeutralQuestionIds
-  }) => {
-    setServerSessionActive(false);
-    setServerSessionToken('');
-    setServerSessionAnswers([]);
-    setServerResultDisplayModel(null);
-    setServerResultCurrentEntry(null);
+  const restoreServerQuestionSnapshot = (snapshot, { microText = '', trackBack = false } = {}) => {
+    if (!snapshot?.serverSession) return false;
 
-    if (questionPhase === 'base') {
-      const nextFollowupQuestions = buildFollowupQuestions(
-        nextScores,
-        recentSessionsSnapshot,
-        sessionQuestionIds,
-        nextNeutralSignals
-      );
+    setUserName(snapshot.userName || '');
+    setQuestions(snapshot.questions || []);
+    setFollowupQuestions(snapshot.followupQuestions || []);
+    setCurrIdx(snapshot.currIdx || 0);
+    setScores(snapshot.scores || createEmptyScores());
+    setQuestionPhase(snapshot.questionPhase || 'base');
+    setRecentSessionsSnapshot(snapshot.recentSessions || []);
+    setSessionQuestionIds(snapshot.sessionQuestionIds || []);
+    setNeutralSignals(snapshot.neutralSignals || createEmptyNeutralSignals());
+    setNeutralQuestionIds(snapshot.neutralQuestionIds || []);
+    setQuestionContextSummary(snapshot.questionContextSummary || null);
+    setServerSessionActive(Boolean(snapshot.serverSessionActive));
+    setServerSessionToken(snapshot.serverSessionToken || '');
+    setServerSessionAnswers(snapshot.serverSessionAnswers || []);
+    serverFallbackQuestionsRef.current = {
+      base: snapshot.serverFallbackQuestions?.base || [],
+      followup: snapshot.serverFallbackQuestions?.followup || []
+    };
+    setMicroCopy(microText);
+    setQuestionDirection(-1);
+    setStep('question');
+    setLastAnswerSnapshot(null);
+    transitionLockRef.current = false;
 
-      if (nextFollowupQuestions.length > 0) {
-        const nextSessionIds = [...sessionQuestionIds, ...nextFollowupQuestions.map((item) => item.id)];
-        trackEvent('followup_start', {
-          count: nextFollowupQuestions.length,
-          neutralCount: nextNeutralQuestionIds.length
-        });
-        setQuestions(serverFallbackQuestionsRef.current.base);
-        setFollowupQuestions(nextFollowupQuestions);
-        setQuestionPhase('followup');
-        setCurrIdx(0);
-        setSessionQuestionIds(nextSessionIds);
-        setScores(nextScores);
-        setNeutralSignals(nextNeutralSignals);
-        setNeutralQuestionIds(nextNeutralQuestionIds);
-        writeActiveSession({
-          userName,
-          questions: serverFallbackQuestionsRef.current.base,
-          followupQuestions: nextFollowupQuestions,
-          currIdx: 0,
-          scores: nextScores,
-          questionPhase: 'followup',
-          recentSessions: recentSessionsSnapshot,
-          sessionQuestionIds: nextSessionIds,
-          neutralSignals: nextNeutralSignals,
-          neutralQuestionIds: nextNeutralQuestionIds
-        });
-        return;
-      }
+    if (trackBack) {
+      const restoredFallbackQuestions = snapshot.questionPhase === 'followup'
+        ? snapshot.serverFallbackQuestions?.followup || []
+        : snapshot.serverFallbackQuestions?.base || [];
+      const restoredQuestion = restoredFallbackQuestions[snapshot.currIdx || 0];
+      trackEvent('question_back', {
+        phase: snapshot.questionPhase || 'base',
+        questionId: restoredQuestion?.id || '',
+        axis: restoredQuestion?._axis || '',
+        index: (snapshot.currIdx || 0) + 1,
+        mode: 'server_session'
+      });
     }
 
-    finishSession(nextScores);
+    return true;
   };
 
   const completeServerPhase = async ({
     answers,
     nextScores,
     nextNeutralSignals,
-    nextNeutralQuestionIds
+    nextNeutralQuestionIds,
+    recoverySnapshot
   }) => {
     const startedAt = performance.now();
     const phase = questionPhase;
@@ -1070,16 +1062,8 @@ export default function App() {
         durationMs: Math.round(performance.now() - startedAt),
         reason: error?.message || 'unknown'
       });
-      trackEvent('session_api_fallback', {
-        ...getSessionApiEventMeta(),
-        stage: 'complete',
-        phase,
-        durationMs: Math.round(performance.now() - startedAt)
-      });
-      continueWithClientFallback({
-        nextScores,
-        nextNeutralSignals,
-        nextNeutralQuestionIds
+      restoreServerQuestionSnapshot(recoverySnapshot, {
+        microText: '연결이 잠시 끊겼어요. 마지막 답변을 다시 골라주세요'
       });
     }
   };
@@ -1115,43 +1099,7 @@ export default function App() {
 
   const handleServerQuestionBack = () => {
     if (!lastAnswerSnapshot?.serverSession || isTransitioning || transitionLockRef.current) return;
-
-    const snapshot = lastAnswerSnapshot;
-    setUserName(snapshot.userName || '');
-    setQuestions(snapshot.questions || []);
-    setFollowupQuestions(snapshot.followupQuestions || []);
-    setCurrIdx(snapshot.currIdx || 0);
-    setScores(snapshot.scores || createEmptyScores());
-    setQuestionPhase(snapshot.questionPhase || 'base');
-    setRecentSessionsSnapshot(snapshot.recentSessions || []);
-    setSessionQuestionIds(snapshot.sessionQuestionIds || []);
-    setNeutralSignals(snapshot.neutralSignals || createEmptyNeutralSignals());
-    setNeutralQuestionIds(snapshot.neutralQuestionIds || []);
-    setQuestionContextSummary(snapshot.questionContextSummary || null);
-    setServerSessionActive(Boolean(snapshot.serverSessionActive));
-    setServerSessionToken(snapshot.serverSessionToken || '');
-    setServerSessionAnswers(snapshot.serverSessionAnswers || []);
-    serverFallbackQuestionsRef.current = {
-      base: snapshot.serverFallbackQuestions?.base || [],
-      followup: snapshot.serverFallbackQuestions?.followup || []
-    };
-    setMicroCopy('');
-    setQuestionDirection(-1);
-    setStep('question');
-    setLastAnswerSnapshot(null);
-    transitionLockRef.current = false;
-
-    const restoredFallbackQuestions = snapshot.questionPhase === 'followup'
-      ? snapshot.serverFallbackQuestions?.followup || []
-      : snapshot.serverFallbackQuestions?.base || [];
-    const restoredQuestion = restoredFallbackQuestions[snapshot.currIdx || 0];
-    trackEvent('question_back', {
-      phase: snapshot.questionPhase || 'base',
-      questionId: restoredQuestion?.id || '',
-      axis: restoredQuestion?._axis || '',
-      index: (snapshot.currIdx || 0) + 1,
-      mode: 'server_session'
-    });
+    restoreServerQuestionSnapshot(lastAnswerSnapshot, { trackBack: true });
   };
 
   const getFallbackStateAfterAnswer = (optionId) => {
@@ -1194,7 +1142,8 @@ export default function App() {
     if (!serverSessionActive || isTransitioning || transitionLockRef.current) return;
     transitionLockRef.current = true;
     setIsTransitioning(true);
-    setLastAnswerSnapshot(createServerQuestionSnapshot());
+    const recoverySnapshot = createServerQuestionSnapshot();
+    setLastAnswerSnapshot(recoverySnapshot);
     setMicroCopy('');
     setQuestionDirection(method?.includes('left') ? -1 : 1);
     trackEvent('question_answer', {
@@ -1233,7 +1182,8 @@ export default function App() {
           answers: nextAnswers,
           nextScores,
           nextNeutralSignals,
-          nextNeutralQuestionIds
+          nextNeutralQuestionIds,
+          recoverySnapshot
         }).finally(() => {
           transitionLockRef.current = false;
           setIsTransitioning(false);
