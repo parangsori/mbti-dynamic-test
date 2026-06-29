@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 
 class LocalStorageMock {
   constructor() {
@@ -135,5 +136,27 @@ const runServerSecretNameGuardCheck = () => {
 };
 
 runServerSecretNameGuardCheck();
+
+const runServerCompleteFallbackGuardCheck = async () => {
+  const appSource = await readFile(new URL('../src/App.jsx', import.meta.url), 'utf8');
+  const completePhaseStart = appSource.indexOf('const completeServerPhase = async');
+  const completePhaseEnd = appSource.indexOf('const getFallbackQuestionForCurrentStep', completePhaseStart);
+
+  assert.ok(completePhaseStart >= 0 && completePhaseEnd > completePhaseStart, 'server completion flow must exist');
+
+  const completePhaseSource = appSource.slice(completePhaseStart, completePhaseEnd);
+  assert.doesNotMatch(
+    completePhaseSource,
+    /session_api_fallback|continueWithClientFallback|finishSession\(/,
+    'server completion failures must not generate a local result fallback'
+  );
+  assert.match(
+    completePhaseSource,
+    /restoreServerQuestionSnapshot\(recoverySnapshot/,
+    'server completion failures must restore a retryable question state'
+  );
+};
+
+await runServerCompleteFallbackGuardCheck();
 
 console.log('Security guard checks passed.');
