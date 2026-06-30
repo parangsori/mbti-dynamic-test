@@ -152,6 +152,22 @@ html.high-contrast .question-card-shell img {
   animation: answer-pulse 0.3s ease-out;
 }
 
+@keyframes question-progress-shimmer {
+  from { transform: translate3d(-140%, 0, 0); }
+  to { transform: translate3d(320%, 0, 0); }
+}
+
+.question-progress-shimmer {
+  animation: question-progress-shimmer 2s linear infinite;
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .question-progress-shimmer {
+    animation: none;
+  }
+}
+
 /* Progress bar glow effect */
 @keyframes progress-glow {
   0%, 100% { box-shadow: 0 0 8px rgba(34, 211, 238, 0.3); }

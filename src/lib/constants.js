@@ -19,6 +19,14 @@ export const COMPATIBILITY = {
 
 export const CHANGELOG = [
   {
+    version: 'v1.7.11',
+    date: '2026.06.30',
+    updates: [
+      '답변 선택 후 다음 문항이 나타나는 시간을 줄여 저사양 기기에서도 테스트 흐름이 더 빠르고 자연스럽게 이어지도록 개선',
+      '문항 전환 시 전체 화면을 다시 그리는 부담과 반복 배경 효과를 줄이면서 기존 선택 피드백과 진행감은 유지'
+    ]
+  },
+  {
     version: 'v1.7.10',
     date: '2026.06.20',
     updates: [
