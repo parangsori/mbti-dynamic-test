@@ -14,6 +14,7 @@
     "test:freshness": "node scripts/checkRepeatFreshness.mjs",
     "test:tempo-copy": "node scripts/checkTempoCopyFreshness.mjs",
     "test:question-transition": "node scripts/checkQuestionTransitionPerf.mjs",
+    "test:result-assets": "node scripts/checkResultCharacterPreload.mjs",
     "test:error-diagnostics": "node scripts/checkErrorDiagnostics.mjs",
     "test:security": "node scripts/checkSecurityGuards.mjs",
     "check:bundle-leak": "node scripts/checkBundleLeakBaseline.mjs",
