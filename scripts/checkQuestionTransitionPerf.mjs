@@ -17,9 +17,8 @@ assert.ok(delayMs >= 300 && delayMs <= 450, `question transition delay must stay
 
 assert.match(appSource, /}, QUESTION_TRANSITION_DELAY_MS\);/, 'server-backed answers must use the shared transition delay');
 assert.match(sessionFlowSource, /}, QUESTION_TRANSITION_DELAY_MS\);/, 'local answers must use the shared transition delay');
-assert.doesNotMatch(appSource, /key=\{`question-\$\{questionPhase\}-\$\{currIdx\}`\}/, 'question changes must not remount the full QuestionView');
-assert.match(appSource, /<QuestionView\s+key="question"/, 'QuestionView must keep a stable outer key during a session');
-assert.match(questionViewSource, /<AnimatePresence mode="popLayout">/, 'question card transitions must overlap without duplicating layout space');
+assert.match(appSource, /key=\{`question-\$\{questionPhase\}-\$\{currIdx\}`\}/, 'question changes must preserve the main branch remount boundary');
+assert.match(questionViewSource, /<AnimatePresence mode="wait">/, 'question card transitions must preserve the main branch motion sequence');
 assert.match(questionViewSource, /question-progress-shimmer/, 'progress shimmer must use the compositor-friendly class');
 assert.match(questionViewSource, /animate=\{\{ scaleX: progress \/ 100 \}\}/, 'progress updates must animate with transform instead of width');
 assert.match(
@@ -27,15 +26,16 @@ assert.match(
   /const completedQuestions = Math\.min\(currIdx \+ \(isTransitioning \? 1 : 0\), totalQuestions\);[\s\S]*const progress = \(completedQuestions \/ totalQuestions\) \* 100;/,
   'progress must count completed answers, not the unanswered current question'
 );
+assert.match(questionViewSource, /transition=\{\{ duration: 0\.24, ease: 'easeOut' \}\}/, 'progress must use a monotonic tween instead of a bouncing spring');
 assert.match(
   questionViewSource,
-  /transition=\{\{ duration: 0\.24, ease: 'easeOut' \}\}/,
-  'progress must use a monotonic tween instead of a bouncing spring'
+  /handleCardClick[\s\S]*?triggerSwipeFeedback\(side\);[\s\S]*?setFlyOutSide\(side\);[\s\S]*?onAnswer\(option, 'tap'\)/,
+  'tap answers must preserve the main branch directional confirmation motion'
 );
-assert.doesNotMatch(
+assert.match(
   questionViewSource,
-  /handleCardClick[\s\S]*?setFlyOutSide\(side\)[\s\S]*?onAnswer\(option, 'tap'\)/,
-  'tap answers must not trigger the swipe-only 350px flyout'
+  /event\.key === 'ArrowLeft'[\s\S]*?setFlyOutSide\('left'\)[\s\S]*?event\.key === 'ArrowRight'[\s\S]*?setFlyOutSide\('right'\)/,
+  'keyboard answers must preserve the main branch directional confirmation motion'
 );
 assert.match(
   questionViewSource,
@@ -47,10 +47,10 @@ assert.match(
   /currIdx === 0[\s\S]*?setShowWiggle\(true\)/,
   'the first-question swipe onboarding wiggle must remain isolated to Q1'
 );
-assert.doesNotMatch(
+assert.match(
   questionViewSource,
-  /key=\{currIdx\}[\s\S]{0,220}(?:initial|exit)=\{\{[^}]*x:/,
-  'question changes must not add a second horizontal cross-slide'
+  /key=\{currIdx\}[\s\S]{0,220}initial=\{\{ opacity: 0, x: 56 \* questionDirection \}\}[\s\S]*?exit=\{\{ opacity: 0, x: -56 \* questionDirection \}\}/,
+  'question changes must preserve the main branch directional slide'
 );
 assert.match(questionViewSource, /h-3 w-3/, 'progress markers must use fixed-width slots');
 assert.doesNotMatch(questionViewSource, /transition-all duration-300/, 'progress markers must not animate layout width');

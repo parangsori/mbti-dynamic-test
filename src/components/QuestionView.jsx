@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import todayImage from '../../resources/question-context/today.svg';
 import relationshipImage from '../../resources/question-context/relationship.svg';
@@ -72,30 +72,17 @@ export default function QuestionView({
   const isFollowupPhase = phase === 'followup';
   const isFirstQuestion = currIdx === 0;
 
-  useLayoutEffect(() => {
-    setActiveDragSide(null);
-    setSwipeFeedbackSide(null);
-    setFlyOutSide(null);
-    setShowWiggle(false);
-    setAnswerFlash(null);
-    draggedCardRef.current = false;
-    touchStartRef.current = null;
-
-    if (swipeFeedbackTimerRef.current) {
-      window.clearTimeout(swipeFeedbackTimerRef.current);
-      swipeFeedbackTimerRef.current = null;
-    }
-  }, [question.id]);
-
   useEffect(() => {
     const handleKeyDown = (event) => {
       if (isTransitioning || isTextInputTarget(event.target)) return;
       if (event.key === 'ArrowLeft' && firstOption) {
         event.preventDefault();
+        setFlyOutSide('left');
         onAnswer(firstOption, 'keyboard_left');
       }
       if (event.key === 'ArrowRight' && secondOption) {
         event.preventDefault();
+        setFlyOutSide('right');
         onAnswer(secondOption, 'keyboard_right');
       }
     };
@@ -183,21 +170,6 @@ export default function QuestionView({
     }
   };
 
-  const triggerTapFeedback = (side) => {
-    setAnswerFlash(side);
-
-    if (swipeFeedbackTimerRef.current) {
-      window.clearTimeout(swipeFeedbackTimerRef.current);
-    }
-    swipeFeedbackTimerRef.current = window.setTimeout(() => {
-      setAnswerFlash(null);
-    }, 260);
-
-    if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
-      navigator.vibrate(SWIPE_VIBRATION_PATTERN);
-    }
-  };
-
   const resolveCardSwipe = (option, side, _, info) => {
     if (isTransitioning) return;
 
@@ -241,7 +213,8 @@ export default function QuestionView({
       return;
     }
     const side = option === firstOption ? 'left' : 'right';
-    triggerTapFeedback(side);
+    triggerSwipeFeedback(side);
+    setFlyOutSide(side);
     onAnswer(option, 'tap');
   };
 
@@ -310,13 +283,13 @@ export default function QuestionView({
       </div>
 
       <div className="w-full">
-        <AnimatePresence mode="popLayout">
+        <AnimatePresence mode="wait">
           <motion.div
             key={currIdx}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.18, ease: 'easeOut' }}
+            initial={{ opacity: 0, x: 56 * questionDirection }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -56 * questionDirection }}
+            transition={{ duration: 0.35, ease: 'easeOut' }}
             className="w-full"
           >
             <section className="question-card-shell relative overflow-hidden rounded-[1.65rem] border border-white/10 bg-slate-950/[0.58] shadow-[0_22px_60px_rgba(2,6,23,0.34)] backdrop-blur-xl">

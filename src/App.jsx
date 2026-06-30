@@ -1392,7 +1392,7 @@ export default function App() {
 
           {!isBooting && step === 'question' && activeQuestion && (
             <QuestionView
-              key="question"
+              key={`question-${questionPhase}-${currIdx}`}
               currIdx={currIdx}
               totalQuestions={questionPhase === 'followup' ? followupQuestions.length : 12}
               question={activeQuestion}
