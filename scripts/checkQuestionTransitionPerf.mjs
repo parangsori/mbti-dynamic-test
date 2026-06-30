@@ -22,6 +22,39 @@ assert.match(appSource, /<QuestionView\s+key="question"/, 'QuestionView must kee
 assert.match(questionViewSource, /<AnimatePresence mode="popLayout">/, 'question card transitions must overlap without duplicating layout space');
 assert.match(questionViewSource, /question-progress-shimmer/, 'progress shimmer must use the compositor-friendly class');
 assert.match(questionViewSource, /animate=\{\{ scaleX: progress \/ 100 \}\}/, 'progress updates must animate with transform instead of width');
+assert.match(
+  questionViewSource,
+  /const completedQuestions = Math\.min\(currIdx \+ \(isTransitioning \? 1 : 0\), totalQuestions\);[\s\S]*const progress = \(completedQuestions \/ totalQuestions\) \* 100;/,
+  'progress must count completed answers, not the unanswered current question'
+);
+assert.match(
+  questionViewSource,
+  /transition=\{\{ duration: 0\.24, ease: 'easeOut' \}\}/,
+  'progress must use a monotonic tween instead of a bouncing spring'
+);
+assert.doesNotMatch(
+  questionViewSource,
+  /handleCardClick[\s\S]*?setFlyOutSide\(side\)[\s\S]*?onAnswer\(option, 'tap'\)/,
+  'tap answers must not trigger the swipe-only 350px flyout'
+);
+assert.match(
+  questionViewSource,
+  /resolveCardSwipe[\s\S]*?triggerSwipeFeedback\(side\);[\s\S]*?setFlyOutSide\(side\);/,
+  'a confirmed swipe must retain its directional flyout feedback'
+);
+assert.match(
+  questionViewSource,
+  /currIdx === 0[\s\S]*?setShowWiggle\(true\)/,
+  'the first-question swipe onboarding wiggle must remain isolated to Q1'
+);
+assert.doesNotMatch(
+  questionViewSource,
+  /key=\{currIdx\}[\s\S]{0,220}(?:initial|exit)=\{\{[^}]*x:/,
+  'question changes must not add a second horizontal cross-slide'
+);
+assert.match(questionViewSource, /h-3 w-3/, 'progress markers must use fixed-width slots');
+assert.doesNotMatch(questionViewSource, /transition-all duration-300/, 'progress markers must not animate layout width');
+assert.doesNotMatch(questionViewSource, /dot-pop/, 'progress markers must not run an overshooting pop animation');
 assert.match(appSource, /step === 'question' \? '' : 'animate-blob'/, 'ambient blob motion must pause during the question flow');
 assert.match(stylesSource, /@keyframes question-progress-shimmer[\s\S]*translate3d/, 'progress shimmer must animate with transform');
 
