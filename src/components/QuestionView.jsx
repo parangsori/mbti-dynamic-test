@@ -92,12 +92,10 @@ export default function QuestionView({
       if (isTransitioning || isTextInputTarget(event.target)) return;
       if (event.key === 'ArrowLeft' && firstOption) {
         event.preventDefault();
-        setFlyOutSide('left');
         onAnswer(firstOption, 'keyboard_left');
       }
       if (event.key === 'ArrowRight' && secondOption) {
         event.preventDefault();
-        setFlyOutSide('right');
         onAnswer(secondOption, 'keyboard_right');
       }
     };
@@ -185,6 +183,21 @@ export default function QuestionView({
     }
   };
 
+  const triggerTapFeedback = (side) => {
+    setAnswerFlash(side);
+
+    if (swipeFeedbackTimerRef.current) {
+      window.clearTimeout(swipeFeedbackTimerRef.current);
+    }
+    swipeFeedbackTimerRef.current = window.setTimeout(() => {
+      setAnswerFlash(null);
+    }, 260);
+
+    if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+      navigator.vibrate(SWIPE_VIBRATION_PATTERN);
+    }
+  };
+
   const resolveCardSwipe = (option, side, _, info) => {
     if (isTransitioning) return;
 
@@ -228,13 +241,12 @@ export default function QuestionView({
       return;
     }
     const side = option === firstOption ? 'left' : 'right';
-    triggerSwipeFeedback(side);
-    setFlyOutSide(side);
+    triggerTapFeedback(side);
     onAnswer(option, 'tap');
   };
 
-  const progress = ((currIdx + 1) / totalQuestions) * 100;
-  const progressPrev = (currIdx / totalQuestions) * 100;
+  const completedQuestions = Math.min(currIdx + (isTransitioning ? 1 : 0), totalQuestions);
+  const progress = (completedQuestions / totalQuestions) * 100;
   const answerHelpText = isFirstQuestion
     ? '카드를 좌우로 밀거나 원하는 답변을 눌러도 돼요'
     : '답변을 누르거나 카드 방향으로 가볍게 밀어주세요';
@@ -268,9 +280,9 @@ export default function QuestionView({
           <div className="h-2 w-full bg-slate-950/50 rounded-full overflow-hidden border border-white/5">
             <motion.div
               className="relative h-full w-full origin-left bg-gradient-to-r from-cyan-400 via-brand to-pink-400"
-              initial={{ scaleX: progressPrev / 100 }}
+              initial={false}
               animate={{ scaleX: progress / 100 }}
-              transition={{ duration: 0.6, type: 'spring', stiffness: 100 }}
+              transition={{ duration: 0.24, ease: 'easeOut' }}
             >
               <div className="question-progress-shimmer absolute inset-y-0 left-0 w-[45%] bg-gradient-to-r from-transparent via-white/20 to-transparent" />
             </motion.div>
@@ -278,16 +290,17 @@ export default function QuestionView({
 
           <div className="flex justify-between mt-2 px-0.5" aria-hidden="true">
             {Array.from({ length: totalQuestions }, (_, i) => (
-              <div
-                key={i}
-                className={`h-1 rounded-full transition-all duration-300 ${
-                  i < currIdx + 1
-                    ? 'w-3 bg-cyan-300 shadow-[0_0_4px_rgba(34,211,238,0.55)]'
-                    : i === currIdx + 1
-                      ? 'w-2 bg-slate-500'
-                      : 'w-1.5 bg-slate-700'
-                } ${i === currIdx ? 'dot-pop' : ''}`}
-              />
+              <div key={i} className="flex h-3 w-3 items-center justify-center">
+                <div
+                  className={`h-1.5 w-1.5 rounded-full transition-[background-color,box-shadow,opacity] duration-200 ease-out ${
+                    i < completedQuestions
+                      ? 'bg-cyan-300 shadow-[0_0_4px_rgba(34,211,238,0.55)]'
+                      : i === completedQuestions
+                        ? 'bg-slate-400 ring-2 ring-cyan-200/25'
+                        : 'bg-slate-700 opacity-80'
+                  }`}
+                />
+              </div>
             ))}
           </div>
         </div>
@@ -300,10 +313,10 @@ export default function QuestionView({
         <AnimatePresence mode="popLayout">
           <motion.div
             key={currIdx}
-            initial={{ opacity: 0, x: 56 * questionDirection }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -56 * questionDirection }}
-            transition={{ duration: 0.26, ease: 'easeOut' }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.18, ease: 'easeOut' }}
             className="w-full"
           >
             <section className="question-card-shell relative overflow-hidden rounded-[1.65rem] border border-white/10 bg-slate-950/[0.58] shadow-[0_22px_60px_rgba(2,6,23,0.34)] backdrop-blur-xl">
