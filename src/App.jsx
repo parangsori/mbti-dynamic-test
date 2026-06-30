@@ -45,6 +45,7 @@ import {
   isServerSessionEnabled,
   startServerSession
 } from './lib/serverSession.js';
+import { getTypeCharacterAsset } from './data/typeCharacterAssets.js';
 // Accessibility helpers are loaded inline to avoid dual-import warning
 const loadAccessibilitySettings = () => {
   try {
@@ -80,6 +81,7 @@ const retryImport = (loader, retries = 1) =>
   });
 
 let resultViewPreloadPromise = null;
+const imagePreloadPromises = new Map();
 
 const loadResultViewModule = () => {
   if (!resultViewPreloadPromise) {
@@ -94,6 +96,32 @@ const loadResultViewModule = () => {
 
 const preloadResultView = () => loadResultViewModule();
 
+const preloadImage = (src) => {
+  if (!src || typeof Image === 'undefined') return Promise.resolve();
+  if (imagePreloadPromises.has(src)) return imagePreloadPromises.get(src);
+
+  const preloadPromise = new Promise((resolve, reject) => {
+    const image = new Image();
+    image.decoding = 'async';
+    image.onload = () => {
+      if (typeof image.decode !== 'function') {
+        resolve();
+        return;
+      }
+
+      image.decode().catch(() => undefined).finally(resolve);
+    };
+    image.onerror = () => reject(new Error(`image_preload_failed:${src}`));
+    image.src = src;
+  }).catch((error) => {
+    imagePreloadPromises.delete(src);
+    throw error;
+  });
+
+  imagePreloadPromises.set(src, preloadPromise);
+  return preloadPromise;
+};
+
 const ResultView = lazy(loadResultViewModule);
 const RecoveryPrompt = lazy(() => import('./components/RecoveryPrompt.jsx'));
 const HistoryModal = lazy(() => import('./components/HistoryModal.jsx'));
@@ -103,6 +131,8 @@ const AccessibilitySettings = lazy(() => import('./components/AccessibilitySetti
 import BootSplashScreen from './components/BootSplashScreen.jsx';
 
 const ANALYSIS_DURATION_MS = 2800;
+const ANALYSIS_CHARACTER_SRC = '/brand-character-v173.png';
+const RESULT_AXES = [['E', 'I'], ['S', 'N'], ['T', 'F'], ['J', 'P']];
 const SERVER_MIDDLE_OPTION_ID = 'middle';
 const SERVER_OPTION_INDEX_PATTERN = /^opt_.+_(\d+)$/;
 const ANALYSIS_STEPS = [
@@ -111,6 +141,30 @@ const ANALYSIS_STEPS = [
   '오늘의 결과 준비 중'
 ];
 const ANALYSIS_GUIDE = '브랜드 안내자가 결과 화면으로 넘어가기 전 흐름을 정돈하는 중이에요';
+
+const preloadAnalysisCharacter = () => preloadImage(ANALYSIS_CHARACTER_SRC).catch((error) => {
+  captureError(error, {
+    key: 'analysis_character_preload_error',
+    stage: 'analysis_character_preload'
+  });
+});
+
+const getResultCharacterSrc = (scores, displayModel = null) => {
+  const serverAsset = displayModel?.spirit?.asset;
+  if (serverAsset) return serverAsset;
+
+  const mbti = RESULT_AXES
+    .map(([left, right]) => ((scores?.[left] || 0) >= (scores?.[right] || 0) ? left : right))
+    .join('');
+  return getTypeCharacterAsset(mbti);
+};
+
+const preloadResultAssets = async (scores, displayModel = null) => {
+  const characterSrc = getResultCharacterSrc(scores, displayModel);
+  const results = await Promise.allSettled([preloadResultView(), preloadImage(characterSrc)]);
+  const failure = results.find((result) => result.status === 'rejected');
+  if (failure) throw failure.reason;
+};
 
 const getServerOptionIndex = (optionId = '') => {
   const match = String(optionId).match(SERVER_OPTION_INDEX_PATTERN);
@@ -235,8 +289,12 @@ function AnalysisView() {
         <div className="relative mx-auto h-24 w-24">
           <div className="absolute inset-2 rounded-full bg-cyan-300/16 blur-2xl" aria-hidden="true" />
           <img
-            src="/brand-character-v173.png"
+            src={ANALYSIS_CHARACTER_SRC}
             alt="오늘의 MBTI 안내 캐릭터"
+            width={512}
+            height={512}
+            decoding="async"
+            fetchPriority="high"
             className="relative h-full w-full rounded-full object-contain"
           />
         </div>
@@ -444,6 +502,12 @@ export default function App() {
     setHistoryData(storedHistory);
 
     if (pendingResult) {
+      preloadResultAssets(pendingResult.scores || createEmptyScores(), pendingResult.displayModel || null).catch((error) => {
+        captureError(error, {
+          key: 'result_screen_preload_error',
+          stage: 'result_recovery_preload'
+        });
+      });
       setUserName(pendingResult.userName || '');
       setScores(pendingResult.scores || createEmptyScores());
       setQuestionContextSummary(pendingResult.questionContextSummary || null);
@@ -688,6 +752,7 @@ export default function App() {
     setLastAnswerSnapshot(null);
     transitionLockRef.current = false;
     setStep('question');
+    preloadAnalysisCharacter();
 
     writeActiveSession({
       userName: trimmedName,
@@ -736,6 +801,7 @@ export default function App() {
     setLastAnswerSnapshot(null);
     transitionLockRef.current = false;
     setStep('question');
+    preloadAnalysisCharacter();
     trackEvent('session_api_start_ok', {
       ...getSessionApiEventMeta(),
       durationMs: Math.round(performance.now() - startedAt),
@@ -816,6 +882,7 @@ export default function App() {
     transitionLockRef.current = false;
     setShowRecoveryPrompt(false);
     setStep('question');
+    preloadAnalysisCharacter();
     trackEvent('session_resume');
   };
 
@@ -888,7 +955,7 @@ export default function App() {
     trackEvent('analysis_view', {
       questionContextTop: nextQuestionContextSummary.topTag
     });
-    preloadResultView().catch((error) => {
+    preloadResultAssets(finalScores).catch((error) => {
       captureError(error, {
         key: 'result_screen_preload_error',
         stage: 'result_preload'
@@ -952,7 +1019,7 @@ export default function App() {
     trackEvent('analysis_view', {
       questionContextTop: nextQuestionContextSummary.topTag
     });
-    preloadResultView().catch((error) => {
+    preloadResultAssets(finalScores, nextDisplayModel).catch((error) => {
       captureError(error, {
         key: 'result_screen_preload_error',
         stage: 'result_preload'

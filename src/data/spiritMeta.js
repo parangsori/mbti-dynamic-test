@@ -1,3 +1,5 @@
+import { TYPE_CHARACTER_ASSETS } from './typeCharacterAssets.js';
+
 export const TYPE_CHARACTER_META = {
   INFJ: {
     name: '루미',
@@ -10,7 +12,7 @@ export const TYPE_CHARACTER_META = {
     appearsWhen: '겉으로는 차분하지만 속으로는 많은 것을 읽고 있던 날, 관계의 온도와 말의 뉘앙스가 유난히 크게 느껴졌을 때 가까이 나타나요.',
     message: '오늘은 조용히 지나간 마음까지 잘 읽어낸 날이에요. 다 이해하려 애쓰지 않아도, 당신의 감도는 이미 충분히 선명했어요.',
     symbols: ['빛 카드', '얇은 관찰 렌즈', '창가에 비친 푸른 빛'],
-    asset: '/assets/type-characters/INFJ_Lumi.png'
+    asset: TYPE_CHARACTER_ASSETS.INFJ
   },
   INFP: {
     name: '모아',
@@ -23,7 +25,7 @@ export const TYPE_CHARACTER_META = {
     appearsWhen: '혼자 있는 시간이 더 편하고, 마음속 이야기가 유난히 선명했던 날 가까이 나타나요.',
     message: '오늘은 마음속에 오래 남은 감정도 당신의 중요한 신호였어요.',
     symbols: ['마음 기록 캡슐', '접힌 쪽지', '따뜻한 작은 빛'],
-    asset: '/assets/type-characters/INFP_Moa.png'
+    asset: TYPE_CHARACTER_ASSETS.INFP
   },
   ENFP: {
     name: '포포',
@@ -36,7 +38,7 @@ export const TYPE_CHARACTER_META = {
     appearsWhen: '사람과 자극 사이에서 에너지가 살아나고, 작은 아이디어가 다음 장면으로 번지던 날 가까이 나타나요.',
     message: '오늘은 작은 가능성에도 마음이 먼저 반응한 날이에요. 다 끝까지 해내지 않아도, 불씨를 발견한 것만으로 충분해요.',
     symbols: ['씨앗 불씨', '빛 조각', '퍼지는 작은 불꽃'],
-    asset: '/assets/type-characters/ENFP_Popo.png'
+    asset: TYPE_CHARACTER_ASSETS.ENFP
   },
   ENFJ: {
     name: '온유',
@@ -49,7 +51,7 @@ export const TYPE_CHARACTER_META = {
     appearsWhen: '혼자 빛나기보다 함께 편한 분위기를 만들고 싶었던 날 가까이 나타나요.',
     message: '오늘은 누군가의 마음을 먼저 살피는 따뜻한 힘이 잘 보였어요.',
     symbols: ['온기 구슬', '연결 빛고리', '부드러운 호'],
-    asset: '/assets/type-characters/ENFJ_Onyu.png'
+    asset: TYPE_CHARACTER_ASSETS.ENFJ
   },
   INTJ: {
     name: '선',
@@ -62,7 +64,7 @@ export const TYPE_CHARACTER_META = {
     appearsWhen: '말보다 그림이 먼저 그려지고, 지금보다 다음 단계가 더 또렷했던 날 가까이 나타나요.',
     message: '오늘은 멀리 보는 시선이 당신의 선택을 조용히 이끌었어요.',
     symbols: ['별 격자', '접힌 설계도', '차가운 중심광'],
-    asset: '/assets/type-characters/INTJ_Seon.png'
+    asset: TYPE_CHARACTER_ASSETS.INTJ
   },
   ENTJ: {
     name: '루트',
@@ -75,7 +77,7 @@ export const TYPE_CHARACTER_META = {
     appearsWhen: '애매하게 두기보다 결정하고 앞으로 밀고 가는 쪽이 편했던 날 가까이 나타나요.',
     message: '오늘은 방향을 정하고 움직이는 힘이 또렷하게 살아난 날이에요.',
     symbols: ['방향 코어', '길 표시', '단단한 빛축'],
-    asset: '/assets/type-characters/ENTJ_Root.png'
+    asset: TYPE_CHARACTER_ASSETS.ENTJ
   },
   INTP: {
     name: '누브',
@@ -88,7 +90,7 @@ export const TYPE_CHARACTER_META = {
     appearsWhen: '사람보다 생각의 흐름, 원리, 논리의 연결이 더 재미있던 날 가까이 나타나요.',
     message: '오늘은 질문을 오래 따라간 시간이 당신의 깊이를 보여줬어요.',
     symbols: ['논리 조각', '떠 있는 질문 큐브', '차분한 푸른 코어'],
-    asset: '/assets/type-characters/INTP_Nube.png'
+    asset: TYPE_CHARACTER_ASSETS.INTP
   },
   ENTP: {
     name: '틸트',
@@ -101,7 +103,7 @@ export const TYPE_CHARACTER_META = {
     appearsWhen: '말과 아이디어가 꼬리를 물고, 판을 새롭게 흔들고 싶었던 날 가까이 나타나요.',
     message: '오늘은 다르게 보는 힘이 당신의 장면을 더 넓혀줬어요.',
     symbols: ['회전 카드', '프리즘 조각', '반짝이는 전환점'],
-    asset: '/assets/type-characters/ENTP_Tilt.png'
+    asset: TYPE_CHARACTER_ASSETS.ENTP
   },
   ISFP: {
     name: '아로',
@@ -114,7 +116,7 @@ export const TYPE_CHARACTER_META = {
     appearsWhen: '말보다 느낌이 먼저 오고, 내 감각을 따라가는 쪽이 자연스러웠던 날 가까이 나타나요.',
     message: '오늘은 조용히 고른 감각 안에 당신다운 색이 남아 있었어요.',
     symbols: ['색 조약돌', '작은 필름 조각', '부드러운 결'],
-    asset: '/assets/type-characters/ISFP_Aro.png'
+    asset: TYPE_CHARACTER_ASSETS.ISFP
   },
   ESFP: {
     name: '루루',
@@ -127,7 +129,7 @@ export const TYPE_CHARACTER_META = {
     appearsWhen: '계획보다 지금의 장면이 더 크게 느껴지고, 분위기를 살리는 쪽이 편했던 날 가까이 나타나요.',
     message: '오늘은 지금 이 순간을 살아나게 하는 밝은 힘이 보였어요.',
     symbols: ['리듬 리본', '작은 무대빛', '튀는 공기결'],
-    asset: '/assets/type-characters/ESFP_Ruru.png'
+    asset: TYPE_CHARACTER_ASSETS.ESFP
   },
   ISTP: {
     name: '텐',
@@ -140,7 +142,7 @@ export const TYPE_CHARACTER_META = {
     appearsWhen: '감정보다 실전 감각과 필요한 움직임이 먼저였던 날 가까이 나타나요.',
     message: '오늘은 군더더기를 덜어낸 선택이 당신을 가볍게 만들었어요.',
     symbols: ['모듈 조각', '미니 툴 코어', '절제된 은빛'],
-    asset: '/assets/type-characters/ISTP_Ten.png'
+    asset: TYPE_CHARACTER_ASSETS.ISTP
   },
   ESTP: {
     name: '키로',
@@ -153,7 +155,7 @@ export const TYPE_CHARACTER_META = {
     appearsWhen: '생각보다 몸이 먼저 반응하고, 상황을 보고 빠르게 선택하는 쪽이 자연스러웠던 날 가까이 나타나요.',
     message: '오늘은 멈춰서 오래 따지기보다 장면을 읽고 바로 움직인 날이에요. 그 빠른 감각도 당신의 방식이에요.',
     symbols: ['장면 스캐너', '짧은 빛 궤적', '앞으로 향한 작은 코어'],
-    asset: '/assets/type-characters/ESTP_Kiro.png'
+    asset: TYPE_CHARACTER_ASSETS.ESTP
   },
   ISFJ: {
     name: '소미',
@@ -166,7 +168,7 @@ export const TYPE_CHARACTER_META = {
     appearsWhen: '눈에 띄는 것보다 놓치는 사람이 없게 챙기고 싶었던 날 가까이 나타나요.',
     message: '오늘은 조용한 배려가 당신의 가장 든든한 빛이었어요.',
     symbols: ['기억 등불', '보관 카드', '부드러운 보호막'],
-    asset: '/assets/type-characters/ISFJ_Somi.png'
+    asset: TYPE_CHARACTER_ASSETS.ISFJ
   },
   ESFJ: {
     name: '라온',
@@ -179,7 +181,7 @@ export const TYPE_CHARACTER_META = {
     appearsWhen: '내 기분만큼 주변의 분위기도 함께 신경 쓰였던 날 가까이 나타나요.',
     message: '오늘은 사람 사이를 부드럽게 잇는 힘이 따뜻하게 남았어요.',
     symbols: ['연결 구슬', '빛 매듭', '둥근 온기선'],
-    asset: '/assets/type-characters/ESFJ_Raon.png'
+    asset: TYPE_CHARACTER_ASSETS.ESFJ
   },
   ISTJ: {
     name: '오르',
@@ -192,7 +194,7 @@ export const TYPE_CHARACTER_META = {
     appearsWhen: '감정보다 익숙한 원칙과 정리된 흐름이 더 믿음직하게 느껴진 날, 차근차근 맞춰가는 쪽이 편했던 날 가까이 나타나요.',
     message: '오늘은 천천히 정리한 기준이 당신을 받쳐준 날이에요. 빠르지 않아도, 흐트러지지 않은 선택에는 힘이 있어요.',
     symbols: ['정렬 카드', '작은 사각 인장', '고요한 격자 빛'],
-    asset: '/assets/type-characters/ISTJ_Or.png'
+    asset: TYPE_CHARACTER_ASSETS.ISTJ
   },
   ESTJ: {
     name: '바른',
@@ -205,7 +207,7 @@ export const TYPE_CHARACTER_META = {
     appearsWhen: '정리하고 결론 내리고 움직이는 것이 가장 시원했던 날 가까이 나타나요.',
     message: '오늘은 판을 정리하고 앞으로 나아가게 하는 힘이 선명했어요.',
     symbols: ['경로 보드', '중심 앵커', '정돈된 노드'],
-    asset: '/assets/type-characters/ESTJ_Bareun.png'
+    asset: TYPE_CHARACTER_ASSETS.ESTJ
   }
 };
 

@@ -243,6 +243,10 @@ export default function TypeCharacterMoodRing({
         <img
           src={imageSrc}
           alt={alt}
+          width={512}
+          height={512}
+          decoding="async"
+          fetchPriority="high"
           className={`relative z-10 object-contain drop-shadow-[0_24px_42px_rgba(0,0,0,0.58)] ${config.image}`}
         />
       )}
