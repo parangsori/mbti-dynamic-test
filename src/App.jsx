@@ -303,6 +303,19 @@ const isAppleMobileDevice = () => {
 
 const shouldShowBootSplash = () => !isStandaloneDisplay() || isAppleMobileDevice();
 
+const getPendingResultCurrentEntry = (pendingResult) => {
+  if (pendingResult?.currentEntry && typeof pendingResult.currentEntry === 'object') {
+    return pendingResult.currentEntry;
+  }
+
+  const savedAt = new Date(pendingResult.savedAt);
+  return {
+    createdAt: savedAt.toISOString(),
+    date: savedAt.toLocaleDateString('ko-KR', { month: 'short', day: 'numeric', weekday: 'short' }),
+    time: savedAt.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false })
+  };
+};
+
 const readHomeScreenTipHidden = () => {
   try {
     return localStorage.getItem(HOME_SCREEN_TIP_HIDDEN_KEY) === 'true';
@@ -434,7 +447,7 @@ export default function App() {
       setScores(pendingResult.scores || createEmptyScores());
       setQuestionContextSummary(pendingResult.questionContextSummary || null);
       setServerResultDisplayModel(pendingResult.displayModel || null);
-      setServerResultCurrentEntry(pendingResult.currentEntry || null);
+      setServerResultCurrentEntry(getPendingResultCurrentEntry(pendingResult));
       setNeutralQuestionIds(Array.from({ length: pendingResult.neutralCount || 0 }, (_, index) => `pending-neutral-${index}`));
       setFollowupQuestions(Array.from({ length: pendingResult.followupCount || 0 }, (_, index) => ({ id: `pending-followup-${index}` })));
       setRecoverableSession(null);
@@ -1216,6 +1229,7 @@ export default function App() {
 
   const handleResultReady = () => {
     clearActiveSession();
+    clearPendingResult();
   };
 
   const activeQuestionContextVisual = activeQuestion ? getQuestionContextVisual(activeQuestion) : null;
