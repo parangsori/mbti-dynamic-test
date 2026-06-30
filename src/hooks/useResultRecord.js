@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { toHistoryAxisSnapshot } from '../lib/historyAnalysis.js';
+import { captureError } from '../lib/observability.js';
 import { HISTORY_ENTRY_LIMIT, RESULT_SNAPSHOT_VERSION, getHistoryEntryKey, patchHistoryEntry, writeHistory } from '../lib/storage.js';
 import { syncResultEntry } from '../lib/resultSync.js';
 
@@ -114,7 +115,15 @@ export function useResultRecord({
     }
 
     const updated = [newEntry, ...historyData].slice(0, HISTORY_ENTRY_LIMIT);
-    writeHistory(updated);
+    const historySaved = writeHistory(updated);
+    if (!historySaved) {
+      captureError(new Error('result_history_save_failed'), {
+        key: 'result_history_save_error',
+        stage: 'result_record'
+      });
+      return;
+    }
+
     setHistoryData(updated);
     startServerSync(newEntry);
     if (!resultReadyRef.current) {
