@@ -6,6 +6,7 @@ import {
   QUESTIONS_META_EXTENDED
 } from '../data/questionPools.js';
 
+export const QUESTION_TRANSITION_DELAY_MS = 420;
 export const createEmptyScores = () => ({ E: 0, I: 0, S: 0, N: 0, T: 0, F: 0, J: 0, P: 0 });
 export const createEmptyNeutralSignals = () => ({ EI: 0, SN: 0, TF: 0, JP: 0 });
 

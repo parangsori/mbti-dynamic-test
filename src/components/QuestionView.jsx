@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import todayImage from '../../resources/question-context/today.svg';
 import relationshipImage from '../../resources/question-context/relationship.svg';
@@ -71,6 +71,21 @@ export default function QuestionView({
   const contextImage = CONTEXT_IMAGES[contextKey] || CONTEXT_IMAGES.daily;
   const isFollowupPhase = phase === 'followup';
   const isFirstQuestion = currIdx === 0;
+
+  useLayoutEffect(() => {
+    setActiveDragSide(null);
+    setSwipeFeedbackSide(null);
+    setFlyOutSide(null);
+    setShowWiggle(false);
+    setAnswerFlash(null);
+    draggedCardRef.current = false;
+    touchStartRef.current = null;
+
+    if (swipeFeedbackTimerRef.current) {
+      window.clearTimeout(swipeFeedbackTimerRef.current);
+      swipeFeedbackTimerRef.current = null;
+    }
+  }, [question.id]);
 
   useEffect(() => {
     const handleKeyDown = (event) => {
@@ -252,12 +267,12 @@ export default function QuestionView({
         <div className="relative mt-3">
           <div className="h-2 w-full bg-slate-950/50 rounded-full overflow-hidden border border-white/5">
             <motion.div
-              className="h-full bg-gradient-to-r from-cyan-400 via-brand to-pink-400 relative"
-              initial={{ width: `${progressPrev}%` }}
-              animate={{ width: `${progress}%` }}
+              className="relative h-full w-full origin-left bg-gradient-to-r from-cyan-400 via-brand to-pink-400"
+              initial={{ scaleX: progressPrev / 100 }}
+              animate={{ scaleX: progress / 100 }}
               transition={{ duration: 0.6, type: 'spring', stiffness: 100 }}
             >
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-[shimmer_2s_infinite] bg-[length:200%_100%]" />
+              <div className="question-progress-shimmer absolute inset-y-0 left-0 w-[45%] bg-gradient-to-r from-transparent via-white/20 to-transparent" />
             </motion.div>
           </div>
 
@@ -282,13 +297,13 @@ export default function QuestionView({
       </div>
 
       <div className="w-full">
-        <AnimatePresence mode="wait">
+        <AnimatePresence mode="popLayout">
           <motion.div
             key={currIdx}
             initial={{ opacity: 0, x: 56 * questionDirection }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -56 * questionDirection }}
-            transition={{ duration: 0.35, ease: 'easeOut' }}
+            transition={{ duration: 0.26, ease: 'easeOut' }}
             className="w-full"
           >
             <section className="question-card-shell relative overflow-hidden rounded-[1.65rem] border border-white/10 bg-slate-950/[0.58] shadow-[0_22px_60px_rgba(2,6,23,0.34)] backdrop-blur-xl">

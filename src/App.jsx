@@ -13,6 +13,7 @@ import {
   getQuestionContextVisual,
   getQuestionTempoMessage,
   getScoredQuestionById,
+  QUESTION_TRANSITION_DELAY_MS,
   summarizeQuestionContext
 } from './lib/questionFlow.js';
 import { summarizeActivityReport } from './lib/activityReport.js';
@@ -1213,7 +1214,7 @@ export default function App() {
       setCurrIdx(nextIdx);
       transitionLockRef.current = false;
       setIsTransitioning(false);
-    }, 800);
+    }, QUESTION_TRANSITION_DELAY_MS);
   };
 
   useEffect(() => {
@@ -1276,13 +1277,14 @@ export default function App() {
     step === 'start' &&
     !homeScreenTipHidden &&
     !homeScreenTipSessionHidden;
+  const ambientBlobMotionClass = step === 'question' ? '' : 'animate-blob';
 
   return (
     <div className={`relative w-full min-h-[100dvh] flex flex-col items-center ${step !== 'result' ? 'justify-center' : 'pt-10'}`}>
       <PullToRefreshIndicator enabled={isStandalone} />
-      <div className="fixed top-[-10%] left-[-10%] w-96 h-96 bg-purple-900 rounded-full mix-blend-screen filter blur-[128px] opacity-40 animate-blob pointer-events-none"></div>
-      <div className="fixed top-[20%] right-[-10%] w-96 h-96 bg-cyan-900 rounded-full mix-blend-screen filter blur-[128px] opacity-40 animate-blob pointer-events-none" style={{ animationDelay: '2s' }}></div>
-      <div className="fixed bottom-[-20%] left-[20%] w-96 h-96 bg-pink-900 rounded-full mix-blend-screen filter blur-[128px] opacity-40 animate-blob pointer-events-none" style={{ animationDelay: '4s' }}></div>
+      <div className={`fixed top-[-10%] left-[-10%] w-96 h-96 bg-purple-900 rounded-full mix-blend-screen filter blur-[128px] opacity-40 pointer-events-none ${ambientBlobMotionClass}`}></div>
+      <div className={`fixed top-[20%] right-[-10%] w-96 h-96 bg-cyan-900 rounded-full mix-blend-screen filter blur-[128px] opacity-40 pointer-events-none ${ambientBlobMotionClass}`} style={{ animationDelay: '2s' }}></div>
+      <div className={`fixed bottom-[-20%] left-[20%] w-96 h-96 bg-pink-900 rounded-full mix-blend-screen filter blur-[128px] opacity-40 pointer-events-none ${ambientBlobMotionClass}`} style={{ animationDelay: '4s' }}></div>
 
       <div
         className={`relative z-10 w-full max-w-md min-h-[100dvh] mx-auto flex flex-col items-center ${
@@ -1323,7 +1325,7 @@ export default function App() {
 
           {!isBooting && step === 'question' && activeQuestion && (
             <QuestionView
-              key={`question-${questionPhase}-${currIdx}`}
+              key="question"
               currIdx={currIdx}
               totalQuestions={questionPhase === 'followup' ? followupQuestions.length : 12}
               question={activeQuestion}

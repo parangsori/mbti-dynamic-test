@@ -3,7 +3,8 @@ import {
   buildFollowupQuestions,
   createEmptyNeutralSignals,
   createEmptyScores,
-  formatMicroCopy
+  formatMicroCopy,
+  QUESTION_TRANSITION_DELAY_MS
 } from '../lib/questionFlow.js';
 import { writeActiveSession } from '../lib/storage.js';
 
@@ -179,7 +180,7 @@ export function useSessionFlow() {
       }
 
       releaseTransition();
-    }, 800);
+    }, QUESTION_TRANSITION_DELAY_MS);
   };
 
   const handleQuestionAnswer = (option, method = 'tap', { userName, trackEvent, onFinishSession } = {}) => {
