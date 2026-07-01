@@ -19,6 +19,7 @@ const POSTHOG_EVENTS = [
   'result_server_sync_success',
   'result_server_sync_fail',
   'result_server_sync_skipped',
+  'session_api_start_observed',
   'session_api_start_ok',
   'session_api_complete_ok',
   'session_api_fallback',
@@ -395,6 +396,95 @@ LIMIT 24
 `;
 };
 
+export const buildSessionStartMonitoringQuery = (days) => `
+WITH
+observed_starts AS (
+  SELECT
+    timestamp,
+    distinct_id,
+    toString(properties['identity_available']) = 'true' AS identityAvailable,
+    coalesce(nullIf(toString(properties['user_agent_family']), ''), 'unknown') AS userAgentFamily,
+    coalesce(nullIf(toString(properties['access_tier']), ''), 'anonymous') AS accessTier
+  FROM events
+  ${kstDateWindowSql(days)}
+    AND event = 'session_api_start_observed'
+),
+client_starts AS (
+  SELECT count() AS total
+  FROM events
+  ${kstDateWindowSql(days)}
+    AND event = 'session_api_start_ok'
+),
+observed_totals AS (
+  SELECT
+    count() AS observedTotal,
+    countIf(identityAvailable) AS identityAvailableTotal
+  FROM observed_starts
+),
+identified_starts AS (
+  SELECT timestamp, distinct_id
+  FROM observed_starts
+  WHERE identityAvailable
+),
+minute_windows AS (
+  SELECT
+    distinct_id,
+    toStartOfMinute(toTimeZone(timestamp, '${DASHBOARD_TIME_ZONE}')) AS windowStart,
+    count() AS total
+  FROM identified_starts
+  GROUP BY distinct_id, windowStart
+),
+ten_minute_windows AS (
+  SELECT
+    distinct_id,
+    toStartOfInterval(toTimeZone(timestamp, '${DASHBOARD_TIME_ZONE}'), INTERVAL 10 MINUTE) AS windowStart,
+    count() AS total
+  FROM identified_starts
+  GROUP BY distinct_id, windowStart
+)
+SELECT 'summary' AS section, 'observed_starts' AS category, observedTotal AS total
+FROM observed_totals
+UNION ALL
+SELECT 'summary', 'identity_available_starts', identityAvailableTotal
+FROM observed_totals
+UNION ALL
+SELECT
+  'summary',
+  'identity_coverage_percent',
+  if(observedTotal > 0, round((identityAvailableTotal / observedTotal) * 100), 0)
+FROM observed_totals
+UNION ALL
+SELECT 'summary', 'client_starts', total
+FROM client_starts
+UNION ALL
+SELECT
+  'summary',
+  'unmatched_client_starts',
+  greatest(toInt64(observedTotal) - toInt64(client_starts.total), 0)
+FROM observed_totals
+CROSS JOIN client_starts
+UNION ALL
+SELECT 'summary', 'warning_windows', countIf(total >= 10)
+FROM minute_windows
+UNION ALL
+SELECT 'summary', 'severe_windows', countIf(total >= 30)
+FROM ten_minute_windows
+UNION ALL
+SELECT 'summary', 'max_one_minute_burst', coalesce(max(total), 0)
+FROM minute_windows
+UNION ALL
+SELECT 'summary', 'max_ten_minute_burst', coalesce(max(total), 0)
+FROM ten_minute_windows
+UNION ALL
+SELECT 'user_agent', userAgentFamily, count()
+FROM observed_starts
+GROUP BY userAgentFamily
+UNION ALL
+SELECT 'access_tier', accessTier, count()
+FROM observed_starts
+GROUP BY accessTier
+`;
+
 const rowsToCounts = (rows = []) =>
   rows.reduce((acc, row) => {
     const [event, total, actors] = row;
@@ -557,6 +647,110 @@ const rowsToSessionPerformance = (rows = []) => {
   };
 };
 
+const SESSION_START_POLICY = Object.freeze({
+  version: 1,
+  enforcement: 'observation_only',
+  warningThresholdPerMinute: 10,
+  severeThresholdPerTenMinutes: 30
+});
+
+const SESSION_START_SUMMARY_KEYS = Object.freeze({
+  observed_starts: 'observedStarts',
+  identity_available_starts: 'identityAvailableStarts',
+  identity_coverage_percent: 'identityCoveragePercent',
+  client_starts: 'clientStarts',
+  unmatched_client_starts: 'unmatchedClientStarts',
+  warning_windows: 'warningWindows',
+  severe_windows: 'severeWindows',
+  max_one_minute_burst: 'maxOneMinuteBurst',
+  max_ten_minute_burst: 'maxTenMinuteBurst'
+});
+
+const SESSION_START_USER_AGENT_FAMILIES = ['chrome', 'safari', 'firefox', 'edge', 'bot', 'other', 'unknown'];
+const SESSION_START_ACCESS_TIERS = ['anonymous', 'free', 'premium'];
+
+const safeAggregateCount = (value) => {
+  if (typeof value !== 'number' && typeof value !== 'string') return 0;
+  if (typeof value === 'string' && value.trim() === '') return 0;
+
+  const numericValue = Number(value);
+  return Number.isFinite(numericValue) && numericValue > 0
+    ? Math.min(Math.floor(numericValue), Number.MAX_SAFE_INTEGER)
+    : 0;
+};
+
+const rowsToCategoricalCounts = (counts, allowedKeys) =>
+  allowedKeys
+    .filter((key) => counts[key] > 0)
+    .map((key) => ({ key, count: counts[key] }));
+
+export const unavailableSessionStartMonitoring = () => ({
+  status: 'unavailable',
+  policy: SESSION_START_POLICY,
+  summary: {
+    observedStarts: 0,
+    identityAvailableStarts: 0,
+    identityCoveragePercent: 0,
+    clientStarts: 0,
+    unmatchedClientStarts: 0,
+    warningWindows: 0,
+    severeWindows: 0,
+    maxOneMinuteBurst: 0,
+    maxTenMinuteBurst: 0
+  },
+  userAgents: [],
+  accessTiers: []
+});
+
+export const rowsToSessionStartMonitoring = (rows = []) => {
+  const summary = unavailableSessionStartMonitoring().summary;
+  const userAgentCounts = Object.create(null);
+  const accessTierCounts = Object.create(null);
+
+  for (const row of Array.isArray(rows) ? rows : []) {
+    if (!Array.isArray(row)) continue;
+
+    const [section, category, rawTotal] = row;
+    const count = safeAggregateCount(rawTotal);
+
+    if (section === 'summary' && SESSION_START_SUMMARY_KEYS[category]) {
+      summary[SESSION_START_SUMMARY_KEYS[category]] = count;
+      continue;
+    }
+
+    if (section === 'user_agent' && SESSION_START_USER_AGENT_FAMILIES.includes(category)) {
+      userAgentCounts[category] = (userAgentCounts[category] || 0) + count;
+      continue;
+    }
+
+    if (section === 'access_tier' && SESSION_START_ACCESS_TIERS.includes(category)) {
+      accessTierCounts[category] = (accessTierCounts[category] || 0) + count;
+    }
+  }
+
+  summary.identityAvailableStarts = Math.min(summary.identityAvailableStarts, summary.observedStarts);
+  summary.identityCoveragePercent = summary.observedStarts > 0
+    ? Math.min(100, Math.round((summary.identityAvailableStarts / summary.observedStarts) * 100))
+    : 0;
+  summary.unmatchedClientStarts = Math.max(0, summary.observedStarts - summary.clientStarts);
+
+  const status = summary.severeWindows > 0
+    ? 'severe'
+    : summary.warningWindows > 0
+      ? 'warning'
+      : summary.observedStarts > 0 || summary.clientStarts > 0
+        ? 'observing'
+        : 'empty';
+
+  return {
+    status,
+    policy: SESSION_START_POLICY,
+    summary,
+    userAgents: rowsToCategoricalCounts(userAgentCounts, SESSION_START_USER_AGENT_FAMILIES),
+    accessTiers: rowsToCategoricalCounts(accessTierCounts, SESSION_START_ACCESS_TIERS)
+  };
+};
+
 const percent = (value, base) => (base > 0 ? Math.round((value / base) * 100) : 0);
 
 const buildNotes = ({ starts, completions, shares, installs, standaloneActors, errorTotal, serverSyncFailures, imageSaveFailures, sessionPerformance }) => {
@@ -596,7 +790,7 @@ const buildNotes = ({ starts, completions, shares, installs, standaloneActors, e
   return notes;
 };
 
-const buildMetrics = ({ range, counts, daily, locations, devices, referrers, errors, sessionPerformance, warnings = [] }) => {
+const buildMetrics = ({ range, counts, daily, locations, devices, referrers, errors, sessionPerformance, sessionStartMonitoring, warnings = [] }) => {
   const pageviews = counts.$pageview?.total || 0;
   const visitors = counts.$pageview?.actors || 0;
   const starts = counts.start_click?.total || 0;
@@ -683,6 +877,7 @@ const buildMetrics = ({ range, counts, daily, locations, devices, referrers, err
       successRate: percent(serverSyncSuccess, syncAttempts)
     },
     sessionPerformance,
+    sessionStartMonitoring,
     errors: {
       total: clientErrors,
       actors: clientErrorActors,
@@ -725,7 +920,8 @@ export default async function handler(req, res) {
       locationCounts,
       deviceCounts,
       referrerCounts,
-      errorCounts
+      errorCounts,
+      sessionStartMonitoringCounts
     ] = await Promise.all([
       runPostHogQuery(buildEventCountQuery(days)),
       runPostHogQuery(buildDailyQuery(days)),
@@ -733,9 +929,10 @@ export default async function handler(req, res) {
       optionalQuery(buildLocationQuery(days), 'location_metrics_unavailable'),
       optionalQuery(buildDeviceQuery(days), 'device_metrics_unavailable'),
       optionalQuery(buildReferrerQuery(days), 'referrer_metrics_unavailable'),
-      optionalQuery(buildErrorQuery(days), 'error_metrics_unavailable')
+      optionalQuery(buildErrorQuery(days), 'error_metrics_unavailable'),
+      optionalQuery(buildSessionStartMonitoringQuery(days), 'session_start_monitoring_unavailable')
     ]);
-    const optionalResults = [locationCounts, deviceCounts, referrerCounts, errorCounts];
+    const optionalResults = [locationCounts, deviceCounts, referrerCounts, errorCounts, sessionStartMonitoringCounts];
     const warnings = optionalResults.map((result) => result.warning).filter(Boolean);
 
     const metrics = buildMetrics({
@@ -747,6 +944,9 @@ export default async function handler(req, res) {
       referrers: rowsToReferrers(referrerCounts.data.results),
       errors: rowsToErrors(errorCounts.data.results),
       sessionPerformance: rowsToSessionPerformance(sessionPerformanceCounts.results),
+      sessionStartMonitoring: sessionStartMonitoringCounts.warning
+        ? unavailableSessionStartMonitoring()
+        : rowsToSessionStartMonitoring(sessionStartMonitoringCounts.data.results),
       warnings
     });
 

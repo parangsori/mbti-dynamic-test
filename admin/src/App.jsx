@@ -9,6 +9,45 @@ const RANGES = [
 const DASHBOARD_TIME_ZONE = 'Asia/Seoul';
 const DASHBOARD_TIME_ZONE_LABEL = '한국 시간(KST)';
 
+const SESSION_START_STATUS = {
+  observing: {
+    label: '관찰 중',
+    description: '현재 관찰 기준을 넘은 집계 구간이 없습니다.'
+  },
+  warning: {
+    label: '주의 관찰',
+    description: '1분 관찰 기준을 넘은 구간이 있습니다.'
+  },
+  severe: {
+    label: '집중 관찰',
+    description: '10분 관찰 기준을 넘은 구간이 있습니다.'
+  },
+  empty: {
+    label: '데이터 없음',
+    description: '조회 기간에 서버 시작 관찰 데이터가 아직 없습니다.'
+  },
+  unavailable: {
+    label: '집계 불가',
+    description: '시작 관찰 집계를 불러오지 못했습니다. 핵심 지표는 계속 표시합니다.'
+  }
+};
+
+const USER_AGENT_LABELS = {
+  chrome: 'Chrome',
+  safari: 'Safari',
+  firefox: 'Firefox',
+  edge: 'Edge',
+  bot: 'Bot',
+  other: '기타',
+  unknown: '알 수 없음'
+};
+
+const ACCESS_TIER_LABELS = {
+  anonymous: '익명',
+  free: '무료 회원',
+  premium: '프리미엄 회원'
+};
+
 const formatNumber = (value) => new Intl.NumberFormat('ko-KR').format(Number(value) || 0);
 
 const formatDuration = (value) => {
@@ -223,6 +262,99 @@ function SessionPerformance({ data }) {
   );
 }
 
+function MonitoringMix({ eyebrow, title, items = [], labels, emptyText }) {
+  return (
+    <section className="panel compact">
+      <div className="panel-title">
+        <div>
+          <p>{eyebrow}</p>
+          <h2>{title}</h2>
+        </div>
+      </div>
+
+      {items.length === 0 ? (
+        <p className="empty-text">{emptyText}</p>
+      ) : (
+        <div className="insight-list">
+          {items.map((item) => (
+            <div className="insight-row" key={item.key}>
+              <div>
+                <strong>{labels[item.key] || '기타'}</strong>
+                <span>이벤트 수</span>
+              </div>
+              <em>{formatNumber(item.count)}</em>
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
+function SessionStartMonitoring({ data }) {
+  if (!data) return null;
+
+  const status = SESSION_START_STATUS[data.status] ? data.status : 'unavailable';
+  const statusCopy = SESSION_START_STATUS[status];
+  const summary = data.summary || {};
+  const policy = data.policy || {};
+
+  return (
+    <>
+      <section className={`panel session-start-monitoring session-start-monitoring-${status}`}>
+        <div className="panel-title">
+          <div>
+            <p>서버 시작 관찰</p>
+            <h2>시작 요청이 정상 범위인지</h2>
+          </div>
+          <strong className="monitoring-status">{statusCopy.label}</strong>
+        </div>
+
+        <p className="monitoring-description" aria-atomic="true" aria-live="polite">
+          {statusCopy.description}
+        </p>
+
+        {status !== 'unavailable' && (
+          <dl className="stat-list stat-list-grid">
+            <div><dt>서버 관찰</dt><dd>{formatNumber(summary.observedStarts)}</dd></div>
+            <div><dt>클라이언트 성공</dt><dd>{formatNumber(summary.clientStarts)}</dd></div>
+            <div><dt>미대응 추정</dt><dd>{formatNumber(summary.unmatchedClientStarts)}</dd></div>
+            <div><dt>식별 가능 비율</dt><dd>{formatNumber(summary.identityCoveragePercent)}%</dd></div>
+            <div><dt>주의 구간</dt><dd>{formatNumber(summary.warningWindows)}</dd></div>
+            <div><dt>심각 구간</dt><dd>{formatNumber(summary.severeWindows)}</dd></div>
+            <div><dt>1분 최대</dt><dd>{formatNumber(summary.maxOneMinuteBurst)}</dd></div>
+            <div><dt>10분 최대</dt><dd>{formatNumber(summary.maxTenMinuteBurst)}</dd></div>
+          </dl>
+        )}
+
+        <div className="monitoring-notes">
+          <p>클라이언트 미대응은 서버 관찰과 클라이언트 성공 이벤트의 차이로 계산한 추정치입니다.</p>
+          <p>주의 {formatNumber(policy.warningThresholdPerMinute)}회/분, 심각 {formatNumber(policy.severeThresholdPerTenMinutes)}회/10분 기준은 차단이나 제한에 쓰지 않는 관찰용입니다.</p>
+        </div>
+      </section>
+
+      {status !== 'unavailable' && (
+        <section className="split-grid session-start-monitoring-mixes" aria-label="서버 시작 관찰 구성">
+          <MonitoringMix
+            eyebrow="브라우저"
+            title="시작 관찰 환경"
+            items={data.userAgents || []}
+            labels={USER_AGENT_LABELS}
+            emptyText="아직 브라우저 집계 데이터가 없습니다."
+          />
+          <MonitoringMix
+            eyebrow="접근 등급"
+            title="접근 등급 비중"
+            items={data.accessTiers || []}
+            labels={ACCESS_TIER_LABELS}
+            emptyText="아직 접근 등급 집계 데이터가 없습니다."
+          />
+        </section>
+      )}
+    </>
+  );
+}
+
 function DailyPulse({ daily = [] }) {
   const totalsByDay = daily.reduce((acc, item) => {
     if (!acc[item.day]) acc[item.day] = { day: item.day, pageview: 0, start: 0, complete: 0, share: 0 };
@@ -432,6 +564,8 @@ export default function App() {
           </section>
 
           <Funnel items={visibleMetrics.funnel} />
+
+          <SessionStartMonitoring data={visibleMetrics.sessionStartMonitoring} />
 
           <section className="split-grid">
             <section className="panel compact">

@@ -198,6 +198,56 @@ input {
   gap: 12px;
 }
 
+.monitoring-status {
+  flex: 0 0 auto;
+  align-self: flex-start;
+  padding: 5px 8px;
+  border: 1px solid rgba(103, 232, 249, 0.28);
+  border-radius: 999px;
+  color: #bae6fd;
+  background: rgba(8, 47, 73, 0.44);
+  font-size: 11px;
+  line-height: 1.2;
+}
+
+.session-start-monitoring-warning .monitoring-status {
+  border-color: rgba(250, 204, 21, 0.3);
+  color: #fef08a;
+  background: rgba(113, 63, 18, 0.32);
+}
+
+.session-start-monitoring-severe .monitoring-status,
+.session-start-monitoring-unavailable .monitoring-status {
+  border-color: rgba(248, 113, 113, 0.3);
+  color: #fecaca;
+  background: rgba(127, 29, 29, 0.3);
+}
+
+.monitoring-description {
+  margin: 14px 0 0;
+  color: #e2e8f0;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.5;
+}
+
+.monitoring-notes {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(148, 163, 184, 0.12);
+}
+
+.monitoring-notes p {
+  margin: 0;
+  color: #94a3b8;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.monitoring-notes p + p {
+  margin-top: 5px;
+}
+
 .panel-title h2,
 .auth-panel h2 {
   margin: 5px 0 0;
@@ -205,6 +255,11 @@ input {
   font-size: 18px;
   line-height: 1.25;
   letter-spacing: 0;
+  word-break: keep-all;
+}
+
+.session-start-monitoring-mixes .empty-text {
+  word-break: keep-all;
 }
 
 .funnel-list,
@@ -547,6 +602,15 @@ input {
 
   .metric-card strong {
     font-size: 25px;
+  }
+
+  .session-start-monitoring .panel-title {
+    display: block;
+  }
+
+  .session-start-monitoring .monitoring-status {
+    display: inline-block;
+    margin-top: 9px;
   }
 
   .error-heading {

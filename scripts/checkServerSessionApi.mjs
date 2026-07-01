@@ -1,6 +1,4 @@
 import assert from 'node:assert/strict';
-import { Readable } from 'node:stream';
-import startSessionHandler from '../api/session/start.js';
 import {
   assertSafeSessionQuestions,
   completeServerSession,
@@ -9,97 +7,10 @@ import {
 import { openJson, sealJson } from '../server/security/crypto.js';
 import { validateServerDisplayModel } from '../src/lib/serverDisplayModel.js';
 import { buildResultViewModel } from '../server/product/resultAnalysis.js';
+import { assertStartHandlerHardening } from './checkServerSessionStartHandler.mjs';
 
 const secret = 'local-server-session-test-key';
 const sessionAad = 'today-mbti-session-v1';
-const invokeStartHandler = async ({ method = 'POST', body = '', headers = {} } = {}) => {
-  process.env.SESSION_TOKEN_SECRET = secret;
-  const req = Readable.from(body ? [Buffer.from(body)] : []);
-  req.method = method;
-  req.headers = headers;
-  const chunks = [];
-  const res = {
-    statusCode: 0,
-    headers: {},
-    setHeader(name, value) {
-      this.headers[name.toLowerCase()] = value;
-    },
-    end(value) {
-      chunks.push(String(value || ''));
-    }
-  };
-
-  await startSessionHandler(req, res);
-
-  return {
-    status: res.statusCode,
-    headers: res.headers,
-    body: JSON.parse(chunks.join('') || '{}')
-  };
-};
-
-const assertStartHandlerHardening = async () => {
-  let handlerResponse = await invokeStartHandler({
-    body: JSON.stringify({ recentSessions: [], ageGroup: '30s', gender: 'female' })
-  });
-  assert.equal(handlerResponse.status, 200);
-  assert.equal(handlerResponse.body.questions.length, 12);
-  assert.ok(handlerResponse.body.sessionToken);
-  assert.equal(handlerResponse.headers['cache-control'], 'private, no-store');
-  assertSafeSessionQuestions(handlerResponse.body.questions);
-  assert.ok(handlerResponse.body.questions.every((question) => question.ui?.tempoMessage));
-  assert.ok(handlerResponse.body.questions.every((question) => question.ui?.contextVisual?.key));
-
-  handlerResponse = await invokeStartHandler({ method: 'GET' });
-  assert.equal(handlerResponse.status, 405);
-  assert.equal(handlerResponse.body.error, 'method_not_allowed');
-
-  handlerResponse = await invokeStartHandler({ body: '{' });
-  assert.equal(handlerResponse.status, 400);
-  assert.equal(handlerResponse.body.error, 'invalid_json');
-
-  handlerResponse = await invokeStartHandler({ body: '[]' });
-  assert.equal(handlerResponse.status, 400);
-  assert.equal(handlerResponse.body.error, 'invalid_request_body');
-
-  handlerResponse = await invokeStartHandler({
-    body: JSON.stringify({ recentSessions: 'not-an-array' })
-  });
-  assert.equal(handlerResponse.status, 400);
-  assert.equal(handlerResponse.body.error, 'invalid_recent_sessions');
-
-  handlerResponse = await invokeStartHandler({
-    body: JSON.stringify({ recentSessions: [null] })
-  });
-  assert.equal(handlerResponse.status, 400);
-  assert.equal(handlerResponse.body.error, 'invalid_recent_sessions');
-
-  handlerResponse = await invokeStartHandler({
-    body: JSON.stringify({ ageGroup: '999s' })
-  });
-  assert.equal(handlerResponse.status, 400);
-  assert.equal(handlerResponse.body.error, 'invalid_age_group');
-
-  handlerResponse = await invokeStartHandler({
-    body: JSON.stringify({ gender: 'invalid' })
-  });
-  assert.equal(handlerResponse.status, 400);
-  assert.equal(handlerResponse.body.error, 'invalid_gender');
-
-  handlerResponse = await invokeStartHandler({
-    body: '{}',
-    headers: { 'content-length': String(20 * 1024) }
-  });
-  assert.equal(handlerResponse.status, 400);
-  assert.equal(handlerResponse.body.error, 'request_too_large');
-
-  handlerResponse = await invokeStartHandler({
-    body: 'x'.repeat(20 * 1024)
-  });
-  assert.equal(handlerResponse.status, 400);
-  assert.equal(handlerResponse.body.error, 'request_too_large');
-};
-
 const historyData = [
   {
     createdAt: '2026-06-20T12:00:00.000Z',
@@ -258,6 +169,6 @@ assert.throws(() => completeServerSession({
   secret
 }), /unknown_option/);
 
-await assertStartHandlerHardening();
+await assertStartHandlerHardening({ secret });
 
 console.log('Server session API checks passed.');

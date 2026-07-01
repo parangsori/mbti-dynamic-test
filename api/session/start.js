@@ -1,4 +1,8 @@
 import { createServerSession } from '../../server/session/engine.js';
+import {
+  buildSessionStartObservation,
+  scheduleSessionStartObservation
+} from '../../server/analytics/sessionStartMonitoring.js';
 
 const MAX_BODY_BYTES = 16 * 1024;
 const VALID_AGE_GROUPS = new Set(['', 'child', 'teen', '20s', '30s', '40s', '50s']);
@@ -73,15 +77,45 @@ const sanitizeGender = (value) => {
   return gender;
 };
 
-export default async function handler(req, res) {
+const defaultObserveSessionStart = ({ req, recentSessions, ageGroup }) => {
+  const observation = buildSessionStartObservation({
+    forwardingFor: req.headers?.['x-forwarded-for'],
+    userAgent: req.headers?.['user-agent'],
+    recentSessionCount: recentSessions?.length || 0,
+    ageGroup,
+    environment: process.env.VERCEL_ENV || process.env.NODE_ENV,
+    salt: process.env.SESSION_MONITORING_SALT
+  });
+  return scheduleSessionStartObservation({
+    observation,
+    posthogToken: process.env.VITE_POSTHOG_KEY,
+    posthogHost: process.env.VITE_POSTHOG_HOST
+  });
+};
+
+export const createStartSessionHandler = ({
+  createSession = createServerSession,
+  observeSessionStart = defaultObserveSessionStart,
+  logger = console
+} = {}) => async function handler(req, res) {
   try {
     const body = await readBody(req);
-    const session = createServerSession({
-      recentSessions: sanitizeRecentSessions(body.recentSessions),
-      ageGroup: sanitizeAgeGroup(body.ageGroup),
+    const recentSessions = sanitizeRecentSessions(body.recentSessions);
+    const ageGroup = sanitizeAgeGroup(body.ageGroup);
+    const session = createSession({
+      recentSessions,
+      ageGroup,
       gender: sanitizeGender(body.gender)
     });
     sendJson(res, 200, session);
+    try {
+      const scheduling = observeSessionStart({ req, recentSessions, ageGroup });
+      if (scheduling && typeof scheduling.then === 'function') {
+        scheduling.catch(() => logger.warn('session_start_monitoring_scheduling_error'));
+      }
+    } catch {
+      logger.warn('session_start_monitoring_scheduling_error');
+    }
   } catch (error) {
     if (error.message === 'method_not_allowed') {
       sendJson(res, 405, { error: 'method_not_allowed' });
@@ -95,4 +129,6 @@ export default async function handler(req, res) {
 
     sendJson(res, 500, { error: 'session_start_failed' });
   }
-}
+};
+
+export default createStartSessionHandler();
