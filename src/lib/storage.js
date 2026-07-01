@@ -114,7 +114,6 @@ export const readPendingResult = () => {
     return null;
   }
 
-  if (!value.scores || typeof value.scores !== 'object' || Array.isArray(value.scores)) return null;
   return value;
 };
 

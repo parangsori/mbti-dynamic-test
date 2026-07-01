@@ -2,7 +2,7 @@ import {
   buildQuestionSession,
   createRecentSessionSnapshot,
   getQuestionLifeTag
-} from '../src/lib/questionFlow.js';
+} from '../server/product/questionFlow.js';
 
 const SESSION_COUNT = 5;
 const EXPECTED_AXIS_COUNT = 3;
@@ -61,7 +61,7 @@ const getStableSeed = (parts) =>
   }, 0);
 
 const getPresentationVariantStats = async () => {
-  const source = await readSource('../src/lib/resultAnalysis.js');
+  const source = await readSource('../server/product/resultAnalysis.js');
   const blockMatch = source.match(/const PRESENTATION_VARIANTS = \{([\s\S]*?)\n\};\n\nconst getStableSeed/);
   if (!blockMatch) {
     throw new Error('PRESENTATION_VARIANTS 블록을 찾을 수 없습니다.');
@@ -95,16 +95,20 @@ const getPresentationVariantStats = async () => {
 
 const recentSessions = [];
 const sessions = [];
+const toSafeRecentSession = ({ questions, ageGroup }) => {
+  const snapshot = createRecentSessionSnapshot({
+    questions,
+    ids: questions.map(getQuestionId),
+    ageGroup
+  });
+  return { ids: snapshot.ids, ageGroup: snapshot.ageGroup, savedAt: snapshot.savedAt };
+};
 
 for (let i = 0; i < SESSION_COUNT; i += 1) {
   const ageGroup = AGE_GROUPS[i % AGE_GROUPS.length];
   const questions = buildQuestionSession(recentSessions, { ageGroup });
   sessions.push(questions);
-  recentSessions.unshift(createRecentSessionSnapshot({
-    questions,
-    ids: questions.map(getQuestionId),
-    ageGroup
-  }));
+  recentSessions.unshift(toSafeRecentSession({ questions, ageGroup }));
 }
 
 const allQuestions = sessions.flat();
@@ -158,11 +162,7 @@ const stressSessions = [];
 for (let i = 0; i < STRESS_SESSION_COUNT; i += 1) {
   const questions = buildQuestionSession(stressRecentSessions, { ageGroup: STRESS_AGE_GROUP });
   stressSessions.push(questions);
-  stressRecentSessions.unshift(createRecentSessionSnapshot({
-    questions,
-    ids: questions.map(getQuestionId),
-    ageGroup: STRESS_AGE_GROUP
-  }));
+  stressRecentSessions.unshift(toSafeRecentSession({ questions, ageGroup: STRESS_AGE_GROUP }));
   stressRecentSessions.splice(12);
 }
 
@@ -175,10 +175,11 @@ const stressRepeatRate = stressAllQuestions.length > 0
 
 const retainedFamilyStress = RETAINED_FAMILY_STRESS_AGE_GROUPS.map((ageGroup) => {
   const recent = [];
+  const recentQuestionBatches = [];
   const overlaps = [];
 
   for (let i = 0; i < STRESS_SESSION_COUNT; i += 1) {
-    const recentFamilyIds = new Set(recent.flatMap((session) => session.familyIds || []));
+    const recentFamilyIds = new Set(recentQuestionBatches.flatMap((items) => items.map(getFamilyId).filter(Boolean)));
     const questions = buildQuestionSession(recent, { ageGroup });
     const repeatedFamilies = questions
       .map(getFamilyId)
@@ -191,12 +192,10 @@ const retainedFamilyStress = RETAINED_FAMILY_STRESS_AGE_GROUPS.map((ageGroup) =>
       });
     }
 
-    recent.unshift(createRecentSessionSnapshot({
-      questions,
-      ids: questions.map(getQuestionId),
-      ageGroup
-    }));
+    recent.unshift(toSafeRecentSession({ questions, ageGroup }));
+    recentQuestionBatches.unshift(questions);
     recent.splice(12);
+    recentQuestionBatches.splice(12);
   }
 
   return {

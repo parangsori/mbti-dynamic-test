@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
+import { access, readFile, readdir } from 'node:fs/promises';
 
 class LocalStorageMock {
   constructor() {
@@ -32,6 +32,7 @@ if (!globalThis.btoa) {
 }
 
 const { importHomeScreenMigrationText, STORAGE_KEYS } = await import('../src/lib/storage.js');
+const { createInFlightRequestDeduper } = await import('../src/lib/inFlightRequest.js');
 
 const localStorage = new LocalStorageMock();
 
@@ -140,7 +141,7 @@ runServerSecretNameGuardCheck();
 const runServerCompleteFallbackGuardCheck = async () => {
   const appSource = await readFile(new URL('../src/App.jsx', import.meta.url), 'utf8');
   const completePhaseStart = appSource.indexOf('const completeServerPhase = async');
-  const completePhaseEnd = appSource.indexOf('const getFallbackQuestionForCurrentStep', completePhaseStart);
+  const completePhaseEnd = appSource.indexOf('const createServerQuestionSnapshot', completePhaseStart);
 
   assert.ok(completePhaseStart >= 0 && completePhaseEnd > completePhaseStart, 'server completion flow must exist');
 
@@ -158,5 +159,110 @@ const runServerCompleteFallbackGuardCheck = async () => {
 };
 
 await runServerCompleteFallbackGuardCheck();
+
+const runServerStartRequiredGuardCheck = async () => {
+  const appSource = await readFile(new URL('../src/App.jsx', import.meta.url), 'utf8');
+  const startFlowStart = appSource.indexOf('const handleStart = async');
+  const startFlowEnd = appSource.indexOf('const latestHistoryComparison', startFlowStart);
+  assert.ok(startFlowStart >= 0 && startFlowEnd > startFlowStart, 'server start flow must exist');
+
+  const startFlowSource = appSource.slice(startFlowStart, startFlowEnd);
+  assert.doesNotMatch(
+    startFlowSource,
+    /startLocalSession|buildQuestionSession|session_api_fallback/,
+    'server start failures must not create a local session fallback'
+  );
+  assert.match(startFlowSource, /setStartError\(/, 'server start failures must expose a retryable start error');
+};
+
+const runClientProductBoundaryGuardCheck = async () => {
+  const [appSource, sessionFlowSource, resultViewSource, startViewSource] = await Promise.all([
+    readFile(new URL('../src/App.jsx', import.meta.url), 'utf8'),
+    readFile(new URL('../src/hooks/useSessionFlow.js', import.meta.url), 'utf8'),
+    readFile(new URL('../src/components/ResultView.jsx', import.meta.url), 'utf8'),
+    readFile(new URL('../src/components/StartView.jsx', import.meta.url), 'utf8')
+  ]);
+  const clientFlowSource = `${appSource}\n${sessionFlowSource}\n${resultViewSource}`;
+
+  assert.doesNotMatch(
+    clientFlowSource,
+    /buildQuestionSession|buildFollowupQuestions|getScoredQuestionById|buildResultViewModel|getPersonalizedResultContext|questionFlow\.js|resultAnalysis\.js|spiritMeta\.js/,
+    'client question and result surfaces must not import or synthesize proprietary product rules'
+  );
+  assert.doesNotMatch(
+    appSource,
+    /option\.type|question\.weight|question\._axis|SERVER_OPTION_INDEX_PATTERN|hydrateServerQuestionForFallback/,
+    'client answer flow must keep option IDs opaque and avoid local scoring metadata'
+  );
+  assert.match(startViewSource, /role="alert"/, 'start failure must use an alert region');
+  assert.match(startViewSource, /aria-live="assertive"/, 'start failure must be announced');
+  assert.match(startViewSource, /startErrorRef\.current\?\.focus\(\)/, 'start failure must receive keyboard focus');
+  assert.match(startViewSource, />\s*다시 시도\s*</, 'start failure must expose a retry action');
+};
+
+await runClientProductBoundaryGuardCheck();
+
+const readClientSources = async (directoryUrl) => {
+  const entries = await readdir(directoryUrl, { withFileTypes: true });
+  const sources = [];
+  for (const entry of entries) {
+    const entryUrl = new URL(entry.name + (entry.isDirectory() ? '/' : ''), directoryUrl);
+    if (entry.isDirectory()) {
+      sources.push(...await readClientSources(entryUrl));
+    } else if (/\.(js|jsx)$/.test(entry.name)) {
+      sources.push({ path: entryUrl.pathname, source: await readFile(entryUrl, 'utf8') });
+    }
+  }
+  return sources;
+};
+
+const runServerProductOwnershipGuardCheck = async () => {
+  const clientSources = await readClientSources(new URL('../src/', import.meta.url));
+  const forbiddenImport = clientSources.find(({ source }) => (
+    /from\s+['"][^'"]*(?:server\/product|questionFlow|resultAnalysis|personalization|spiritMeta|questionPools)['"]/.test(source)
+  ));
+  assert.equal(forbiddenImport, undefined, `client source imports server product logic: ${forbiddenImport?.path || ''}`);
+
+  const removedClientProductPaths = [
+    '../src/lib/questionFlow.js',
+    '../src/lib/resultAnalysis.js',
+    '../src/lib/personalization.js',
+    '../src/data/questionPools.js',
+    '../src/data/spiritMeta.js'
+  ];
+  await Promise.all(removedClientProductPaths.map(async (path) => {
+    await assert.rejects(access(new URL(path, import.meta.url)), `proprietary module must not remain under src: ${path}`);
+  }));
+};
+
+await runServerProductOwnershipGuardCheck();
+
+const runInFlightDeduperCheck = async () => {
+  const dedupe = createInFlightRequestDeduper();
+  let calls = 0;
+  let release;
+  const request = () => {
+    calls += 1;
+    return new Promise((resolve) => {
+      release = resolve;
+    });
+  };
+
+  const first = dedupe('same-start', request);
+  const second = dedupe('same-start', request);
+  assert.equal(calls, 1, 'identical in-flight starts must share one request');
+  release({ ok: true });
+  assert.deepEqual(await Promise.all([first, second]), [{ ok: true }, { ok: true }]);
+
+  const third = dedupe('same-start', async () => {
+    calls += 1;
+    return { ok: 'again' };
+  });
+  assert.deepEqual(await third, { ok: 'again' });
+  assert.equal(calls, 2, 'settled starts must clear the in-flight entry');
+};
+
+await runServerStartRequiredGuardCheck();
+await runInFlightDeduperCheck();
 
 console.log('Security guard checks passed.');

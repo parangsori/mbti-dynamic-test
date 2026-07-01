@@ -1,12 +1,18 @@
+import { createHash, randomUUID } from 'node:crypto';
 import {
   buildFollowupQuestions,
   buildQuestionSession,
   createEmptyNeutralSignals,
   createEmptyScores,
+  getFollowupTempoMessage,
+  getQuestionContextVisual,
+  getQuestionTempoMessage,
   summarizeQuestionContext
-} from '../../src/lib/questionFlow.js';
-import { buildResultViewModel } from '../../src/lib/resultAnalysis.js';
-import { BADGES, MBTI_RESULTS } from '../../data.js';
+} from '../product/questionFlow.js';
+import { buildResultViewModel, PRESENTATION_THEMES } from '../product/resultAnalysis.js';
+import { getPersonalizedResultContext, getPersonalizedTempoMessage } from '../product/personalization.js';
+import { QUESTION_TEMPO_COPY } from '../product/productConstants.js';
+import { BADGES, MBTI_RESULTS } from '../product/content.js';
 import { sealJson, openJson } from '../security/crypto.js';
 
 const SESSION_AAD = 'today-mbti-session-v1';
@@ -27,35 +33,95 @@ export const getSessionSecret = () =>
 
 const getNow = () => Date.now();
 
-const normalizeRecentSessions = (value) => Array.isArray(value) ? value.slice(0, 12) : [];
+const normalizeRecentSessions = (value) => Array.isArray(value)
+  ? value.slice(0, 12).map((session) => ({
+      ids: Array.isArray(session) ? session.slice(0, 24) : (session?.ids || []).slice(0, 24),
+      ageGroup: sanitizeAgeGroup(session?.ageGroup),
+      savedAt: typeof session?.savedAt === 'string' ? session.savedAt : ''
+    }))
+  : [];
 
 const sanitizeAgeGroup = (value) =>
   ['child', 'teen', '20s', '30s', '40s', '50s'].includes(value) ? value : '';
 
+const sanitizeGender = (value) =>
+  ['male', 'female', 'other'].includes(value) ? value : '';
+
 const sanitizeHistoryData = (value) => Array.isArray(value) ? value.slice(0, 30) : [];
 
-const createCurrentEntry = () => {
-  const now = new Date();
+const createCurrentEntry = ({ id, createdAt } = {}) => {
+  const now = new Date(createdAt || Date.now());
   return {
+    localEntryId: id || now.toISOString(),
     createdAt: now.toISOString(),
     date: now.toLocaleDateString('ko-KR', { month: 'short', day: 'numeric', weekday: 'short' }),
     time: now.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false })
   };
 };
 
+const createResultIdentity = () => ({
+  id: randomUUID(),
+  createdAt: new Date().toISOString()
+});
+
+const getResultIdentity = (payload = {}) => {
+  if (payload.resultIdentity?.id && payload.resultIdentity?.createdAt) {
+    return payload.resultIdentity;
+  }
+
+  const createdAt = new Date(Number(payload.createdAt) || Date.now()).toISOString();
+  const legacySource = JSON.stringify({
+    createdAt: payload.createdAt,
+    expiresAt: payload.expiresAt,
+    questionIds: (payload.baseQuestions || []).map((question) => question.id)
+  });
+  const id = `legacy-${createHash('sha256').update(legacySource).digest('hex').slice(0, 24)}`;
+  return { id, createdAt };
+};
+
 const makeOptionId = (questionId, index) => `${OPTION_ID_PREFIX}_${questionId}_${index + 1}`;
 
-const sanitizeQuestion = (question) => ({
+const sanitizeQuestion = (question, { ageGroup = '', index = 0, phase = 'base', total = 12, followupHasNeutralReview = false } = {}) => ({
   id: question.id,
   q: question.q,
-  contextTag: question.contextTag || '',
   allowMiddle: Boolean(question.allowMiddle),
+  ui: {
+    contextVisual: getQuestionContextVisual(question),
+    tempoMessage: phase === 'followup'
+      ? getFollowupTempoMessage(index, total)
+      : getPersonalizedTempoMessage(
+          ageGroup,
+          index,
+          total,
+          getQuestionTempoMessage(index, total, '지금의 결대로 가볍게 골라보세요', QUESTION_TEMPO_COPY)
+        ),
+    phaseHint: phase === 'followup'
+      ? followupHasNeutralReview
+        ? '방금 애매했던 부분을 조금 더 또렷하게 볼게요'
+        : '경계에 있는 축을 한 번 더 확인하고 있어요'
+      : question.allowMiddle
+        ? '둘 중 하나가 딱 안 잡히면 보조 버튼으로 넘어갈 수 있어요'
+        : '',
+    middleMicroCopy: question.allowMiddle ? '이 부분은 서버에서 한 번 더 확인할게요' : ''
+  },
   options: (question.options || []).map((option, index) => ({
     id: makeOptionId(question.id, index),
     text: option.text,
     micro: option.micro || ''
   }))
 });
+
+const sanitizeQuestionBatch = (questions = [], { ageGroup = '', phase = 'base' } = {}) => {
+  const followupHasNeutralReview = phase === 'followup'
+    && questions.some((question) => Number(question.trigger?.neutralCount) > 0);
+  return questions.map((question, index) => sanitizeQuestion(question, {
+    ageGroup,
+    index,
+    phase,
+    total: questions.length,
+    followupHasNeutralReview
+  }));
+};
 
 const buildAnswerKey = (questions = []) => Object.fromEntries(
   questions.map((question) => [
@@ -85,7 +151,7 @@ const readSessionToken = (token, secret) => {
   } catch {
     throw new Error('invalid_token');
   }
-  if (!payload || payload.version !== 1) throw new Error('invalid_session');
+  if (!payload || ![1, 2].includes(payload.version)) throw new Error('invalid_session');
   if (!Number.isFinite(payload.expiresAt) || payload.expiresAt < getNow()) throw new Error('expired_session');
   return payload;
 };
@@ -170,9 +236,9 @@ const buildResult = ({ tokenPayload, scores, neutralQuestionIds = [], historyDat
   const axisNarratives = spectrum.map(toAxisNarrative);
   const strongestAxis = [...axisNarratives].sort((a, b) => b.intensity - a.intensity)[0];
   const displayName = String(userName || '').trim() || defaultUserName;
-  const currentEntry = createCurrentEntry();
-  const displayModel = {
-    ...buildResultViewModel({
+  const resultIdentity = getResultIdentity(tokenPayload);
+  const currentEntry = createCurrentEntry(resultIdentity);
+  const generatedDisplayModel = buildResultViewModel({
       scores,
       historyData,
       currentEntry,
@@ -182,14 +248,34 @@ const buildResult = ({ tokenPayload, scores, neutralQuestionIds = [], historyDat
       neutralCount: neutralQuestionIds.length,
       usedFollowup,
       questionContextSummary
-    }),
-    questionContextSummary
+    });
+  const displayModel = {
+    ...generatedDisplayModel,
+    schemaVersion: 2,
+    resultId: resultIdentity.id,
+    currentEntry,
+    spirit: {
+      ...generatedDisplayModel.spirit,
+      asset: '',
+      assetKey: mbti
+    },
+    personalizedContext: getPersonalizedResultContext(
+      tokenPayload.ageGroup || '',
+      tokenPayload.gender || '',
+      mbti,
+      percent
+    ),
+    presentationThemes: PRESENTATION_THEMES,
+    questionContextSummary,
+    neutralCount: neutralQuestionIds.length,
+    usedFollowup
   };
 
   return {
     status: 'complete',
-    schemaVersion: 1,
+    schemaVersion: 2,
     result: {
+      resultId: resultIdentity.id,
       mbti,
       info,
       badges,
@@ -204,37 +290,46 @@ const buildResult = ({ tokenPayload, scores, neutralQuestionIds = [], historyDat
       usedFollowup,
       historyCount: historyData.length,
       sessionQuestionIds: allQuestions.map((question) => question.id),
+      recentSessionSnapshot: {
+        ids: allQuestions.map((question) => question.id),
+        ageGroup: tokenPayload.ageGroup || '',
+        savedAt: resultIdentity.createdAt
+      },
+      followupCount: (tokenPayload.followupQuestions || []).length,
       currentEntry,
       displayModel
     }
   };
 };
 
-export const createServerSession = ({ recentSessions, ageGroup, secret = getSessionSecret() } = {}) => {
+export const createServerSession = ({ recentSessions, ageGroup, gender, secret = getSessionSecret() } = {}) => {
   if (!secret) throw new Error('session_secret_not_configured');
   const safeRecentSessions = normalizeRecentSessions(recentSessions);
   const safeAgeGroup = sanitizeAgeGroup(ageGroup);
+  const safeGender = sanitizeGender(gender);
   const baseQuestions = buildQuestionSession(safeRecentSessions, { ageGroup: safeAgeGroup });
   const now = getNow();
   const tokenPayload = {
-    version: 1,
+    version: 2,
     phase: 'base',
     createdAt: now,
     expiresAt: now + SESSION_TTL_MS,
     ageGroup: safeAgeGroup,
+    gender: safeGender,
     recentSessions: safeRecentSessions,
     baseQuestions,
     followupQuestions: [],
     answerKey: buildAnswerKey(baseQuestions),
     baseScores: createEmptyScores(),
     baseNeutralSignals: createEmptyNeutralSignals(),
-    neutralQuestionIds: []
+    neutralQuestionIds: [],
+    resultIdentity: createResultIdentity()
   };
 
   return {
     sessionToken: createSessionToken(tokenPayload, secret),
     expiresAt: new Date(tokenPayload.expiresAt).toISOString(),
-    questions: baseQuestions.map(sanitizeQuestion)
+    questions: sanitizeQuestionBatch(baseQuestions, { ageGroup: safeAgeGroup, phase: 'base' })
   };
 };
 
@@ -291,7 +386,10 @@ export const completeServerSession = ({
         status: 'needs_followup',
         sessionToken: createSessionToken(nextPayload, secret),
         expiresAt: new Date(nextPayload.expiresAt).toISOString(),
-        questions: followupQuestions.map(sanitizeQuestion)
+        questions: sanitizeQuestionBatch(followupQuestions, {
+          ageGroup: tokenPayload.ageGroup || '',
+          phase: 'followup'
+        })
       };
     }
   }
@@ -308,7 +406,7 @@ export const completeServerSession = ({
 
 export const assertSafeSessionQuestions = (questions = []) => {
   const serialized = JSON.stringify(questions);
-  const forbidden = ['"type"', '"weight"', '"_axis"', '"familyId"', '"ageFit"', '"role"'];
+  const forbidden = ['"type"', '"weight"', '"_axis"', '"familyId"', '"ageFit"', '"role"', '"contextTag"'];
   const leaked = forbidden.find((token) => serialized.includes(token));
   if (leaked) throw new Error(`session_question_leak:${leaked}`);
   return true;

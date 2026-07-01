@@ -6,9 +6,12 @@ import {
   completeServerSession,
   createServerSession
 } from '../server/session/engine.js';
-import { buildResultViewModel } from '../src/lib/resultAnalysis.js';
+import { openJson, sealJson } from '../server/security/crypto.js';
+import { validateServerDisplayModel } from '../src/lib/serverDisplayModel.js';
+import { buildResultViewModel } from '../server/product/resultAnalysis.js';
 
 const secret = 'local-server-session-test-key';
+const sessionAad = 'today-mbti-session-v1';
 const invokeStartHandler = async ({ method = 'POST', body = '', headers = {} } = {}) => {
   process.env.SESSION_TOKEN_SECRET = secret;
   const req = Readable.from(body ? [Buffer.from(body)] : []);
@@ -37,13 +40,15 @@ const invokeStartHandler = async ({ method = 'POST', body = '', headers = {} } =
 
 const assertStartHandlerHardening = async () => {
   let handlerResponse = await invokeStartHandler({
-    body: JSON.stringify({ recentSessions: [], ageGroup: '30s' })
+    body: JSON.stringify({ recentSessions: [], ageGroup: '30s', gender: 'female' })
   });
   assert.equal(handlerResponse.status, 200);
   assert.equal(handlerResponse.body.questions.length, 12);
   assert.ok(handlerResponse.body.sessionToken);
   assert.equal(handlerResponse.headers['cache-control'], 'private, no-store');
   assertSafeSessionQuestions(handlerResponse.body.questions);
+  assert.ok(handlerResponse.body.questions.every((question) => question.ui?.tempoMessage));
+  assert.ok(handlerResponse.body.questions.every((question) => question.ui?.contextVisual?.key));
 
   handlerResponse = await invokeStartHandler({ method: 'GET' });
   assert.equal(handlerResponse.status, 405);
@@ -74,6 +79,12 @@ const assertStartHandlerHardening = async () => {
   });
   assert.equal(handlerResponse.status, 400);
   assert.equal(handlerResponse.body.error, 'invalid_age_group');
+
+  handlerResponse = await invokeStartHandler({
+    body: JSON.stringify({ gender: 'invalid' })
+  });
+  assert.equal(handlerResponse.status, 400);
+  assert.equal(handlerResponse.body.error, 'invalid_gender');
 
   handlerResponse = await invokeStartHandler({
     body: '{}',
@@ -115,20 +126,21 @@ const firstAnswers = start.questions.map((question) => ({
   optionId: question.options[0].id
 }));
 
-let response = completeServerSession({
+let finalCompletionInput = {
   sessionToken: start.sessionToken,
   answers: firstAnswers,
   historyData,
   userName: '테스트',
   defaultUserName: '익명 탐험가',
   secret
-});
+};
+let response = completeServerSession(finalCompletionInput);
 
 if (response.status === 'needs_followup') {
   assert.ok(response.sessionToken);
   assert.ok(response.questions.length > 0);
   assertSafeSessionQuestions(response.questions);
-  response = completeServerSession({
+  finalCompletionInput = {
     sessionToken: response.sessionToken,
     answers: response.questions.map((question) => ({
       questionId: question.id,
@@ -138,7 +150,8 @@ if (response.status === 'needs_followup') {
     userName: '테스트',
     defaultUserName: '익명 탐험가',
     secret
-  });
+  };
+  response = completeServerSession(finalCompletionInput);
 }
 
 assert.equal(response.status, 'complete');
@@ -150,6 +163,60 @@ assert.equal(response.result.displayModel?.mbti, response.result.mbti);
 assert.equal(response.result.displayModel?.percent, response.result.percent);
 assert.equal(response.result.displayModel?.questionContextSummary?.topTag, response.result.questionContextSummary.topTag);
 assert.ok(response.result.displayModel?.presentation?.themeKey);
+assert.equal(response.result.displayModel?.schemaVersion, 2);
+assert.equal(response.result.displayModel?.resultId, response.result.resultId);
+assert.deepEqual(response.result.displayModel?.currentEntry, response.result.currentEntry);
+assert.ok(response.result.displayModel?.personalizedContext?.intro);
+assert.ok(response.result.displayModel?.presentationThemes?.length >= 1);
+assert.equal(validateServerDisplayModel(response.result.displayModel), response.result.displayModel);
+const serializedDisplayModel = JSON.stringify(response.result.displayModel);
+for (const forbiddenField of ['"weight"', '"_axis"', '"familyId"', '"ageFit"', '"allowMiddleCandidate"']) {
+  assert.equal(serializedDisplayModel.includes(forbiddenField), false, `display model must not expose ${forbiddenField}`);
+}
+
+for (const requiredField of ['spirit', 'presentation', 'shareCardCopy', 'currentEntry']) {
+  const invalidModel = { ...response.result.displayModel };
+  delete invalidModel[requiredField];
+  assert.throws(() => validateServerDisplayModel(invalidModel), /invalid_server_display_model/);
+}
+assert.throws(
+  () => validateServerDisplayModel({ ...response.result.displayModel, schemaVersion: 999 }),
+  /unsupported_server_display_model/
+);
+
+await new Promise((resolve) => setTimeout(resolve, 5));
+const repeatedResponse = completeServerSession(finalCompletionInput);
+assert.equal(repeatedResponse.status, 'complete');
+assert.ok(response.result.resultId, 'completed results must include a stable result id');
+assert.equal(repeatedResponse.result.resultId, response.result.resultId);
+assert.deepEqual(repeatedResponse.result.currentEntry, response.result.currentEntry);
+assert.equal(response.result.currentEntry.localEntryId, response.result.resultId);
+assert.equal(
+  repeatedResponse.result.displayModel.presentation.themeKey,
+  response.result.displayModel.presentation.themeKey
+);
+
+const legacyPayload = openJson(start.sessionToken, secret, { aad: sessionAad });
+legacyPayload.version = 1;
+delete legacyPayload.resultIdentity;
+const legacyInput = {
+  ...finalCompletionInput,
+  sessionToken: sealJson(legacyPayload, secret, { aad: sessionAad }),
+  answers: firstAnswers
+};
+let legacyResponse = completeServerSession(legacyInput);
+if (legacyResponse.status === 'needs_followup') {
+  legacyInput.sessionToken = legacyResponse.sessionToken;
+  legacyInput.answers = legacyResponse.questions.map((question) => ({
+    questionId: question.id,
+    optionId: question.options[0].id
+  }));
+  legacyResponse = completeServerSession(legacyInput);
+}
+const repeatedLegacyResponse = completeServerSession(legacyInput);
+assert.match(legacyResponse.result.resultId, /^legacy-[a-f0-9]{24}$/);
+assert.equal(repeatedLegacyResponse.result.resultId, legacyResponse.result.resultId);
+assert.deepEqual(repeatedLegacyResponse.result.currentEntry, legacyResponse.result.currentEntry);
 
 const scoresFromSpectrum = Object.fromEntries(
   response.result.spectrum.flatMap((axis) => [

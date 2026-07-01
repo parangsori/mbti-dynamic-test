@@ -1,23 +1,13 @@
-export const COMPATIBILITY = {
-  INFP: { good: 'ENFJ', bad: 'ISTJ' },
-  ENFP: { good: 'INFJ', bad: 'ISTJ' },
-  INFJ: { good: 'ENFP', bad: 'ESTP' },
-  ENFJ: { good: 'INFP', bad: 'ISTP' },
-  INTJ: { good: 'ENFP', bad: 'ESFJ' },
-  ENTJ: { good: 'INFP', bad: 'ISFJ' },
-  INTP: { good: 'ENTJ', bad: 'ESFJ' },
-  ENTP: { good: 'INFJ', bad: 'ISFJ' },
-  ISFP: { good: 'ENFJ', bad: 'INTP' },
-  ESFP: { good: 'ISFJ', bad: 'INTJ' },
-  ISTP: { good: 'ESTJ', bad: 'ENFP' },
-  ESTP: { good: 'ISFJ', bad: 'INFP' },
-  ISFJ: { good: 'ESFP', bad: 'ENTP' },
-  ESFJ: { good: 'ISFP', bad: 'INTP' },
-  ISTJ: { good: 'ESTP', bad: 'ENFP' },
-  ESTJ: { good: 'ISTP', bad: 'INFJ' }
-};
-
 export const CHANGELOG = [
+  {
+    version: 'v1.8.0',
+    date: '2026.07.01',
+    updates: [
+      '검사 시작과 결과 확인 과정의 안정성을 높이고, 일시적인 연결 문제에도 다시 시도할 수 있도록 개선',
+      '서비스 내부 처리 구조를 정리해 주요 기능이 더욱 안전하고 일관되게 동작하도록 개선',
+      '진행 중 연결이 끊겨도 흐름을 이어갈 수 있도록 복구 안정성과 기록 처리를 보강'
+    ]
+  },
   {
     version: 'v1.7.11',
     date: '2026.06.30',
@@ -127,7 +117,7 @@ export const CHANGELOG = [
     version: 'v1.6.14',
     date: '2026.05.28',
     updates: [
-      '자주 테스트할 때 같은 질문이 다시 나오는 느낌을 줄이기 위해 최근 문항 familyId 회피 범위와 반복 테스트 신선도 검증을 보강',
+      '자주 테스트할 때 같은 질문이 다시 나오는 느낌을 줄이기 위해 유사 문항 회피 범위와 반복 테스트 신선도 검증을 보강',
       '같은 연령대로 20회 연속 테스트하는 스트레스 검증을 추가해 특정 질문이 과하게 반복되지 않도록 점검',
       '일부 JP 앵커 문항이 반복 테스트에서 과하게 선택되던 가중치를 낮춰 새 질문이 더 잘 섞이도록 개선'
     ]
@@ -597,18 +587,3 @@ export const AXIS_GUIDE = {
 };
 
 export const DEFAULT_USERNAME = '익명 탐험가';
-
-export const QUESTION_TEMPO_COPY = [
-  '시작은 가볍게, 첫 느낌대로 골라보세요',
-  '초반 템포 좋아요. 생각보다 빨리 감이 와요',
-  '벌써 세 번째예요. 오늘 결이 슬슬 보여요',
-  '여기부터는 평소 습관이 조금씩 드러나요',
-  '중반 진입. 직감대로 골라도 꽤 정확해요',
-  '답변 흐름이 모이기 시작했어요',
-  '이쯤 오면 내 패턴이 은근히 선명해져요',
-  '후반부예요. 결과 분위기가 잡히고 있어요',
-  '거의 다 왔어요. 오늘 무드가 더 또렷해져요',
-  '이제 결과의 결이 꽤 선명해졌어요',
-  '마지막 두 문항, 느낌대로 밀어붙여도 좋아요',
-  '마지막 선택이에요. 결과 보기 직전이에요'
-];

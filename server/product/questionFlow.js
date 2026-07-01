@@ -1,10 +1,10 @@
-import { QUESTIONS_DB } from '../../data.js';
+import { QUESTIONS_DB } from './content.js';
 import {
   FOLLOWUP_QUESTIONS,
   QUESTIONS_META,
   QUESTIONS_EXTENDED,
   QUESTIONS_META_EXTENDED
-} from '../data/questionPools.js';
+} from './questionPools.js';
 
 export const QUESTION_TRANSITION_DELAY_MS = 420;
 export const createEmptyScores = () => ({ E: 0, I: 0, S: 0, N: 0, T: 0, F: 0, J: 0, P: 0 });
@@ -115,12 +115,17 @@ const getRecentSessionIds = (session) => {
 
 const getRecentSessionFamilyIds = (session) => {
   if (session?.familyIds && Array.isArray(session.familyIds)) return session.familyIds;
-  return [];
+  return getRecentSessionIds(session)
+    .map((id) => getScoredQuestionById(id, { ageGroup: session?.ageGroup || '' })?.familyId)
+    .filter(Boolean);
 };
 
 const getRecentSessionLifeTags = (session) => {
   if (session?.lifeTags && Array.isArray(session.lifeTags)) return session.lifeTags;
-  return [];
+  return getRecentSessionIds(session)
+    .map((id) => getScoredQuestionById(id, { ageGroup: session?.ageGroup || '' }))
+    .filter(Boolean)
+    .map(getQuestionLifeTag);
 };
 
 export const createRecentSessionSnapshot = ({ questions = [], ids = [], ageGroup = '' } = {}) => {

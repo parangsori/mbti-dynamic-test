@@ -1,4 +1,4 @@
-import { TYPE_CHARACTER_ASSETS } from './typeCharacterAssets.js';
+import { TYPE_CHARACTER_ASSETS } from '../../src/data/typeCharacterAssets.js';
 
 export const TYPE_CHARACTER_META = {
   INFJ: {

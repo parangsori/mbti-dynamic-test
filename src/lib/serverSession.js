@@ -1,5 +1,8 @@
-const SERVER_SESSION_ENABLED = import.meta.env.VITE_SERVER_SESSION_ENABLED === 'true';
+import { createInFlightRequestDeduper } from './inFlightRequest.js';
+
+const SERVER_SESSION_ENABLED = import.meta.env?.VITE_SERVER_SESSION_ENABLED !== 'false';
 const REQUEST_TIMEOUT_MS = 4500;
+const dedupeStartRequest = createInFlightRequestDeduper();
 
 const postJson = async (path, payload) => {
   const controller = new AbortController();
@@ -23,13 +26,12 @@ const postJson = async (path, payload) => {
   }
 };
 
-export const isServerSessionEnabled = () => SERVER_SESSION_ENABLED;
-
-export const startServerSession = ({ recentSessions, ageGroup } = {}) => {
+export const startServerSession = ({ recentSessions, ageGroup, gender } = {}) => {
   if (!SERVER_SESSION_ENABLED) {
     return Promise.resolve({ status: 'disabled' });
   }
-  return postJson('/api/session/start', { recentSessions, ageGroup });
+  const payload = { recentSessions, ageGroup, gender };
+  return dedupeStartRequest(JSON.stringify(payload), () => postJson('/api/session/start', payload));
 };
 
 export const completeServerSession = ({

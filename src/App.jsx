@@ -3,19 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import StartView from './components/StartView.jsx';
 import QuestionView from './components/QuestionView.jsx';
 import PullToRefreshIndicator from './components/PullToRefreshIndicator.jsx';
-import { AXIS_GUIDE, CHANGELOG, DEFAULT_USERNAME, QUESTION_TEMPO_COPY } from './lib/constants.js';
-import {
-  buildQuestionSession,
-  createEmptyNeutralSignals,
-  createEmptyScores,
-  createRecentSessionSnapshot,
-  getFollowupTempoMessage,
-  getQuestionContextVisual,
-  getQuestionTempoMessage,
-  getScoredQuestionById,
-  QUESTION_TRANSITION_DELAY_MS,
-  summarizeQuestionContext
-} from './lib/questionFlow.js';
+import { AXIS_GUIDE, CHANGELOG, DEFAULT_USERNAME } from './lib/constants.js';
 import { summarizeActivityReport } from './lib/activityReport.js';
 import {
   clearAllLocalData,
@@ -31,7 +19,6 @@ import {
   createHomeScreenMigrationText,
   importHomeScreenMigrationText,
   trackEvent,
-  writeActiveSession,
   writePendingResult,
   writeProfile,
   writeRecentSessions,
@@ -42,10 +29,9 @@ import { getHistoryComparison, getHistoryEntryNote, getHistoryInsights } from '.
 import { useSessionFlow } from './hooks/useSessionFlow.js';
 import {
   completeServerSession,
-  isServerSessionEnabled,
   startServerSession
 } from './lib/serverSession.js';
-import { getTypeCharacterAsset } from './data/typeCharacterAssets.js';
+import { validateServerDisplayModel } from './lib/serverDisplayModel.js';
 // Accessibility helpers are loaded inline to avoid dual-import warning
 const loadAccessibilitySettings = () => {
   try {
@@ -68,7 +54,7 @@ const readMockPremiumFlag = () => {
     return false;
   }
 };
-import { getPersonalizedTempoMessage, getAgeGroupFromBirthDate } from './lib/personalization.js';
+import { getAgeGroupFromBirthDate } from './lib/profileAge.js';
 
 const retryImport = (loader, retries = 1) =>
   loader().catch((error) => {
@@ -123,7 +109,6 @@ const preloadImage = (src) => {
 };
 
 const ResultView = lazy(loadResultViewModule);
-const RecoveryPrompt = lazy(() => import('./components/RecoveryPrompt.jsx'));
 const HistoryModal = lazy(() => import('./components/HistoryModal.jsx'));
 const VersionModal = lazy(() => import('./components/VersionModal.jsx'));
 const AxisGuideModal = lazy(() => import('./components/AxisGuideModal.jsx'));
@@ -132,9 +117,8 @@ import BootSplashScreen from './components/BootSplashScreen.jsx';
 
 const ANALYSIS_DURATION_MS = 2800;
 const ANALYSIS_CHARACTER_SRC = '/brand-character-v173.png';
-const RESULT_AXES = [['E', 'I'], ['S', 'N'], ['T', 'F'], ['J', 'P']];
 const SERVER_MIDDLE_OPTION_ID = 'middle';
-const SERVER_OPTION_INDEX_PATTERN = /^opt_.+_(\d+)$/;
+const QUESTION_TRANSITION_DELAY_MS = 420;
 const ANALYSIS_STEPS = [
   '답변 흐름 확인 중',
   '성향 축 정리 중',
@@ -149,55 +133,17 @@ const preloadAnalysisCharacter = () => preloadImage(ANALYSIS_CHARACTER_SRC).catc
   });
 });
 
-const getResultCharacterSrc = (scores, displayModel = null) => {
-  const serverAsset = displayModel?.spirit?.asset;
-  if (serverAsset) return serverAsset;
+const getResultCharacterSrc = (displayModel = null) => displayModel?.spirit?.asset || '';
 
-  const mbti = RESULT_AXES
-    .map(([left, right]) => ((scores?.[left] || 0) >= (scores?.[right] || 0) ? left : right))
-    .join('');
-  return getTypeCharacterAsset(mbti);
-};
-
-const preloadResultAssets = async (scores, displayModel = null) => {
-  const characterSrc = getResultCharacterSrc(scores, displayModel);
+const preloadResultAssets = async (displayModel = null) => {
+  const characterSrc = getResultCharacterSrc(displayModel);
   const results = await Promise.allSettled([preloadResultView(), preloadImage(characterSrc)]);
   const failure = results.find((result) => result.status === 'rejected');
   if (failure) throw failure.reason;
 };
 
-const getServerOptionIndex = (optionId = '') => {
-  const match = String(optionId).match(SERVER_OPTION_INDEX_PATTERN);
-  return match ? Math.max(0, Number(match[1]) - 1) : -1;
-};
-
-const hydrateServerQuestionForFallback = (question, ageGroup = '') => {
-  const rawQuestion = getScoredQuestionById(question?.id, { ageGroup });
-  if (!rawQuestion) return question;
-
-  return {
-    ...question,
-    familyId: rawQuestion.familyId,
-    role: rawQuestion.role,
-    weight: rawQuestion.weight || 1,
-    contextTag: question.contextTag || rawQuestion.contextTag,
-    lifeTag: rawQuestion.lifeTag,
-    ageFit: rawQuestion.ageFit,
-    _axis: rawQuestion._axis,
-    options: (question.options || []).map((option) => {
-      const optionIndex = getServerOptionIndex(option.id);
-      const rawOption = rawQuestion.options?.[optionIndex] || rawQuestion.options?.find((item) => item.text === option.text);
-      return {
-        ...option,
-        type: rawOption?.type,
-        micro: option.micro || rawOption?.micro || ''
-      };
-    })
-  };
-};
-
 const scoresFromServerResult = (result = {}) => {
-  const nextScores = createEmptyScores();
+  const nextScores = {};
   (result.spectrum || []).forEach((axis) => {
     if (axis.left) nextScores[axis.left] = Number(axis.leftScore) || 0;
     if (axis.right) nextScores[axis.right] = Number(axis.rightScore) || 0;
@@ -362,18 +308,21 @@ const isAppleMobileDevice = () => {
 
 const shouldShowBootSplash = () => !isStandaloneDisplay() || isAppleMobileDevice();
 
-const getPendingResultCurrentEntry = (pendingResult) => {
-  if (pendingResult?.currentEntry && typeof pendingResult.currentEntry === 'object') {
-    return pendingResult.currentEntry;
+const getStartErrorMessage = (error) => {
+  if (error?.name === 'AbortError') {
+    return '문항 준비가 평소보다 오래 걸리고 있어요. 연결을 확인한 뒤 다시 시도해주세요.';
   }
-
-  const savedAt = new Date(pendingResult.savedAt);
-  return {
-    createdAt: savedAt.toISOString(),
-    date: savedAt.toLocaleDateString('ko-KR', { month: 'short', day: 'numeric', weekday: 'short' }),
-    time: savedAt.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false })
-  };
+  if (error?.message === 'invalid_server_session_start' || error?.message === 'disabled') {
+    return '지금은 문항을 준비할 수 없어요. 잠시 후 다시 시도해주세요.';
+  }
+  return '연결이 잠시 끊겼어요. 다시 시도하면 이어서 시작할 수 있어요.';
 };
+
+const sanitizeRecentSessions = (sessions) => (Array.isArray(sessions) ? sessions : []).slice(0, 12).map((session) => ({
+  ids: Array.isArray(session?.ids) ? session.ids.slice(0, 24).map(String) : [],
+  ageGroup: typeof session?.ageGroup === 'string' ? session.ageGroup : '',
+  savedAt: typeof session?.savedAt === 'string' ? session.savedAt : ''
+}));
 
 const readHomeScreenTipHidden = () => {
   try {
@@ -419,8 +368,6 @@ export default function App() {
   const [userName, setUserName] = useState(readUserName());
   const [showHistory, setShowHistory] = useState(false);
   const [showVersionModal, setShowVersionModal] = useState(false);
-  const [showRecoveryPrompt, setShowRecoveryPrompt] = useState(false);
-  const [recoverableSession, setRecoverableSession] = useState(null);
   const [axisGuideKey, setAxisGuideKey] = useState(null);
   const [historyData, setHistoryData] = useState([]);
   const [isPremiumUser] = useState(readMockPremiumFlag);
@@ -445,30 +392,21 @@ export default function App() {
     setRecentSessionsSnapshot,
     sessionQuestionIds,
     setSessionQuestionIds,
-    neutralSignals,
-    setNeutralSignals,
-    neutralQuestionIds,
-    setNeutralQuestionIds,
     questionContextSummary,
     setQuestionContextSummary,
     lastAnswerSnapshot,
     setLastAnswerSnapshot,
     transitionLockRef,
-    activeQuestion,
-    handleQuestionAnswer,
-    handleMiddleAnswer,
-    handleQuestionBack
+    activeQuestion
   } = useSessionFlow();
   const [serverSessionActive, setServerSessionActive] = useState(false);
   const [serverSessionToken, setServerSessionToken] = useState('');
   const [serverSessionAnswers, setServerSessionAnswers] = useState([]);
   const [serverResultDisplayModel, setServerResultDisplayModel] = useState(null);
-  const [serverResultCurrentEntry, setServerResultCurrentEntry] = useState(null);
   const [isStartingSession, setIsStartingSession] = useState(false);
-  const serverFallbackQuestionsRef = useRef({
-    base: [],
-    followup: []
-  });
+  const [startError, setStartError] = useState('');
+  const [neutralCount, setNeutralCount] = useState(0);
+  const [usedFollowup, setUsedFollowup] = useState(false);
 
   // M3: Profile state (birthDate-based)
   const [birthDate, setBirthDate] = useState(() => readProfile().birthDate || null);
@@ -502,21 +440,35 @@ export default function App() {
     setHistoryData(storedHistory);
 
     if (pendingResult) {
-      preloadResultAssets(pendingResult.scores || createEmptyScores(), pendingResult.displayModel || null).catch((error) => {
+      try {
+        validateServerDisplayModel(pendingResult.displayModel);
+      } catch (error) {
+        clearPendingResult();
+        captureError(error, {
+          key: 'legacy_pending_result_incompatible',
+          stage: 'result_recovery'
+        });
+        trackEvent('result_recovery_incompatible', { reason: error?.message || 'invalid_display_model' });
+        if (readActiveSession()) {
+          clearActiveSession();
+          trackEvent('session_recovery_incompatible');
+        }
+        setStartError('이전 결과는 새 보안 방식과 호환되지 않아 정리했어요. 기록과 프로필은 그대로예요.');
+        return;
+      }
+
+      preloadResultAssets(pendingResult.displayModel).catch((error) => {
         captureError(error, {
           key: 'result_screen_preload_error',
           stage: 'result_recovery_preload'
         });
       });
       setUserName(pendingResult.userName || '');
-      setScores(pendingResult.scores || createEmptyScores());
-      setQuestionContextSummary(pendingResult.questionContextSummary || null);
-      setServerResultDisplayModel(pendingResult.displayModel || null);
-      setServerResultCurrentEntry(getPendingResultCurrentEntry(pendingResult));
-      setNeutralQuestionIds(Array.from({ length: pendingResult.neutralCount || 0 }, (_, index) => `pending-neutral-${index}`));
-      setFollowupQuestions(Array.from({ length: pendingResult.followupCount || 0 }, (_, index) => ({ id: `pending-followup-${index}` })));
-      setRecoverableSession(null);
-      setShowRecoveryPrompt(false);
+      setScores(scoresFromServerResult(pendingResult.displayModel));
+      setQuestionContextSummary(pendingResult.displayModel.questionContextSummary || null);
+      setServerResultDisplayModel(pendingResult.displayModel);
+      setNeutralCount(Number(pendingResult.displayModel.neutralCount) || 0);
+      setUsedFollowup(Boolean(pendingResult.displayModel.usedFollowup));
       setResultBoundaryKey((value) => value + 1);
       setStep('result');
       trackEvent('result_recovery_resume', {
@@ -526,9 +478,10 @@ export default function App() {
     }
 
     const savedSession = readActiveSession();
-    if (savedSession && savedSession.questions?.length && savedSession.currIdx < savedSession.questions.length) {
-      setRecoverableSession(savedSession);
-      setShowRecoveryPrompt(true);
+    if (savedSession) {
+      clearActiveSession();
+      setStartError('진행 중이던 이전 검사는 새 보안 방식과 호환되지 않아 다시 시작해야 해요.');
+      trackEvent('session_recovery_incompatible');
     }
   }, []);
 
@@ -711,92 +664,45 @@ export default function App() {
     clearActiveSession();
     clearPendingResult();
     setServerResultDisplayModel(null);
-    setServerResultCurrentEntry(null);
     setFollowupQuestions([]);
     setQuestionPhase('base');
     setSessionQuestionIds([]);
-    setNeutralSignals(createEmptyNeutralSignals());
-    setNeutralQuestionIds([]);
+    setNeutralCount(0);
+    setUsedFollowup(false);
     setQuestionContextSummary(null);
     setLastAnswerSnapshot(null);
     setServerSessionActive(false);
     setServerSessionToken('');
     setServerSessionAnswers([]);
     setIsStartingSession(false);
-    serverFallbackQuestionsRef.current = { base: [], followup: [] };
+    setStartError('');
     transitionLockRef.current = false;
     setStep('start');
   };
 
-  const startLocalSession = ({ trimmedName, recentSessions, sessionQuestions }) => {
-    const thisSession = sessionQuestions.map((question) => question.id);
-
-    setServerSessionActive(false);
-    setServerSessionToken('');
-    setServerSessionAnswers([]);
-    setServerResultDisplayModel(null);
-    setServerResultCurrentEntry(null);
-    serverFallbackQuestionsRef.current = { base: [], followup: [] };
-    setQuestions(sessionQuestions);
-    setFollowupQuestions([]);
-    setScores(createEmptyScores());
-    setCurrIdx(0);
-    setMicroCopy('');
-    setQuestionDirection(1);
-    setQuestionPhase('base');
-    setRecentSessionsSnapshot(recentSessions);
-    setSessionQuestionIds(thisSession);
-    setNeutralSignals(createEmptyNeutralSignals());
-    setNeutralQuestionIds([]);
-    setQuestionContextSummary(null);
-    setLastAnswerSnapshot(null);
-    transitionLockRef.current = false;
-    setStep('question');
-    preloadAnalysisCharacter();
-
-    writeActiveSession({
-      userName: trimmedName,
-      questions: sessionQuestions,
-      followupQuestions: [],
-      currIdx: 0,
-      scores: createEmptyScores(),
-      questionPhase: 'base',
-      recentSessions: recentSessions,
-      sessionQuestionIds: thisSession,
-      neutralSignals: createEmptyNeutralSignals(),
-      neutralQuestionIds: []
-    });
-  };
-
   const startServerBackedSession = async ({ trimmedName, recentSessions, startedAt }) => {
-    const session = await startServerSession({ recentSessions, ageGroup });
+    const session = await startServerSession({ recentSessions, ageGroup, gender });
     if (!session?.sessionToken || !Array.isArray(session.questions) || !session.questions.length) {
       throw new Error('invalid_server_session_start');
     }
 
-    const fallbackQuestions = session.questions.map((question) => hydrateServerQuestionForFallback(question, ageGroup));
     const thisSession = session.questions.map((question) => question.id);
 
-    serverFallbackQuestionsRef.current = {
-      base: fallbackQuestions,
-      followup: []
-    };
     setServerSessionActive(true);
     setServerSessionToken(session.sessionToken);
     setServerSessionAnswers([]);
     setServerResultDisplayModel(null);
-    setServerResultCurrentEntry(null);
     setQuestions(session.questions);
     setFollowupQuestions([]);
-    setScores(createEmptyScores());
+    setScores({});
     setCurrIdx(0);
     setMicroCopy('');
     setQuestionDirection(1);
     setQuestionPhase('base');
     setRecentSessionsSnapshot(recentSessions);
     setSessionQuestionIds(thisSession);
-    setNeutralSignals(createEmptyNeutralSignals());
-    setNeutralQuestionIds([]);
+    setNeutralCount(0);
+    setUsedFollowup(false);
     setQuestionContextSummary(null);
     setLastAnswerSnapshot(null);
     transitionLockRef.current = false;
@@ -812,7 +718,9 @@ export default function App() {
   const handleStart = async () => {
     if (isStartingSession) return;
     const startedAt = performance.now();
+    const isRetry = Boolean(startError);
     setIsStartingSession(true);
+    setStartError('');
 
     if (document.activeElement instanceof HTMLElement) {
       document.activeElement.blur();
@@ -827,72 +735,27 @@ export default function App() {
         ageGroup: ageGroup || '',
         hasGender: Boolean(gender)
       });
+      if (isRetry) trackEvent('session_api_retry', { stage: 'start' });
 
-      const recentSessions = readRecentSessions();
+      const recentSessions = sanitizeRecentSessions(readRecentSessions());
+      writeRecentSessions(recentSessions);
 
-      if (isServerSessionEnabled()) {
-        try {
-          await startServerBackedSession({ trimmedName, recentSessions, startedAt });
-          return;
-        } catch (error) {
-          captureError(error, {
-            key: 'session_api_start_error',
-            stage: 'session_start'
-          });
-          trackEvent('session_api_error', {
-            ...getSessionApiEventMeta(),
-            stage: 'start',
-            durationMs: Math.round(performance.now() - startedAt),
-            reason: error?.message || 'unknown'
-          });
-          trackEvent('session_api_fallback', {
-            ...getSessionApiEventMeta(),
-            stage: 'start',
-            durationMs: Math.round(performance.now() - startedAt)
-          });
-        }
-      }
-
-      startLocalSession({
-        trimmedName,
-        recentSessions,
-        sessionQuestions: buildQuestionSession(recentSessions, { ageGroup })
+      await startServerBackedSession({ trimmedName, recentSessions, startedAt });
+    } catch (error) {
+      captureError(error, {
+        key: 'session_api_start_error',
+        stage: 'session_start'
       });
+      trackEvent('session_api_error', {
+        ...getSessionApiEventMeta(),
+        stage: 'start',
+        durationMs: Math.round(performance.now() - startedAt),
+        reason: error?.message || 'unknown'
+      });
+      setStartError(getStartErrorMessage(error));
     } finally {
       setIsStartingSession(false);
     }
-  };
-
-  const handleResumeSession = () => {
-    if (!recoverableSession) return;
-    setUserName(recoverableSession.userName || '');
-    setQuestions(recoverableSession.questions || []);
-    setFollowupQuestions(recoverableSession.followupQuestions || []);
-    setCurrIdx(recoverableSession.currIdx || 0);
-    setScores(recoverableSession.scores || createEmptyScores());
-    setMicroCopy('');
-    setQuestionDirection(1);
-    setQuestionPhase(recoverableSession.questionPhase || 'base');
-    setRecentSessionsSnapshot(recoverableSession.recentSessions || []);
-    setSessionQuestionIds(recoverableSession.sessionQuestionIds || []);
-    setNeutralSignals(recoverableSession.neutralSignals || createEmptyNeutralSignals());
-    setNeutralQuestionIds(recoverableSession.neutralQuestionIds || []);
-    setQuestionContextSummary(null);
-    setLastAnswerSnapshot(null);
-    transitionLockRef.current = false;
-    setShowRecoveryPrompt(false);
-    setStep('question');
-    preloadAnalysisCharacter();
-    trackEvent('session_resume');
-  };
-
-  const dismissRecovery = () => {
-    clearActiveSession();
-    setRecoverableSession(null);
-    setShowRecoveryPrompt(false);
-    setLastAnswerSnapshot(null);
-    transitionLockRef.current = false;
-    trackEvent('session_discard');
   };
 
   const latestHistoryComparison = getHistoryComparison(historyData[0]?.mbti || '', historyData);
@@ -918,88 +781,30 @@ export default function App() {
     setBirthDate(null);
     setGender('');
     setHistoryData([]);
-    setRecoverableSession(null);
-    setShowRecoveryPrompt(false);
     setShowHistory(false);
     setLastAnswerSnapshot(null);
     transitionLockRef.current = false;
   };
 
-  const finishSession = (finalScores, finalSessionIds = sessionQuestionIds) => {
-    const nextQuestionContextSummary = summarizeQuestionContext(questions, followupQuestions);
-    setQuestionContextSummary(nextQuestionContextSummary);
-    const sessionSnapshot = createRecentSessionSnapshot({
-      questions: [...questions, ...followupQuestions],
-      ids: finalSessionIds,
-      ageGroup
-    });
-    writeRecentSessions([sessionSnapshot, ...recentSessionsSnapshot].slice(0, 12));
-    writePendingResult({
-      scores: finalScores,
-      userName,
-      questionContextSummary: nextQuestionContextSummary,
-      neutralCount: neutralQuestionIds.length,
-      followupCount: followupQuestions.length,
-      usedFollowup: questionPhase === 'followup' || followupQuestions.length > 0
-    });
-    trackEvent('complete_test', {
-      usedFollowup: questionPhase === 'followup' || followupQuestions.length > 0,
-      followupCount: followupQuestions.length,
-      neutralCount: neutralQuestionIds.length,
-      questionContextTop: nextQuestionContextSummary.topTag
-    });
-    setScores(finalScores);
-    setLastAnswerSnapshot(null);
-    transitionLockRef.current = false;
-    setResultBoundaryKey((value) => value + 1);
-    trackEvent('analysis_view', {
-      questionContextTop: nextQuestionContextSummary.topTag
-    });
-    preloadResultAssets(finalScores).catch((error) => {
-      captureError(error, {
-        key: 'result_screen_preload_error',
-        stage: 'result_preload'
-      });
-    });
-    setStep('analysis');
-  };
-
   const finishServerSession = (serverResult, meta = {}) => {
-    const finalScores = scoresFromServerResult(serverResult);
-    const nextDisplayModel = serverResult.displayModel || null;
-    const nextCurrentEntry = serverResult.currentEntry || null;
-    const fallbackQuestions = [
-      ...serverFallbackQuestionsRef.current.base,
-      ...serverFallbackQuestionsRef.current.followup
-    ];
-    const finalSessionIds = serverResult.sessionQuestionIds || sessionQuestionIds;
-    const nextQuestionContextSummary = serverResult.questionContextSummary || summarizeQuestionContext(
-      serverFallbackQuestionsRef.current.base,
-      serverFallbackQuestionsRef.current.followup
-    );
-    const sessionSnapshot = createRecentSessionSnapshot({
-      questions: fallbackQuestions,
-      ids: finalSessionIds,
-      ageGroup
-    });
+    const nextDisplayModel = validateServerDisplayModel(serverResult.displayModel);
+    const finalScores = scoresFromServerResult(nextDisplayModel);
+    const nextQuestionContextSummary = nextDisplayModel.questionContextSummary || null;
+    const sessionSnapshot = serverResult.recentSessionSnapshot;
 
     setQuestionContextSummary(nextQuestionContextSummary);
-    writeRecentSessions([sessionSnapshot, ...recentSessionsSnapshot].slice(0, 12));
+    if (sessionSnapshot?.ids?.length) {
+      writeRecentSessions([sessionSnapshot, ...recentSessionsSnapshot].slice(0, 12));
+    }
     writePendingResult({
-      scores: finalScores,
       userName,
-      questionContextSummary: nextQuestionContextSummary,
-      neutralCount: serverResult.neutralCount || 0,
-      followupCount: serverFallbackQuestionsRef.current.followup.length,
-      usedFollowup: Boolean(serverResult.usedFollowup),
-      displayModel: nextDisplayModel,
-      currentEntry: nextCurrentEntry
+      displayModel: nextDisplayModel
     });
     trackEvent('complete_test', {
       usedFollowup: Boolean(serverResult.usedFollowup),
-      followupCount: serverFallbackQuestionsRef.current.followup.length,
+      followupCount: Number(serverResult.followupCount) || 0,
       neutralCount: serverResult.neutralCount || 0,
-      questionContextTop: nextQuestionContextSummary.topTag
+      questionContextTop: nextQuestionContextSummary?.topTag || ''
     });
     trackEvent('session_api_complete_ok', {
       ...getSessionApiEventMeta(),
@@ -1008,8 +813,9 @@ export default function App() {
       usedFollowup: Boolean(serverResult.usedFollowup)
     });
     setScores(finalScores);
+    setNeutralCount(Number(serverResult.neutralCount) || 0);
+    setUsedFollowup(Boolean(serverResult.usedFollowup));
     setServerResultDisplayModel(nextDisplayModel);
-    setServerResultCurrentEntry(nextCurrentEntry);
     setServerSessionActive(false);
     setServerSessionToken('');
     setServerSessionAnswers([]);
@@ -1017,9 +823,9 @@ export default function App() {
     transitionLockRef.current = false;
     setResultBoundaryKey((value) => value + 1);
     trackEvent('analysis_view', {
-      questionContextTop: nextQuestionContextSummary.topTag
+      questionContextTop: nextQuestionContextSummary?.topTag || ''
     });
-    preloadResultAssets(finalScores, nextDisplayModel).catch((error) => {
+    preloadResultAssets(nextDisplayModel).catch((error) => {
       captureError(error, {
         key: 'result_screen_preload_error',
         stage: 'result_preload'
@@ -1035,20 +841,15 @@ export default function App() {
     setQuestions(snapshot.questions || []);
     setFollowupQuestions(snapshot.followupQuestions || []);
     setCurrIdx(snapshot.currIdx || 0);
-    setScores(snapshot.scores || createEmptyScores());
     setQuestionPhase(snapshot.questionPhase || 'base');
     setRecentSessionsSnapshot(snapshot.recentSessions || []);
     setSessionQuestionIds(snapshot.sessionQuestionIds || []);
-    setNeutralSignals(snapshot.neutralSignals || createEmptyNeutralSignals());
-    setNeutralQuestionIds(snapshot.neutralQuestionIds || []);
     setQuestionContextSummary(snapshot.questionContextSummary || null);
+    setNeutralCount(Number(snapshot.neutralCount) || 0);
+    setUsedFollowup(Boolean(snapshot.usedFollowup));
     setServerSessionActive(Boolean(snapshot.serverSessionActive));
     setServerSessionToken(snapshot.serverSessionToken || '');
     setServerSessionAnswers(snapshot.serverSessionAnswers || []);
-    serverFallbackQuestionsRef.current = {
-      base: snapshot.serverFallbackQuestions?.base || [],
-      followup: snapshot.serverFallbackQuestions?.followup || []
-    };
     setMicroCopy(microText);
     setQuestionDirection(-1);
     setStep('question');
@@ -1056,14 +857,13 @@ export default function App() {
     transitionLockRef.current = false;
 
     if (trackBack) {
-      const restoredFallbackQuestions = snapshot.questionPhase === 'followup'
-        ? snapshot.serverFallbackQuestions?.followup || []
-        : snapshot.serverFallbackQuestions?.base || [];
-      const restoredQuestion = restoredFallbackQuestions[snapshot.currIdx || 0];
+      const restoredQuestions = snapshot.questionPhase === 'followup'
+        ? snapshot.followupQuestions || []
+        : snapshot.questions || [];
+      const restoredQuestion = restoredQuestions[snapshot.currIdx || 0];
       trackEvent('question_back', {
         phase: snapshot.questionPhase || 'base',
         questionId: restoredQuestion?.id || '',
-        axis: restoredQuestion?._axis || '',
         index: (snapshot.currIdx || 0) + 1,
         mode: 'server_session'
       });
@@ -1072,13 +872,7 @@ export default function App() {
     return true;
   };
 
-  const completeServerPhase = async ({
-    answers,
-    nextScores,
-    nextNeutralSignals,
-    nextNeutralQuestionIds,
-    recoverySnapshot
-  }) => {
+  const completeServerPhase = async ({ answers, recoverySnapshot }) => {
     const startedAt = performance.now();
     const phase = questionPhase;
 
@@ -1093,24 +887,17 @@ export default function App() {
 
       if (response.status === 'needs_followup') {
         const responseQuestions = response.questions || [];
-        const fallbackFollowups = responseQuestions.map((question) => hydrateServerQuestionForFallback(question, ageGroup));
         const nextSessionIds = [...sessionQuestionIds, ...responseQuestions.map((question) => question.id)];
-        serverFallbackQuestionsRef.current = {
-          ...serverFallbackQuestionsRef.current,
-          followup: fallbackFollowups
-        };
         setServerSessionToken(response.sessionToken || '');
         setServerSessionAnswers([]);
         setFollowupQuestions(responseQuestions);
         setQuestionPhase('followup');
+        setUsedFollowup(true);
         setCurrIdx(0);
         setSessionQuestionIds(nextSessionIds);
-        setScores(nextScores);
-        setNeutralSignals(nextNeutralSignals);
-        setNeutralQuestionIds(nextNeutralQuestionIds);
         trackEvent('followup_start', {
           count: responseQuestions.length,
-          neutralCount: nextNeutralQuestionIds.length
+          neutralCount
         });
         trackEvent('session_api_complete_ok', {
           ...getSessionApiEventMeta(),
@@ -1149,74 +936,26 @@ export default function App() {
     }
   };
 
-  const getFallbackQuestionForCurrentStep = () => {
-    const list = questionPhase === 'followup'
-      ? serverFallbackQuestionsRef.current.followup
-      : serverFallbackQuestionsRef.current.base;
-    return list[currIdx] || null;
-  };
-
   const createServerQuestionSnapshot = () => ({
     serverSession: true,
     userName,
     questions,
     followupQuestions,
     currIdx,
-    scores,
     questionPhase,
     recentSessions: recentSessionsSnapshot,
     sessionQuestionIds,
-    neutralSignals,
-    neutralQuestionIds,
+    neutralCount,
+    usedFollowup,
     questionContextSummary,
     serverSessionActive,
     serverSessionToken,
-    serverSessionAnswers,
-    serverFallbackQuestions: {
-      base: serverFallbackQuestionsRef.current.base,
-      followup: serverFallbackQuestionsRef.current.followup
-    }
+    serverSessionAnswers
   });
 
   const handleServerQuestionBack = () => {
     if (!lastAnswerSnapshot?.serverSession || isTransitioning || transitionLockRef.current) return;
     restoreServerQuestionSnapshot(lastAnswerSnapshot, { trackBack: true });
-  };
-
-  const getFallbackStateAfterAnswer = (optionId) => {
-    const fallbackQuestion = getFallbackQuestionForCurrentStep();
-    if (!fallbackQuestion) {
-      return {
-        nextScores: scores,
-        nextNeutralSignals: createEmptyNeutralSignals(),
-        nextNeutralQuestionIds: neutralQuestionIds
-      };
-    }
-
-    if (optionId === SERVER_MIDDLE_OPTION_ID) {
-      const axisCode = fallbackQuestion._axis;
-      const nextNeutralSignals = axisCode
-        ? { ...neutralSignals, [axisCode]: (neutralSignals[axisCode] || 0) + 1 }
-        : neutralSignals;
-      return {
-        nextScores: scores,
-        nextNeutralSignals,
-        nextNeutralQuestionIds: fallbackQuestion.id
-          ? [...neutralQuestionIds, fallbackQuestion.id]
-          : neutralQuestionIds
-      };
-    }
-
-    const optionIndex = getServerOptionIndex(optionId);
-    const fallbackOption = fallbackQuestion.options?.[optionIndex];
-    const type = fallbackOption?.type;
-    const weight = fallbackQuestion.weight || 1;
-    return {
-      nextScores: type ? { ...scores, [type]: (scores[type] || 0) + weight } : scores,
-      nextNeutralSignals: neutralSignals,
-      nextNeutralQuestionIds: neutralQuestionIds,
-      microText: fallbackOption?.micro || ''
-    };
   };
 
   const handleServerAnswer = (optionId, method = 'tap') => {
@@ -1235,12 +974,10 @@ export default function App() {
       index: currIdx + 1
     });
 
-    const {
-      nextScores,
-      nextNeutralSignals,
-      nextNeutralQuestionIds,
-      microText = ''
-    } = getFallbackStateAfterAnswer(optionId);
+    const selectedOption = activeQuestion?.options?.find((option) => option.id === optionId);
+    const microText = optionId === SERVER_MIDDLE_OPTION_ID
+      ? activeQuestion?.ui?.middleMicroCopy || '이 부분은 서버에서 한 번 더 확인할게요'
+      : selectedOption?.micro || '';
     const nextAnswers = [
       ...serverSessionAnswers,
       {
@@ -1250,9 +987,7 @@ export default function App() {
     ];
 
     setServerSessionAnswers(nextAnswers);
-    setScores(nextScores);
-    setNeutralSignals(nextNeutralSignals);
-    setNeutralQuestionIds(nextNeutralQuestionIds);
+    if (optionId === SERVER_MIDDLE_OPTION_ID) setNeutralCount((value) => value + 1);
     setMicroCopy(microText);
 
     setTimeout(() => {
@@ -1261,9 +996,6 @@ export default function App() {
       if (currIdx + 1 >= activeTotal) {
         completeServerPhase({
           answers: nextAnswers,
-          nextScores,
-          nextNeutralSignals,
-          nextNeutralQuestionIds,
           recoverySnapshot
         }).finally(() => {
           transitionLockRef.current = false;
@@ -1300,8 +1032,7 @@ export default function App() {
     clearPendingResult();
   };
 
-  const activeQuestionContextVisual = activeQuestion ? getQuestionContextVisual(activeQuestion) : null;
-  const followupHasNeutralReview = questionPhase === 'followup' && followupQuestions.some((item) => (item.trigger?.neutralCount || 0) > 0);
+  const activeQuestionContextVisual = activeQuestion?.ui?.contextVisual || null;
   const activeQuestionTotal = questionPhase === 'followup' ? followupQuestions.length : questions.length;
   const isWaitingForServerPhase = serverSessionActive
     && isTransitioning
@@ -1312,33 +1043,7 @@ export default function App() {
       ? '결과를 준비하고 있어요'
       : '다음 흐름을 확인하고 있어요'
     : '';
-  const questionPhaseHint =
-    questionPhase === 'followup'
-      ? followupHasNeutralReview
-        ? '방금 애매했던 부분을 조금 더 또렷하게 볼게요'
-        : '경계에 있는 축을 한 번 더 확인하고 있어요'
-      : activeQuestion?.allowMiddle
-        ? '둘 중 하나가 딱 안 잡히면 보조 버튼으로 넘어갈 수 있어요'
-        : '';
-
-  const answerActionContext = {
-    userName,
-    trackEvent,
-    onFinishSession: finishSession
-  };
-
-  // M3: Get personalized tempo message
-  const getTempoForCurrentQuestion = () => {
-    if (questionPhase === 'followup') {
-      return getFollowupTempoMessage(currIdx, followupQuestions.length);
-    }
-    const baseTotal = questions.length || 12;
-    const defaultMsg = getQuestionTempoMessage(currIdx, baseTotal, '지금의 결대로 가볍게 골라보세요', QUESTION_TEMPO_COPY);
-    if (ageGroup) {
-      return getPersonalizedTempoMessage(ageGroup, currIdx, baseTotal, defaultMsg);
-    }
-    return defaultMsg;
-  };
+  const questionPhaseHint = activeQuestion?.ui?.phaseHint || '';
 
   const showHomeScreenTip =
     step === 'start' &&
@@ -1387,6 +1092,7 @@ export default function App() {
               onDismissHomeScreenTip={handleDismissHomeScreenTip}
               onHideHomeScreenTipForever={handleHideHomeScreenTipForever}
               isStarting={isStartingSession}
+              startError={startError}
             />
           )}
 
@@ -1400,7 +1106,7 @@ export default function App() {
               isTransitioning={isTransitioning}
               transitionMessage={serverTransitionMessage}
               questionDirection={questionDirection}
-              tempoMessage={getTempoForCurrentQuestion()}
+              tempoMessage={activeQuestion.ui?.tempoMessage || ''}
               phaseHint={questionPhaseHint}
               phase={questionPhase}
               questionLabel={questionPhase === 'followup' ? `보정 ${currIdx + 1}` : undefined}
@@ -1412,22 +1118,10 @@ export default function App() {
               showMiddleOption={questionPhase === 'base' && Boolean(activeQuestion.allowMiddle)}
               middleLabel="둘 다 비슷해요"
               contextVisual={activeQuestionContextVisual}
-              canGoBack={serverSessionActive ? Boolean(lastAnswerSnapshot?.serverSession) : Boolean(lastAnswerSnapshot)}
-              onAnswer={(option, method) => (
-                serverSessionActive
-                  ? handleServerAnswer(option.id, method)
-                  : handleQuestionAnswer(option, method, answerActionContext)
-              )}
-              onMiddleAnswer={(method) => (
-                serverSessionActive
-                  ? handleServerAnswer(SERVER_MIDDLE_OPTION_ID, method)
-                  : handleMiddleAnswer(method, answerActionContext)
-              )}
-              onBack={() => (
-                serverSessionActive
-                  ? handleServerQuestionBack()
-                  : handleQuestionBack({ setUserName, setStep, trackEvent })
-              )}
+              canGoBack={Boolean(lastAnswerSnapshot?.serverSession)}
+              onAnswer={(option, method) => handleServerAnswer(option.id, method)}
+              onMiddleAnswer={(method) => handleServerAnswer(SERVER_MIDDLE_OPTION_ID, method)}
+              onBack={handleServerQuestionBack}
             />
           )}
 
@@ -1439,33 +1133,19 @@ export default function App() {
                 <ResultView
                   key="result"
                   scores={scores}
-                  userName={userName}
                   historyData={historyData}
                   setHistoryData={setHistoryData}
-                  defaultUserName={DEFAULT_USERNAME}
                   openHistoryModal={openHistoryModal}
                   onRestart={handleRestart}
                   onOpenAxisGuide={setAxisGuideKey}
                   onResultReady={handleResultReady}
                   trackEvent={trackEvent}
-                  neutralCount={neutralQuestionIds.length}
-                  usedFollowup={followupQuestions.length > 0}
-                  questionContextSummary={questionContextSummary}
                   serverDisplayModel={serverResultDisplayModel}
-                  serverCurrentEntry={serverResultCurrentEntry}
                   ageGroup={ageGroup}
                   gender={gender}
                 />
               </Suspense>
             </ResultErrorBoundary>
-          )}
-        </AnimatePresence>
-
-        <AnimatePresence>
-          {showRecoveryPrompt && recoverableSession && step === 'start' && (
-            <Suspense fallback={null}>
-              <RecoveryPrompt session={recoverableSession} onResume={handleResumeSession} onDismiss={dismissRecovery} />
-            </Suspense>
           )}
         </AnimatePresence>
 

@@ -1,22 +1,21 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 
-const [appSource, questionFlowSource, questionViewSource, sessionFlowSource, stylesSource] = await Promise.all([
+const [appSource, questionViewSource, sessionFlowSource, stylesSource] = await Promise.all([
   readFile(new URL('../src/App.jsx', import.meta.url), 'utf8'),
-  readFile(new URL('../src/lib/questionFlow.js', import.meta.url), 'utf8'),
   readFile(new URL('../src/components/QuestionView.jsx', import.meta.url), 'utf8'),
   readFile(new URL('../src/hooks/useSessionFlow.js', import.meta.url), 'utf8'),
   readFile(new URL('../src/styles/index.css', import.meta.url), 'utf8')
 ]);
 
-const delayMatch = questionFlowSource.match(/QUESTION_TRANSITION_DELAY_MS\s*=\s*(\d+)/);
+const delayMatch = appSource.match(/QUESTION_TRANSITION_DELAY_MS\s*=\s*(\d+)/);
 assert.ok(delayMatch, 'question transition delay must use a shared constant');
 
 const delayMs = Number(delayMatch[1]);
 assert.ok(delayMs >= 300 && delayMs <= 450, `question transition delay must stay responsive, received ${delayMs}ms`);
 
 assert.match(appSource, /}, QUESTION_TRANSITION_DELAY_MS\);/, 'server-backed answers must use the shared transition delay');
-assert.match(sessionFlowSource, /}, QUESTION_TRANSITION_DELAY_MS\);/, 'local answers must use the shared transition delay');
+assert.doesNotMatch(sessionFlowSource, /handleQuestionAnswer|buildFollowupQuestions|option\.type/, 'client session state must not contain a local scoring path');
 assert.match(appSource, /key=\{`question-\$\{questionPhase\}-\$\{currIdx\}`\}/, 'question changes must preserve the main branch remount boundary');
 assert.match(questionViewSource, /<AnimatePresence mode="wait">/, 'question card transitions must preserve the main branch motion sequence');
 assert.match(questionViewSource, /question-progress-shimmer/, 'progress shimmer must use the compositor-friendly class');

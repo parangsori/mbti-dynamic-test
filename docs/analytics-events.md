@@ -43,8 +43,8 @@ These events are queried by `admin/api/admin/metrics.js`.
 | `result_server_sync_skipped` | Supabase result backup was skipped or unavailable. | skip reason. | Result backup skipped. |
 | `session_api_start_ok` | Server-backed session start succeeded. | display mode/device metadata, `durationMs`, `questionCount`. | Server-session start volume and latency. |
 | `session_api_complete_ok` | Server-backed completion succeeded or returned follow-up questions. | `status`, `phase`, `durationMs`, `followupCount`, `usedFollowup`. | Server-session complete volume and latency. |
-| `session_api_fallback` | Client fell back from server session path. | `stage`, `phase`, `durationMs`, display mode/device metadata. | Fallback monitoring. |
-| `session_api_error` | Server-session API path failed before fallback. | `stage`, `phase`, `durationMs`, `reason`, display mode/device metadata. | Error monitoring. |
+| `session_api_fallback` | Legacy event retained for historical dashboards; the current client must not emit it. | historical properties only. | Confirms fallback remains at zero after cutover. |
+| `session_api_error` | Server-session API path failed and the user remained in an explicit retry state. | `stage`, `phase`, `durationMs`, sanitized `reason`, display mode/device metadata. | Error monitoring. |
 | `followup_start` | Follow-up phase started. | `count`, `neutralCount`. | Follow-up frequency. |
 
 ## Additional Client Events
@@ -55,6 +55,9 @@ currently part of the main admin event-count list.
 | Event | Meaning |
 | --- | --- |
 | `result_recovery_resume` | Pending result recovery resumed after refresh. |
+| `result_recovery_incompatible` | A legacy pending result lacked the required display contract and only that pending payload was cleared. |
+| `session_recovery_incompatible` | A legacy locally generated in-progress session was cleared after the server-required cutover. |
+| `session_api_retry` | User retried a failed server-session stage; properties contain only the stage. |
 | `profile_clear` | Local profile cleared. |
 | `home_screen_tip_dismiss` | Home-screen tip dismissed for the session. |
 | `home_screen_tip_hide_forever` | Home-screen tip hidden persistently. |
@@ -93,10 +96,10 @@ and decide how it should be grouped.
   question set.
 - `session_api_complete_ok` with `status: needs_followup` is not failure; it
   means the server requested follow-up questions.
-- `session_api_fallback` means the user flow continued locally after a server
-  path failed.
-- `session_api_error` is paired with fallback today. Do not hide it without
-  preserving recurrence visibility.
+- `session_api_fallback` is historical after the server-required cutover and
+  should remain zero for new clients.
+- `session_api_error` means the user stayed on start or the exact last question
+  with an explicit retry path; it is no longer paired with local fallback.
 - Slow start/complete counts use the admin threshold in code. Review by
   browser/OS/device before changing fallback policy.
 
