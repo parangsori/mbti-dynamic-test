@@ -21,10 +21,12 @@
     "report:bundle-leak": "node scripts/checkBundleLeakBaseline.mjs --report --show-examples",
     "test:content-vault": "node scripts/checkContentVault.mjs",
     "test:server-session": "node scripts/checkServerSessionApi.mjs",
+    "test:session-start-monitoring": "node scripts/checkSessionStartMonitoring.mjs",
     "vault:build": "node scripts/buildContentVault.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.105.4",
+    "@vercel/functions": "^2.2.13",
     "framer-motion": "^11.18.2",
     "html2canvas": "^1.4.1",
     "posthog-js": "^1.391.2",

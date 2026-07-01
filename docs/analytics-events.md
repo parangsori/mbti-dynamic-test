@@ -42,6 +42,7 @@ These events are queried by `admin/api/admin/metrics.js`.
 | `result_server_sync_fail` | Supabase result backup failed. | failure metadata only. | Result backup failure. |
 | `result_server_sync_skipped` | Supabase result backup was skipped or unavailable. | skip reason. | Result backup skipped. |
 | `session_api_start_ok` | Server-backed session start succeeded. | display mode/device metadata, `durationMs`, `questionCount`. | Server-session start volume and latency. |
+| `session_api_start_observed` | Server accepted a valid session-start request and scheduled a privacy-preserving observation. | `policy_version`, `environment`, `identity_available`, `account_identity_available`, `access_tier`, `user_agent_family`, `recent_session_count_bucket`, `age_group_present`; server-derived rotating actor keys only when available. | Aggregate start volume, identity coverage, burst windows, browser family, and access-tier mix. |
 | `session_api_complete_ok` | Server-backed completion succeeded or returned follow-up questions. | `status`, `phase`, `durationMs`, `followupCount`, `usedFollowup`. | Server-session complete volume and latency. |
 | `session_api_fallback` | Legacy event retained for historical dashboards; the current client must not emit it. | historical properties only. | Confirms fallback remains at zero after cutover. |
 | `session_api_error` | Server-session API path failed and the user remained in an explicit retry state. | `stage`, `phase`, `durationMs`, sanitized `reason`, display mode/device metadata. | Error monitoring. |
@@ -103,6 +104,61 @@ and decide how it should be grouped.
 - Slow start/complete counts use the admin threshold in code. Review by
   browser/OS/device before changing fallback policy.
 
+## Server Start Observation Contract
+
+`session_api_start_observed` is emitted by the server after a valid
+`POST /api/session/start` response. Monitoring delivery is best-effort and is
+isolated from the user response: a missing analytics setting, timeout, or
+delivery failure must not fail a normal test start.
+
+The event accepts only this fixed property contract:
+
+- `distinct_id`: daily rotating HMAC of the normalized first forwarding IP and
+  coarse user-agent family, or the fixed `session-monitoring-unavailable`
+  marker when a usable server identity cannot be derived;
+- `$process_person_profile`: `false`, so PostHog does not create a person profile
+  for this observation;
+- `policy_version: 1` and `environment` limited to a small deployment category;
+- `identity_available` and `account_identity_available` booleans;
+- `access_tier`: `anonymous` today, with `free` and `premium` reserved for a
+  future server-verified member context;
+- `user_agent_family`: `chrome`, `edge`, `firefox`, `safari`, `other`, or
+  `unknown`;
+- `recent_session_count_bucket`: `0`, `1-2`, `3-9`, or `10+`;
+- `age_group_present`: presence only, never the age-group value;
+- optional `account_actor_key`: monthly rotating HMAC of a server-verified
+  account ID. It must be absent for anonymous or unverified requests.
+
+The server allowlist rejects any extra event properties. Raw IP addresses,
+full user-agent strings, account IDs, email addresses, names, birth data,
+request bodies, question or option content, session tokens, and answers are not
+part of this event.
+
+### Dashboard Interpretation
+
+- The policy is observation-only. A warning window (`10` starts in one minute)
+  or severe window (`30` starts in ten minutes) is a review signal, not a block,
+  rate limit, or abuse verdict.
+- Burst windows are grouped by the daily rotating network actor key. They do
+  not establish a durable person identity and cannot be joined across KST days.
+- `unmatchedClientStarts` is `session_api_start_observed` minus
+  `session_api_start_ok`, floored at zero. It is an estimate that can differ
+  because server and browser delivery are independent; it is not a confirmed
+  count of bypass attempts.
+- Low identity coverage usually means the salt or forwarding IP was unavailable.
+  Check deployment configuration before interpreting it as traffic behavior.
+- Monitoring-query failure is optional and must not hide the dashboard's core
+  metrics; the panel reports an unavailable state instead.
+
+### Future Member Extension
+
+The current start handler does not pass an authenticated account context, so
+events remain `access_tier: anonymous`. A future member integration may set
+`free` or `premium` and add `account_actor_key` only after the server has
+verified both the account ID and entitlement. Client claims must never select a
+tier. The monthly key must remain separate from the daily network key, and the
+admin response must continue to expose aggregate tier counts only.
+
 ## Privacy Checklist For New Events
 
 Before adding a new analytics event, verify:
@@ -119,5 +175,5 @@ Before adding a new analytics event, verify:
 
 - Decide whether `question_*`, history, and home-screen migration events need a
   dedicated admin panel or should remain product-analysis-only.
-- Add any future abuse-monitoring event, such as `session_api_start_suspicious`,
-  only after its privacy-preserving property shape is agreed.
+- Observe `session_api_start_observed` in production before deciding whether a
+  separate enforcement event or durable throttling is justified.
