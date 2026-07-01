@@ -1,6 +1,6 @@
-import { BADGES, MBTI_RESULTS } from '../../data.js';
-import { getSpiritMeta } from '../data/spiritMeta.js';
-import { COMPATIBILITY } from './constants.js';
+import { BADGES, MBTI_RESULTS } from './content.js';
+import { getSpiritMeta } from './spiritMeta.js';
+import { COMPATIBILITY } from './productConstants.js';
 import {
   getAxisChangeDetails,
   getEffectiveHistory,
@@ -11,7 +11,7 @@ import {
   getRevisitInsight,
   getTrendAnalysis,
   toHistoryAxisSnapshot
-} from './historyAnalysis.js';
+} from '../../src/lib/historyAnalysis.js';
 import { getDailyResultHints } from './personalization.js';
 
 export {
@@ -25,7 +25,7 @@ export {
   getRevisitInsight,
   getTrendAnalysis,
   toHistoryAxisSnapshot
-} from './historyAnalysis.js';
+} from '../../src/lib/historyAnalysis.js';
 
 export const getDisplayName = (name, fallback) => name.trim() || fallback;
 

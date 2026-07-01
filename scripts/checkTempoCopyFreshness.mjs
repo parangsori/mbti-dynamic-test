@@ -1,6 +1,6 @@
-import { QUESTION_TEMPO_COPY } from '../src/lib/constants.js';
-import { getPersonalizedTempoMessage } from '../src/lib/personalization.js';
-import { getFollowupTempoMessage } from '../src/lib/questionFlow.js';
+import { QUESTION_TEMPO_COPY } from '../server/product/productConstants.js';
+import { getPersonalizedTempoMessage } from '../server/product/personalization.js';
+import { getFollowupTempoMessage } from '../server/product/questionFlow.js';
 
 const AGE_GROUPS = ['child', 'teen', '20s', '30s', '40s', '50s'];
 const TOTAL_BASE_QUESTIONS = 12;

@@ -2,6 +2,7 @@ import { createServerSession } from '../../server/session/engine.js';
 
 const MAX_BODY_BYTES = 16 * 1024;
 const VALID_AGE_GROUPS = new Set(['', 'child', 'teen', '20s', '30s', '40s', '50s']);
+const VALID_GENDERS = new Set(['', 'male', 'female', 'other']);
 
 const sendJson = (res, status, payload) => {
   res.statusCode = status;
@@ -64,12 +65,21 @@ const sanitizeAgeGroup = (value) => {
   return ageGroup;
 };
 
+const sanitizeGender = (value) => {
+  if (value === undefined || value === null) return '';
+  if (typeof value !== 'string') throw createRequestError('invalid_gender');
+  const gender = value.trim();
+  if (!VALID_GENDERS.has(gender)) throw createRequestError('invalid_gender');
+  return gender;
+};
+
 export default async function handler(req, res) {
   try {
     const body = await readBody(req);
     const session = createServerSession({
       recentSessions: sanitizeRecentSessions(body.recentSessions),
-      ageGroup: sanitizeAgeGroup(body.ageGroup)
+      ageGroup: sanitizeAgeGroup(body.ageGroup),
+      gender: sanitizeGender(body.gender)
     });
     sendJson(res, 200, session);
   } catch (error) {

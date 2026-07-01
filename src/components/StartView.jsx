@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import ProfileInput from './ProfileInput.jsx';
 import ServiceCopyright from './ServiceCopyright.jsx';
@@ -176,14 +176,20 @@ export default function StartView({
   homeScreenMigrationText,
   onDismissHomeScreenTip,
   onHideHomeScreenTipForever,
-  isStarting = false
+  isStarting = false,
+  startError = ''
 }) {
   const hasPersonalization = Boolean(userName || birthDate?.year || birthDate?.month || birthDate?.day || gender);
   const [showPersonalization, setShowPersonalization] = useState(hasPersonalization);
+  const startErrorRef = useRef(null);
 
   useEffect(() => {
     if (hasPersonalization) setShowPersonalization(true);
   }, [hasPersonalization]);
+
+  useEffect(() => {
+    if (startError) startErrorRef.current?.focus();
+  }, [startError]);
 
   return (
     <motion.div
@@ -218,6 +224,25 @@ export default function StartView({
       >
         {isStarting ? '문항 준비 중...' : '바로 시작하기'}
       </button>
+      {startError && (
+        <div
+          ref={startErrorRef}
+          role="alert"
+          aria-live="assertive"
+          tabIndex={-1}
+          className="mt-3 w-full max-w-[20rem] rounded-2xl border border-amber-200/25 bg-amber-300/[0.08] px-4 py-3 text-center outline-none focus-visible:ring-2 focus-visible:ring-amber-200/70"
+        >
+          <p className="text-[12px] font-semibold leading-relaxed text-amber-50 break-keep">{startError}</p>
+          <button
+            type="button"
+            onClick={onStart}
+            disabled={isStarting}
+            className="mt-2 rounded-xl border border-amber-100/25 bg-amber-100/[0.1] px-3 py-2 text-[12px] font-black text-amber-50 transition hover:bg-amber-100/[0.16] disabled:cursor-wait disabled:opacity-70"
+          >
+            다시 시도
+          </button>
+        </div>
+      )}
       <p className="mt-3 text-center text-[12px] font-medium text-slate-400 break-keep">
         입력 없이 바로 시작할 수 있어요
       </p>

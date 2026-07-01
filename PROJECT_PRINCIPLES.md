@@ -13,7 +13,7 @@
 - Frontend: React 18 + Vite
 - UI: Tailwind CSS + Framer Motion
 - 결과 이미지 저장: `html2canvas`
-- 현재 구조는 프론트엔드 중심이며, 주요 동작은 로컬 상태와 로컬 저장소를 기반으로 한다.
+- 질문 선택·채점·결과 모델은 서버 세션이 소유하며, 브라우저는 정제된 질문과 버전된 결과 화면 모델만 사용한다. 기록·프로필·완료 결과 복구는 로컬 저장소를 사용하되 질문 세션과 토큰은 저장하지 않는다.
 - 결과 기록 백업: Supabase 익명 세션 기반 선택적 동기화. Supabase 환경변수가 없거나 저장에 실패해도 로컬 기록과 테스트 완료 흐름을 막지 않는다.
 - 운영 대시보드: `admin/` 별도 Vite 앱 + Vercel Serverless API + PostHog Query API
 - 관리자 접근 보호: `admin.beatblue.net` + Cloudflare Access + Vercel 환경변수 기반 서버 측 검증
@@ -69,6 +69,8 @@
 - 메인 사용자 서비스의 PostHog 수집 호스트는 reverse proxy `VITE_POSTHOG_HOST=https://e.beatblue.net`을 사용한다.
 - Supabase 클라이언트에는 publishable/anon key만 `VITE_SUPABASE_*` 변수로 둔다. service role key, secret key, DB password는 절대 `VITE_` 변수나 프론트 번들에 두지 않는다.
 - `CONTENT_VAULT_KEY`, `SESSION_TOKEN_SECRET`은 서버 전용 환경변수로만 둔다. 이 값들은 콘텐츠 vault 복호화와 서버 세션 토큰 보호에 사용하며, 절대 `VITE_` 변수로 만들지 않는다.
+- 제품 고유 질문·채점·결과·개인화·캐릭터 메타데이터는 `server/product/`에 둔다. `src/`는 이 경계를 직접 import하지 않으며, 공개 캐릭터 애셋 맵에는 MBTI와 이미지 경로만 둔다.
+- 서버 세션 응답은 `private, no-store`를 유지하고 브라우저·CDN·서비스워커에 질문 세션이나 토큰을 지속 캐시하지 않는다. 허용되는 중복 억제는 동일 시작 요청의 진행 중 Promise 공유뿐이다.
 - Supabase 결과 저장은 로컬 기록의 보조 백업으로만 시작한다. 서버 저장 성공 여부 때문에 테스트 완료, 결과 표시, 공유 카드 저장 흐름이 막히면 안 된다.
 - 클라이언트는 임의 HogQL/query를 서버로 보낼 수 없어야 하며, 서버리스 API는 코드에 고정된 집계 쿼리만 실행한다.
 - 운영 대시보드는 집계 숫자만 표시한다. 사용자별 이벤트 원문, distinct id, 이름, 생년월일, 원본 프로필 데이터는 응답하거나 화면에 노출하지 않는다.
@@ -86,6 +88,7 @@
 - 추천 기본 조합:
   - `npm run build`
   - `npm run test:accuracy`
+  - 보안/IP 경계 변경 시 `npm run check:bundle-leak`을 blocking gate로 실행
 
 ### 사용자 빠른 확인으로 전환해야 하는 경우
 

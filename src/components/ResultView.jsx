@@ -1,15 +1,10 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import { IMAGE_BASE64 } from '../data/mbtiData.js';
-import {
-  buildResultViewModel,
-  PRESENTATION_THEMES
-} from '../lib/resultAnalysis.js';
+import { getTypeCharacterAsset } from '../data/typeCharacterAssets.js';
 import ShareCard from './ShareCard.jsx';
 import SyncRateBadge from './SyncRateBadge.jsx';
 import TypeCharacterMoodRing from './TypeCharacterMoodRing.jsx';
 import ServiceCopyright from './ServiceCopyright.jsx';
-import { getPersonalizedResultContext } from '../lib/personalization.js';
 import { useResultRecord } from '../hooks/useResultRecord.js';
 import { useResultShare } from '../hooks/useResultShare.js';
 
@@ -703,20 +698,14 @@ function TypeCharacterIntroModal({
 
 export default function ResultView({
   scores,
-  userName,
   historyData,
   setHistoryData,
-  defaultUserName,
   openHistoryModal,
   onRestart,
   onOpenAxisGuide,
   onResultReady,
   trackEvent,
-  neutralCount = 0,
-  usedFollowup = false,
-  questionContextSummary = null,
-  serverDisplayModel = null,
-  serverCurrentEntry = null,
+  serverDisplayModel,
   ageGroup = '',
   gender = ''
 }) {
@@ -727,16 +716,7 @@ export default function ResultView({
   const [showMoodLegend, setShowMoodLegend] = useState(false);
   const [showCharacterIntro, setShowCharacterIntro] = useState(false);
 
-  if (!currentEntryRef.current) {
-    const now = new Date();
-    currentEntryRef.current = serverCurrentEntry && typeof serverCurrentEntry === 'object'
-      ? serverCurrentEntry
-      : {
-          createdAt: now.toISOString(),
-          date: now.toLocaleDateString('ko-KR', { month: 'short', day: 'numeric', weekday: 'short' }),
-          time: now.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false })
-        };
-  }
+  if (!currentEntryRef.current) currentEntryRef.current = serverDisplayModel.currentEntry;
 
   const {
     mbti,
@@ -773,24 +753,13 @@ export default function ResultView({
     tomorrowCheckPoint,
     neutralReviewNote,
     questionContextInsight,
-    topChangeChip
-  } = useMemo(() => (
-    serverDisplayModel && typeof serverDisplayModel === 'object'
-      ? serverDisplayModel
-      : buildResultViewModel({
-          scores,
-          historyData,
-          currentEntry: currentEntryRef.current,
-          userName,
-          defaultUserName,
-          ageGroup,
-          neutralCount,
-          usedFollowup,
-          questionContextSummary
-        })
-  ), [ageGroup, defaultUserName, historyData, neutralCount, questionContextSummary, scores, serverDisplayModel, usedFollowup, userName]);
+    topChangeChip,
+    personalizedContext,
+    presentationThemes,
+    questionContextSummary
+  } = serverDisplayModel;
 
-  const resolvedImageSrc = spirit.asset || (info.image ? IMAGE_BASE64[info.image] || info.image : '');
+  const resolvedImageSrc = spirit.asset || getTypeCharacterAsset(spirit.assetKey || mbti);
   const themeClasses = getThemeClasses(presentation.themeKey);
   const precisionBadge = getPrecisionBadge({ percent, neutralReviewNote, boundaryAxes });
   const todayLabel = getTodayLabel();
@@ -862,8 +831,6 @@ export default function ResultView({
     presentation,
     recentFlowSummary
   };
-
-  const personalizedContext = ageGroup ? getPersonalizedResultContext(ageGroup, gender, mbti, percent) : null;
 
   const detailSections = {
     why: (
@@ -1166,7 +1133,7 @@ export default function ResultView({
                 타입 캐릭터는 그대로이고, 오늘의 무드가 주변 빛과 링, 흐름 점으로 달라져요. 같은 MBTI라도 오늘의 결은 다르게 남을 수 있습니다.
               </p>
               <div className="mt-6 grid grid-cols-1 gap-3">
-                {PRESENTATION_THEMES.map((theme) => {
+                {presentationThemes.map((theme) => {
                   const tClasses = getThemeClasses(theme.key);
                   return (
                     <div key={theme.key} className={`relative isolate flex items-start gap-3 overflow-hidden rounded-2xl border px-3 py-3 ${tClasses.panel}`}>

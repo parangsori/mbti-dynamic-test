@@ -1,8 +1,8 @@
-export { QUESTIONS_META } from '../../questions_meta.js';
+export { QUESTIONS_META } from './questionsMeta.js';
 export {
   QUESTIONS_EXTENDED,
   QUESTIONS_META_EXTENDED
-} from '../../questions_extended.js';
+} from './questionsExtended.js';
 
 const FOLLOWUP_WEIGHT = 1.3;
 
